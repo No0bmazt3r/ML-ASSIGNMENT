@@ -1,0 +1,255 @@
+{
+  "frozen_at": "2026-11-06T21:11:46",
+  "git_commit": "98d1437-dirty",
+  "train_weeks": {
+    "ac": [
+      4,
+      5
+    ],
+    "light": [
+      2,
+      3,
+      4,
+      5
+    ]
+  },
+  "test_week": 6,
+  "cv": "TimeSeriesSplit(n_splits=4, gap=60 min), expanding window",
+  "features": [
+    "agg_Voltage1",
+    "agg_Voltage2",
+    "agg_Voltage3",
+    "agg_VoltageN",
+    "agg_Current1",
+    "agg_Current2",
+    "agg_Current3",
+    "agg_CurrentN",
+    "agg_Frequency",
+    "agg_Real_Power1",
+    "agg_Real_Power2",
+    "agg_Real_Power3",
+    "agg_Apparent_Power1",
+    "agg_Apparent_Power2",
+    "agg_Apparent_Power3",
+    "agg_Reactive_Power1",
+    "agg_Reactive_Power2",
+    "agg_Reactive_Power3",
+    "agg_PF1",
+    "agg_PF2",
+    "agg_PF3",
+    "agg_THD1",
+    "agg_THD2",
+    "agg_THD3",
+    "agg_THDN",
+    "agg_Current1H1",
+    "agg_Current2H1",
+    "agg_Current3H1",
+    "agg_CurrentNH1",
+    "agg_Current1H3",
+    "agg_Current2H3",
+    "agg_Current3H3",
+    "agg_CurrentNH3",
+    "agg_Current1H5",
+    "agg_Current2H5",
+    "agg_Current3H5",
+    "agg_CurrentNH5",
+    "agg_Current1H7",
+    "agg_Current2H7",
+    "agg_Current3H7",
+    "agg_CurrentNH7",
+    "agg_Current1H9",
+    "agg_Current2H9",
+    "agg_Current3H9",
+    "agg_CurrentNH9",
+    "agg_Current1H11",
+    "agg_Current2H11",
+    "agg_Current3H11",
+    "agg_CurrentNH11",
+    "agg_Current1H13",
+    "agg_Current2H13",
+    "agg_Current3H13",
+    "agg_CurrentNH13",
+    "agg_Current1H15",
+    "agg_Current2H15",
+    "agg_Current3H15",
+    "agg_CurrentNH15",
+    "agg_p_kw",
+    "agg_q_kvar",
+    "agg_s_kva",
+    "agg_p_kw_std",
+    "agg_p_kw_min",
+    "agg_p_kw_max",
+    "ratio_1H3",
+    "ratio_1H5",
+    "ratio_1H7",
+    "ratio_1H9",
+    "ratio_1H11",
+    "ratio_1H13",
+    "ratio_1H15",
+    "ratio_2H3",
+    "ratio_2H5",
+    "ratio_2H7",
+    "ratio_2H9",
+    "ratio_2H11",
+    "ratio_2H13",
+    "ratio_2H15",
+    "ratio_3H3",
+    "ratio_3H5",
+    "ratio_3H7",
+    "ratio_3H9",
+    "ratio_3H11",
+    "ratio_3H13",
+    "ratio_3H15",
+    "p_lag1",
+    "p_lag5",
+    "p_lag15",
+    "p_lag60",
+    "p_roll15_mean",
+    "p_roll15_std",
+    "p_roll60_mean",
+    "p_roll60_std",
+    "p_diff1",
+    "hour_sin",
+    "hour_cos",
+    "dayofweek",
+    "weekend",
+    "office_hours"
+  ],
+  "targets": {
+    "ac": {
+      "chosen_model": "lightgbm",
+      "params": {
+        "learning_rate": 0.1,
+        "num_leaves": 63
+      },
+      "rule": "lowest CV MAE among tree models, only if >= 5% below Ridge; else Ridge",
+      "cv_best_per_model": {
+        "lightgbm": {
+          "fit_s": 1.9808,
+          "mae": 0.9872,
+          "rmse": 2.3645,
+          "r2": 0.9287,
+          "peak_mae_15min": 2.5871,
+          "energy_share_err_pp": -0.9049
+        },
+        "random_forest": {
+          "fit_s": 7.3503,
+          "mae": 1.027,
+          "rmse": 2.4161,
+          "r2": 0.9239,
+          "peak_mae_15min": 3.6428,
+          "energy_share_err_pp": -1.2743
+        },
+        "ridge": {
+          "fit_s": 0.0235,
+          "mae": 2.2748,
+          "rmse": 3.2172,
+          "r2": 0.8627,
+          "peak_mae_15min": 4.1817,
+          "energy_share_err_pp": -0.0339
+        },
+        "time_of_day": {
+          "fit_s": 0.0322,
+          "mae": 2.994,
+          "rmse": 4.5681,
+          "r2": 0.7424,
+          "peak_mae_15min": 7.6637,
+          "energy_share_err_pp": -3.4967
+        },
+        "xgboost": {
+          "fit_s": 1.4502,
+          "mae": 1.036,
+          "rmse": 2.3435,
+          "r2": 0.9291,
+          "peak_mae_15min": 2.5358,
+          "energy_share_err_pp": -0.9597
+        }
+      },
+      "cv_best_params_per_model": {
+        "lightgbm": {
+          "learning_rate": 0.1,
+          "num_leaves": 63
+        },
+        "random_forest": {
+          "max_depth": null,
+          "min_samples_leaf": 1
+        },
+        "ridge": {
+          "alpha": 100
+        },
+        "time_of_day": {},
+        "xgboost": {
+          "learning_rate": 0.03,
+          "max_depth": 4
+        }
+      }
+    },
+    "light": {
+      "chosen_model": "ridge",
+      "params": {
+        "alpha": 100
+      },
+      "rule": "lowest CV MAE among tree models, only if >= 5% below Ridge; else Ridge",
+      "cv_best_per_model": {
+        "lightgbm": {
+          "fit_s": 2.6442,
+          "mae": 0.3744,
+          "rmse": 0.56,
+          "r2": 0.7998,
+          "peak_mae_15min": 0.8214,
+          "energy_share_err_pp": 0.5132
+        },
+        "random_forest": {
+          "fit_s": 17.2368,
+          "mae": 0.3628,
+          "rmse": 0.5436,
+          "r2": 0.8114,
+          "peak_mae_15min": 0.8961,
+          "energy_share_err_pp": 0.3754
+        },
+        "ridge": {
+          "fit_s": 0.0492,
+          "mae": 0.3603,
+          "rmse": 0.4734,
+          "r2": 0.8524,
+          "peak_mae_15min": 0.7887,
+          "energy_share_err_pp": 0.0438
+        },
+        "time_of_day": {
+          "fit_s": 0.0539,
+          "mae": 0.4285,
+          "rmse": 0.7534,
+          "r2": 0.5803,
+          "peak_mae_15min": 1.456,
+          "energy_share_err_pp": -0.4549
+        },
+        "xgboost": {
+          "fit_s": 1.5809,
+          "mae": 0.3648,
+          "rmse": 0.5434,
+          "r2": 0.813,
+          "peak_mae_15min": 0.9114,
+          "energy_share_err_pp": 0.3369
+        }
+      },
+      "cv_best_params_per_model": {
+        "lightgbm": {
+          "learning_rate": 0.1,
+          "num_leaves": 63
+        },
+        "random_forest": {
+          "max_depth": null,
+          "min_samples_leaf": 5
+        },
+        "ridge": {
+          "alpha": 100
+        },
+        "time_of_day": {},
+        "xgboost": {
+          "learning_rate": 0.03,
+          "max_depth": 4
+        }
+      }
+    }
+  }
+}
