@@ -1,0 +1,179 @@
+{
+  "basis": "frozen-model A/C estimates on unseen weeks 2, 3, 6 (20 days); week 6 checked against the sub-meter",
+  "peak_drivers_week6_pct": {
+    "n_windows": 29,
+    "threshold_kw": 61.9,
+    "ac_estimated": 44.0,
+    "ac_measured": 45.4,
+    "light_estimated": 8.3,
+    "light_measured": 9.6,
+    "office_hours_share_pct": 100.0
+  },
+  "peak_shaving": {
+    "base_max_15min_kw": 71.4,
+    "trigger_kw": 53.1,
+    "scenarios": [
+      {
+        "trim_pct": 10,
+        "max_demand_cut_kw": 2.89,
+        "naive_upper_bound_kw": 2.89,
+        "week6_cut_kw_estimated": 2.89,
+        "week6_cut_kw_measured": 3.04,
+        "rm_per_month": [
+          258,
+          280
+        ],
+        "rm_per_year": [
+          3095,
+          3365
+        ]
+      },
+      {
+        "trim_pct": 20,
+        "max_demand_cut_kw": 5.78,
+        "naive_upper_bound_kw": 5.78,
+        "week6_cut_kw_estimated": 5.78,
+        "week6_cut_kw_measured": 6.06,
+        "rm_per_month": [
+          516,
+          561
+        ],
+        "rm_per_year": [
+          6190,
+          6730
+        ]
+      },
+      {
+        "trim_pct": 30,
+        "max_demand_cut_kw": 8.67,
+        "naive_upper_bound_kw": 8.67,
+        "week6_cut_kw_estimated": 8.67,
+        "week6_cut_kw_measured": 8.1,
+        "rm_per_month": [
+          774,
+          841
+        ],
+        "rm_per_year": [
+          9285,
+          10096
+        ]
+      }
+    ]
+  },
+  "solar_and_precooling": {
+    "pv_hours": "08:00-18:00",
+    "ac_energy_in_pv_hours_pct_estimated": 76.6,
+    "pv_output_14_16_vs_11_13_pct": 88.8,
+    "utp_pv_peak_mw_by_pr": {
+      "0.75": 4.18,
+      "0.78": 4.35,
+      "0.8": 4.46
+    },
+    "precool_shift_pct": 20,
+    "windows": [
+      {
+        "window": "08-10",
+        "max_demand_cut_kw": 0.0,
+        "week6_max_cut_kw_measured_ac": 0.0,
+        "mean_weekday_peak_cut_kw": 0.55,
+        "weekday_peaks_lowered_pct": 21.4,
+        "pv_irradiance_vs_peak_pct": 35.4,
+        "rm_per_month": [
+          0,
+          0
+        ]
+      },
+      {
+        "window": "09-11",
+        "max_demand_cut_kw": 0.0,
+        "week6_max_cut_kw_measured_ac": 0.0,
+        "mean_weekday_peak_cut_kw": 0.34,
+        "weekday_peaks_lowered_pct": 21.4,
+        "pv_irradiance_vs_peak_pct": 59.8,
+        "rm_per_month": [
+          0,
+          0
+        ]
+      },
+      {
+        "window": "10-12",
+        "max_demand_cut_kw": -5.23,
+        "week6_max_cut_kw_measured_ac": -5.35,
+        "mean_weekday_peak_cut_kw": -0.78,
+        "weekday_peaks_lowered_pct": 21.4,
+        "pv_irradiance_vs_peak_pct": 79.9,
+        "rm_per_month": [
+          -467,
+          -507
+        ]
+      },
+      {
+        "window": "11-13",
+        "max_demand_cut_kw": -5.23,
+        "week6_max_cut_kw_measured_ac": -5.35,
+        "mean_weekday_peak_cut_kw": -1.0,
+        "weekday_peaks_lowered_pct": 21.4,
+        "pv_irradiance_vs_peak_pct": 92.1,
+        "rm_per_month": [
+          -467,
+          -507
+        ]
+      }
+    ],
+    "best_window": "08-10"
+  },
+  "after_hours": {
+    "cuts": {
+      "ac": 0.5,
+      "light": 0.3
+    },
+    "scenarios": [
+      {
+        "office_hours": "08-17",
+        "ac_after_kwh_day_estimated": 30.8,
+        "week6_ac_after_kwh_day_estimated": 30.6,
+        "week6_ac_after_kwh_day_measured": 27.7,
+        "light_after_kwh_day": 33.1,
+        "saved_kwh_per_year": 9243,
+        "saved_tco2e_per_year": 6.84,
+        "pct_of_utp_scope2": 0.0337
+      },
+      {
+        "office_hours": "08-18",
+        "ac_after_kwh_day_estimated": 27.9,
+        "week6_ac_after_kwh_day_estimated": 27.0,
+        "week6_ac_after_kwh_day_measured": 23.9,
+        "light_after_kwh_day": 31.3,
+        "saved_kwh_per_year": 8528,
+        "saved_tco2e_per_year": 6.31,
+        "pct_of_utp_scope2": 0.0311
+      },
+      {
+        "office_hours": "07-19",
+        "ac_after_kwh_day_estimated": 25.0,
+        "week6_ac_after_kwh_day_estimated": 24.3,
+        "week6_ac_after_kwh_day_measured": 21.7,
+        "light_after_kwh_day": 28.4,
+        "saved_kwh_per_year": 7675,
+        "saved_tco2e_per_year": 5.68,
+        "pct_of_utp_scope2": 0.028
+      }
+    ]
+  },
+  "assumptions": {
+    "rm_per_kw_month": [
+      89.27,
+      97.06
+    ],
+    "gef_t_per_mwh": 0.74,
+    "utp_scope2_t": 20270,
+    "pv_mwp": 7.4,
+    "pr_range": [
+      0.75,
+      0.78,
+      0.8
+    ],
+    "annualised_from": "20 days in Sep-Oct 2023 (indicative only)",
+    "label": "SCENARIOS for one CLEMD-sized building, not UTP measurements"
+  }
+}

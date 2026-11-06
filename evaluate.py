@@ -87,8 +87,7 @@ def main():
     metrics.to_csv(RESULTS / "test_metrics.csv", index=False)
 
     out = df[["week", "agg_p_kw", "ac_kw", "light_kw"]].join(pd.DataFrame(preds))
-    out = out[out["week"] != 4].drop(columns=[])  # keep only rows with an out-of-sample estimate
-    out = out[out["ac_pred_kw"].notna() | out["light_pred_kw"].notna()]
+    out = out[out["ac_pred_kw"].notna() | out["light_pred_kw"].notna()]  # rows with an out-of-sample estimate
     out.round(4).to_csv(RESULTS / "predictions.csv")
 
     # robustness: does a model trained on one week hold up on the next? (A/C, every model)

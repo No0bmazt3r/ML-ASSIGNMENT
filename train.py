@@ -19,7 +19,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBRegressor
 
-from features import RESULTS, dataset
+from features import RESULTS, TARGETS, dataset
 
 N_SPLITS, GAP = 4, 60  # 4 expanding folds; 60-min gap so the longest lag can't see the validation fold
 MIN_GAIN_OVER_RIDGE = 0.05  # a tree model must cut Ridge's CV MAE by >= 5% to be chosen (proposal 4.4)
@@ -119,7 +119,15 @@ def main():
         "features": list(X.columns),
         "targets": {t: choose(cv[cv.target == t]) for t in ("ac", "light")},
     }
-    (RESULTS / "freeze.json").write_text(json.dumps(freeze, indent=2))
+    path = RESULTS / "freeze.json"
+    if path.exists():  # never overwrite the committed freeze: a rerun must reproduce it
+        old = json.loads(path.read_text())
+        same = all(old["targets"][t][k] == freeze["targets"][t][k] for t in TARGETS for k in ("chosen_model", "params"))
+        (RESULTS / "freeze_rerun.json").write_text(json.dumps(freeze, indent=2))
+        print(f"\nfreeze.json kept; rerun {'REPRODUCES' if same else 'DIFFERS FROM'} the frozen choice")
+        assert same, "rerun chose a different model: check data/feature changes"
+    else:
+        path.write_text(json.dumps(freeze, indent=2))
     for t, f in freeze["targets"].items():
         print(f"\nFROZEN [{t}]: {f['chosen_model']} {f['params']}")
         print(pd.DataFrame(f["cv_best_per_model"]).T[["mae", "rmse", "r2", "peak_mae_15min",

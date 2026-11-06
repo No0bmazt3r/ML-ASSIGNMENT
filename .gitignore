@@ -25,3 +25,4 @@ models/
 .DS_Store
 Thumbs.db
 *:Zone.Identifier
+results/freeze_rerun.json
