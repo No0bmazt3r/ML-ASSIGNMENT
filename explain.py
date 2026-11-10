@@ -4,7 +4,7 @@ A/C (LightGBM): global SHAP, SHAP summed by feature group, grouped permutation i
 and a local SHAP explanation of the week's highest-demand 15-min window.
 Lighting (Ridge): standardised coefficients.
 Writes results/shap_*.csv, results/permutation_importance_groups.csv, results/ridge_light_coefficients.csv
-and figures/results/shap_*.png, permutation_importance.png.
+and figures/results/shap_*.png, importance_by_group.png.
 """
 import matplotlib
 matplotlib.use("Agg")
@@ -14,7 +14,7 @@ import pandas as pd
 import shap
 
 from evaluate import AC, FIG, INK2, TRAIN_WEEKS, frozen, full_table
-from features import RESULTS, build, load
+from features import RESULTS, TEST_WEEK, build, load
 
 N_REPEATS = 5
 
@@ -24,7 +24,7 @@ def main():
     _, groups = build(load().head(100))  # feature -> group map
     group = pd.Series(groups)
     train = df["week"].isin(TRAIN_WEEKS["ac"]) & df["ac_kw"].notna()
-    test = df["week"] == 6
+    test = df["week"] == TEST_WEEK
     model = frozen("ac").fit(X[train], df.loc[train, "ac_kw"])
     Xt, yt = X[test], df.loc[test, "ac_kw"]
 

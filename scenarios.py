@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 
 from evaluate import AC, FIG, INK2, LIGHT
-from features import RESULTS, ROOT
+from features import RESULTS, ROOT, TEST_WEEK
 
 # --- scenario assumptions (all stated in the report) -----------------------------
 RM_PER_KW_MONTH = (89.27, 97.06)  # TNB MV demand charge (capacity + network), standard / ToU, refs [7, 8]
@@ -64,7 +64,7 @@ def main():
     est = p[p["ac_pred_kw"].notna()]
     q = est[["agg_p_kw", "ac_pred_kw", "ac_kw", "light_kw", "light_pred_kw", "week"]].resample("15min").mean()
     q = q.dropna(subset=["agg_p_kw", "ac_pred_kw"])
-    w6 = q[q["week"] == 6]
+    w6 = q[q["week"] == TEST_WEEK]
     out = {"basis": "frozen-model A/C estimates on unseen weeks 2, 3, 6 "
                     f"({q.index.normalize().nunique()} days); week 6 checked against the sub-meter"}
 
@@ -134,7 +134,7 @@ def main():
         off = ~((t.day_of_week < 5) & (t.hour >= start) & (t.hour < end))
         ac_kwh_day = est.loc[off, "ac_pred_kw"].sum() / 60 / days
         light_kwh_day = est.loc[off, "light_kw"].sum() / 60 / days
-        w = est["week"] == 6
+        w = est["week"] == TEST_WEEK
         ac_meas_day = est.loc[off & w, "ac_kw"].sum() / 60 / est[w].index.normalize().nunique()
         ac_est_w6_day = est.loc[off & w, "ac_pred_kw"].sum() / 60 / est[w].index.normalize().nunique()
         saved_kwh_yr = 365 * (AFTER_CUT["ac"] * ac_kwh_day + AFTER_CUT["light"] * light_kwh_day)

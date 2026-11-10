@@ -1,9 +1,9 @@
-"""Proposal figures + headline stats from data/processed/clemd_1min.parquet.
+"""Problem/data figures (EDA, workflow, split) + headline stats, from data/processed/clemd_1min.parquet.
 
-Run prepare_data.py first. Writes figures/proposal/*.png and figures/stats.json.
+Run after the rest of the pipeline. Writes figures/proposal/*.png and figures/proposal/stats.json.
+Figure titles carry no numbers: the report's captions number them.
 """
 import json
-from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
@@ -14,15 +14,17 @@ import pandas as pd
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.patches import FancyBboxPatch
 
-ROOT = Path(__file__).resolve().parent
+from evaluate import AC, GRID, INK2, LIGHT, SURF
+from features import DATA, ROOT, WORK_END, WORK_START
+from scenarios import PR_RANGE, PV_COLOR as PV, PV_MWP, pv_profile
+
 FIG = ROOT / "figures" / "proposal"
 FIG.mkdir(parents=True, exist_ok=True)
-df = pd.read_parquet(ROOT / "data" / "processed" / "clemd_1min.parquet")
-df = df[df["week"] >= 4]  # proposal figures use the A/C weeks only
+df = pd.read_parquet(DATA)
+df = df[df["week"] >= 4]  # these figures use the A/C weeks only
 
-# Colour follows the entity in every figure (dataviz reference palette, validated)
-AC, LIGHT, PV = "#2a78d6", "#eb6834", "#1baf7a"
-OTHER, INK, INK2, GRID, SURF = "#c3c2b7", "#0b0b0b", "#52514e", "#e6e5e0", "#fcfcfb"
+# Colour follows the entity in every figure (same palette as the results figures)
+OTHER, INK = "#c3c2b7", "#0b0b0b"
 plt.rcParams.update({
     "figure.facecolor": SURF, "axes.facecolor": SURF, "savefig.facecolor": SURF,
     "axes.edgecolor": INK2, "axes.labelcolor": INK2, "xtick.color": INK2, "ytick.color": INK2,
@@ -31,7 +33,6 @@ plt.rcParams.update({
     "font.size": 10, "axes.titlesize": 12, "axes.titleweight": "bold", "axes.titlelocation": "left",
     "lines.linewidth": 2, "legend.frameon": False, "savefig.dpi": 200, "savefig.bbox": "tight",
 })
-WORK_START, WORK_END = 8, 17  # assumed Malaysian public-sector office hours, weekdays
 
 
 def save(fig, name):
@@ -47,7 +48,7 @@ q15 = df[["agg_p_kw", "ac_kw", "light_kw", "other_kw"]].resample("15min").mean()
 peak = q15[q15["agg_p_kw"] >= q15["agg_p_kw"].quantile(0.95)]
 stats = {}
 
-# ---- Fig 1: workflow -------------------------------------------------------
+# ---- workflow -------------------------------------------------------
 fig, ax = plt.subplots(figsize=(13, 3.2))
 ax.axis("off"); ax.set_xlim(0, 12.9); ax.set_ylim(0, 3.2)
 steps = [("Problem", "Which loads set\nthe peak?"), ("Data", "CLEMD main meter\n+ sub-meters (1 s)"),
@@ -62,10 +63,10 @@ for i, (head, body) in enumerate(steps):
     ax.text(x + 0.8, 1.35, body, ha="center", va="center", fontsize=8.5, color=INK2)
     if i < len(steps) - 1:
         ax.annotate("", (x + 1.82, 1.6), (x + 1.62, 1.6), arrowprops=dict(arrowstyle="-|>", color=INK2, lw=1.5))
-ax.set_title("Figure 1. Project workflow")
+ax.set_title("Project workflow")
 save(fig, "fig01_workflow.png")
 
-# ---- Fig 2: data availability ----------------------------------------------
+# ---- data availability ----------------------------------------------
 circuits = ["Aggregate", "CP AC", "DB TG", "DB T1", "DB ML 1", "DB ML 2", "EMSB 1", "SSB MF"]
 avail = np.array([  # 1 ok, 0 missing, 0.5 unusable duplicate (from DATASET_NOTES inventory)
     [0, 1, 1, 1, 1, 0.5, 1, 1], [1, 0, 1, 1, 1, 0, 1, 1], [1, 0, 1, 1, 1, 1, 1, 1],
@@ -87,10 +88,10 @@ ax.set_yticks(np.arange(6) + 0.5, weeks)
 ax.tick_params(length=0)
 for s in ax.spines.values():
     s.set_visible(False)
-ax.set_title("Figure 3. CLEMD file availability (outlined: modelling set)")
+ax.set_title("CLEMD file availability (outlined: modelling set)")
 save(fig, "fig03_data_availability.png")
 
-# ---- Fig 3: week 6 time series ---------------------------------------------
+# ---- week 6 time series ---------------------------------------------
 w6 = q15.loc["2023-10-19":"2023-10-24"]
 fig, ax = plt.subplots(figsize=(11, 4))
 ax.plot(w6.index, w6["agg_p_kw"], color=INK2, lw=1.5, label="Whole building (main meter)")
@@ -100,10 +101,10 @@ ax.set_ylabel("Real power, 15-min mean (kW)")
 ax.legend(loc="upper right", ncol=3, fontsize=8.5)
 ax.set_ylim(0, w6["agg_p_kw"].max() * 1.18)
 ax.xaxis.set_major_formatter(mdates.DateFormatter("%a %d %b"))
-ax.set_title("Figure 4. Building, A/C and lighting load (19–24 Oct 2023)")
+ax.set_title("Building, A/C and lighting load (19–24 Oct 2023)")
 save(fig, "fig04_week6_timeseries.png")
 
-# ---- Fig 4: average daily profile, weekday vs weekend ----------------------
+# ---- average daily profile, weekday vs weekend ----------------------
 fig, axes = plt.subplots(1, 2, figsize=(11, 4), sharey=True)
 for ax, (wk, title) in zip(axes, [(False, "Weekdays"), (True, "Weekends")]):
     prof = df[df["weekend"] == wk].groupby("hour")[["ac_kw", "light_kw", "other_kw"]].mean()
@@ -117,11 +118,11 @@ for ax, (wk, title) in zip(axes, [(False, "Weekdays"), (True, "Weekends")]):
 axes[0].set_ylabel("Mean real power (kW)")
 axes[1].legend(loc="upper right", fontsize=8.5)
 axes[0].text(WORK_START + 0.2, axes[0].get_ylim()[1] * 0.97, "office hours\n08:00-17:00", fontsize=8, color=INK2, va="top")
-fig.suptitle("Figure 5. Average daily load profile", x=0.01, ha="left",
+fig.suptitle("Average daily load profile", x=0.01, ha="left",
              fontweight="bold", fontsize=12)
 save(fig, "fig05_daily_profile.png")
 
-# ---- Fig 5: share of energy vs share of peak --------------------------------
+# ---- share of energy vs share of peak --------------------------------
 def shares(frame):
     tot = frame["agg_p_kw"].sum()
     return [frame[c].sum() / tot * 100 for c in ("ac_kw", "light_kw", "other_kw")]
@@ -145,10 +146,10 @@ ax.set_yticks([0, 1], labels); ax.invert_yaxis()
 ax.set_xlim(0, 100); ax.set_xlabel("% of whole-building load")
 ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.28), ncol=3, fontsize=9)
 ax.grid(axis="y", visible=False)
-ax.set_title("Figure 2. A/C share grows at peak demand")
+ax.set_title("A/C share grows at peak demand")
 save(fig, "fig02_energy_vs_peak_share.png")
 
-# ---- Fig 6: A/C heatmap day x hour -----------------------------------------
+# ---- A/C heatmap day x hour -----------------------------------------
 hm = df.groupby([df.index.date, "hour"])["ac_kw"].mean().unstack().dropna(how="all")
 hm = hm.loc[[d for d in hm.index if hm.loc[d].notna().sum() >= 20]]
 fig, ax = plt.subplots(figsize=(10, 5.6))
@@ -162,10 +163,10 @@ for i, d in enumerate(hm.index):
     if pd.Timestamp(d).day_of_week >= 5:
         ax.text(23.7, i, "weekend", fontsize=7, color=INK2, va="center")
 cb = fig.colorbar(im, ax=ax, pad=0.09); cb.set_label("Mean A/C power (kW)"); cb.outline.set_visible(False)
-ax.set_title("Figure 6. Hourly A/C load for each day")
+ax.set_title("Hourly A/C load for each day")
 save(fig, "fig06_ac_heatmap.png")
 
-# ---- Fig 7: main meter vs A/C (why ML is needed) ---------------------------
+# ---- main meter vs A/C (why ML is needed) ---------------------------
 s = q15.sample(min(1500, len(q15)), random_state=0)
 hrs = s.index.hour
 fig, ax = plt.subplots(figsize=(7.5, 5))
@@ -178,10 +179,10 @@ ax.set_xlabel("Whole-building power, main meter (kW)"); ax.set_ylabel("A/C power
 ax.legend(loc="upper left", fontsize=9)
 ax.text(0.98, 0.04, f"Overall Pearson r = {r:.2f}, but at 40–60 kW total\nthe A/C load ranges from about 4 to 35 kW",
         transform=ax.transAxes, ha="right", fontsize=9, color=INK2)
-ax.set_title("Figure 8. Total building power versus A/C power")
+ax.set_title("Total building power versus A/C power")
 save(fig, "fig08_agg_vs_ac.png")
 
-# ---- Fig 8: candidate feature correlation ----------------------------------
+# ---- candidate feature correlation ----------------------------------
 feat = {
     "Total real power": "agg_p_kw", "Total reactive power": "agg_q_kvar", "Total apparent power": "agg_s_kva",
     "Within-minute power std": "agg_p_kw_std", "PF phase 1": "agg_PF1", "PF phase 2": "agg_PF2",
@@ -198,18 +199,11 @@ for i, v in enumerate(corr.values):
 ax.axvline(0, color=INK2, lw=1)
 ax.set_xlim(-1.1, 1.1); ax.set_xlabel("Pearson correlation with A/C power (1-min data)")
 ax.grid(axis="y", visible=False)
-ax.set_title("Figure 7. Main-meter signals correlated with A/C power")
+ax.set_title("Main-meter signals correlated with A/C power")
 save(fig, "fig07_feature_correlation.png")
 
-# ---- Fig 9: A/C profile vs modelled UTP rooftop PV --------------------------
-nasa_path = ROOT / "data" / "external" / "nasa_power_utp_oct2023_utc.csv"
-header_end = nasa_path.read_text().splitlines().index("-END HEADER-")
-nasa = pd.read_csv(nasa_path, skiprows=header_end + 1).rename(columns={"ALLSKY_SFC_SW_DWN": "GHI"})
-nasa.index = pd.to_datetime(nasa[["YEAR", "MO", "DY", "HR"]].astype(int).rename(
-    columns={"YEAR": "year", "MO": "month", "DY": "day", "HR": "hour"})) + pd.Timedelta(hours=8)  # UTC -> MYT
-nasa = nasa.loc["2023-10-04":"2023-10-24"]
-PR = 0.78  # assumed performance ratio (scenario parameter; sensitivity 0.75-0.80)
-pv_mw = (7.4 * nasa["GHI"] / 1000 * PR).groupby(nasa.index.hour).mean()
+# ---- A/C profile vs modelled UTP rooftop PV --------------------------
+pv_mw = PV_MWP * pv_profile() / 1000 * PR_RANGE[1]  # mid performance ratio (0.78)
 ac_prof = df[~df["weekend"]].groupby("hour")["ac_kw"].mean()
 pv_hours = pv_mw[pv_mw > 0.1 * pv_mw.max()].index
 ac_hourly = df["ac_kw"].resample("1h").mean().dropna()
@@ -227,10 +221,10 @@ ax.set_ylim(0, 112); ax.set_xlim(0, 23)
 ax.set_xticks(range(0, 24, 2), [f"{h:02d}" for h in range(0, 24, 2)]); ax.set_xlabel("Hour of day (Malaysia time)")
 ax.set_ylabel("% of own daily maximum")
 ax.legend(loc="upper left", fontsize=8.5)
-ax.set_title("Figure 10. Weekday A/C demand versus modelled rooftop solar")
+ax.set_title("Weekday A/C demand versus modelled rooftop solar")
 save(fig, "fig10_ac_vs_solar.png")
 
-# ---- Fig 10: chronological split -------------------------------------------
+# ---- chronological split -------------------------------------------
 fig, ax = plt.subplots(figsize=(11, 2.6))
 daily = df["agg_p_kw"].resample("1h").mean()
 ax.plot(daily.index, daily, color=INK2, lw=1)
@@ -241,38 +235,8 @@ for wk, col, lab in [(4, AC, "Train"), (5, AC, "Train"), (6, LIGHT, "Test")]:
             f"{lab}: week {wk}", ha="center", fontsize=9, weight="bold")
 ax.set_ylim(0, daily.max() * 1.18); ax.set_ylabel("Building kW (hourly)"); ax.set_xlabel("Date (CLEMD recording, October 2023)")
 ax.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
-ax.set_title("Figure 9. Chronological train/test split")
+ax.set_title("Chronological train/test split (A/C target; lighting also trains on weeks 2-3)")
 save(fig, "fig09_split.png")
-
-# ---- Fig 11: work plan (weeks from proposal submission, 19 Oct 2026) -------
-WEEKS_FROM = ["Before\n19 Oct", "19 Oct", "26 Oct", "2 Nov", "9 Nov", "16 Nov", "23 Nov"]  # week starts
-TASKS = [  # (label, first week index, last week index, done); 0 = before submission
-    ("Data download, cleaning, EDA", 0, 0, True),
-    ("Proposal and figures", 0, 0, True),
-    ("Feature engineering", 1, 1, False),
-    ("Baselines + lighting pipeline", 1, 1, False),
-    ("RF / XGBoost / LightGBM tuning", 2, 2, False),
-    ("Model freeze, test on CLEMD wk 6", 3, 3, False),
-    ("Peak-window eval + SHAP", 3, 3, False),
-    ("Clustering + UTP scenarios", 3, 4, False),
-    ("Final report + code", 4, 4, False),
-    ("Presentation", 5, 6, False),
-]
-MILESTONES = [(1, "Proposal\n19 Oct"), (3, "Model freeze"), (5, "Report*"), (7, "Presentation*")]
-fig, ax = plt.subplots(figsize=(10, 4.4))
-for i, (lab, a, b, done) in enumerate(TASKS):
-    ax.barh(i, b - a + 1, left=a, height=0.55, color=OTHER if done else INK2, edgecolor=SURF, lw=2)
-    if done:
-        ax.text(b + 1.1, i, "done", va="center", fontsize=8, color=INK2)
-for x, lab in MILESTONES:
-    ax.axvline(x, color=INK, lw=1, ls=":")
-    ax.text(x, -1.1, lab, ha="center", fontsize=8, weight="bold")
-ax.set_yticks(range(len(TASKS)), [t[0] for t in TASKS]); ax.invert_yaxis()
-ax.set_ylim(len(TASKS) - 0.4, -1.9)
-ax.set_xticks(np.arange(0.5, 7), WEEKS_FROM, fontsize=8.5); ax.set_xlim(0, 7.3)
-ax.grid(axis="y", visible=False); ax.set_xlabel("Week starting (2026).  * provisional: deadline not yet announced")
-ax.set_title("Figure 11. Work plan (grey = complete)")
-save(fig, "fig11_workplan.png")
 
 # ---- headline numbers -------------------------------------------------------
 stats.update({

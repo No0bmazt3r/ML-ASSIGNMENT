@@ -1,7 +1,8 @@
 # Results
 
 All numbers below are produced by the scripts in this repo (`./run_all.sh`) and stored in `results/`.
-Figures are in `figures/results/` (new) and `figures/proposal/` (proposal figures, unchanged).
+Figures are in `figures/results/` (model results) and `figures/proposal/` (problem and data figures).
+Figure titles carry no numbers; number them in the report captions.
 
 **Integrity of the test.** The model choice, features and search space were frozen and committed
 (commit `9e5fc5e`, record in `results/freeze.json`) before week 6 was ever loaded. Week 6 was then
@@ -84,7 +85,7 @@ Silhouette picks **k = 2** (0.74; k = 3: 0.61).
 | 1: non-working day | 12 | 2 | 268 | 31.7 / 40.2 | 46.1 |
 
 - The two "weekdays" in the non-working mode are Fri 22 Sep and **Thu 28 Sep 2023, which appears to be the
-  Maulidur Rasul public holiday** (verify). The main meter alone identifies non-working days.
+  Maulidur Rasul public holiday** (cite the official 2023 holiday list in the report). The main meter alone identifies non-working days.
 - Sensitivity, k = 3: a third "light day" mode (375 kWh/day) contains Fri 22 Sep, Mon 25 Sep and Fri 29 Sep,
   the days around that holiday, matching the proposal's expectation of light days.
 - Non-working days still use ~32 kWh of A/C and ~46 kWh of lighting/sockets per day. Overnight (00–06) A/C

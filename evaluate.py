@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from features import RESULTS, ROOT, TARGETS, build, load
+from features import RESULTS, ROOT, TARGETS, TEST_WEEK, build, load
 from train import MODELS, scores
 
 FIG = ROOT / "figures" / "results"
@@ -72,7 +72,7 @@ def main():
     rows, preds = [], {}
     for target, col in TARGETS.items():
         train = df["week"].isin(TRAIN_WEEKS[target]) & df[col].notna()
-        test = df["week"] == 6
+        test = df["week"] == TEST_WEEK
         for model in MODELS:
             est = make(target, model).fit(X[train], df.loc[train, col])
             pred = pd.Series(est.predict(X[test]), index=X.index[test])
@@ -100,7 +100,7 @@ def main():
     pd.DataFrame(rob).to_csv(RESULTS / "robustness_w4_to_w5.csv", index=False)
 
     # error breakdown for the frozen A/C model on week 6
-    w6 = out[out["week"] == 6].copy()
+    w6 = out[out["week"] == TEST_WEEK].copy()
     w6["abs_err"] = (w6["ac_pred_kw"] - w6["ac_kw"]).abs()
     w6["hour"] = w6.index.hour
     w6["day_type"] = np.where(w6.index.day_of_week >= 5, "weekend", "weekday")

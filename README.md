@@ -6,6 +6,8 @@ solar-timing and tCO₂e scenarios for UTP (Energy Security, SDG 7).
 
 ## Setup
 
+Python 3.11 (tested on 3.11.17, Linux/WSL2). Exact package versions are pinned in `requirements.txt`.
+
 ```bash
 uv venv .venv && uv pip install -r requirements.txt     # or: python -m venv .venv && pip install -r requirements.txt
 ```
@@ -19,7 +21,11 @@ data/external/nasa_power_utp_oct2023_utc.csv           NASA POWER hourly, UTP (4
 
 ## Pipeline
 
-Run everything with `./run_all.sh` (~12 min), or one step with `.venv/bin/python <script>.py`.
+Run everything with `./run_all.sh` (~12 min; `PY=python ./run_all.sh` to use another interpreter),
+or one step with `.venv/bin/python <script>.py`. Steps must run in this order: each reads the previous
+step's output. Every script ends with `assert` self-checks, so a clean run with no traceback means the
+outputs are consistent. All randomness is seeded (`random_state=0`, `default_rng(0)`), so a rerun
+regenerates the same `results/` numbers.
 
 | Step | Script | Output |
 |---|---|---|
@@ -30,7 +36,7 @@ Run everything with `./run_all.sh` (~12 min), or one step with `.venv/bin/python
 | 5. SHAP + permutation importance | `explain.py` | `results/shap_*.csv`, `results/permutation_importance_groups.csv` |
 | 6. k-means operating modes, after-hours energy | `cluster.py` | `results/cluster_*.csv` |
 | 7. UTP scenarios (kW, RM, solar, tCO₂e) | `scenarios.py` | `results/scenarios.json` |
-| Proposal figures | `make_figures.py` | `figures/proposal/` |
+| 8. Problem/data figures (EDA, workflow, split) + headline stats | `make_figures.py` | `figures/proposal/` |
 
 Figures for steps 4–7 go to `figures/results/`. **Findings: see [RESULTS.md](RESULTS.md).**
 
