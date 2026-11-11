@@ -37,9 +37,10 @@ regenerates the same `results/` numbers.
 | 6. k-means operating modes, after-hours energy | `cluster.py` | `results/cluster_*.csv` |
 | 7. UTP scenarios (kW, RM, solar, tCO₂e) | `scenarios.py` | `results/scenarios.json` |
 | 8. Problem/data figures (EDA, workflow, split) + headline stats | `make_figures.py` | `figures/proposal/` |
-| 9. Presentation walkthrough + stakeholder dashboard | `build_dashboard.py` | `dashboard/index.html` |
+| 9. Extra report figures (distributions, residuals, model comparison, scenarios) | `report_figures.py` | `figures/report/` |
+| 10. Presentation walkthrough + stakeholder dashboard | `build_dashboard.py` | `dashboard/index.html` |
 
-Figures for steps 4–7 go to `figures/results/`. **Findings: see [RESULTS.md](RESULTS.md).**
+Figures for steps 4–7 go to `figures/results/`. **Findings: see [RESULTS.md](RESULTS.md). Final report: [FINAL_REPORT.md](FINAL_REPORT.md).**
 
 **Presentation:** open `dashboard/index.html` in any browser (works offline once fonts are cached; falls back to
 system fonts otherwise). Arrow keys or click to move, `0`–`9` jump to a step, `D` dashboard, `N` speaker notes.
