@@ -1,0 +1,799 @@
+<title>Who Sets the Peak?</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a meter-panel presenter. Fixed header rail (CRISP-DM phases), one step per screen
+   (copy left, instrument-style charts right), fixed footer controls. Steps stack on phones. */
+:root {
+  --bg: #f2f4f6; --surface: #fcfdfd; --ink: #0e1620; --ink2: #46525f; --muted: #6f7a86;
+  --grid: #e2e6ea; --axis: #c3cad2; --hair: rgba(14,22,32,.10); --wash: rgba(14,22,32,.04);
+  --ac: #2a78d6; --ac-wash: rgba(42,120,214,.12); --light: #eb6834; --pv: #1baf7a; --other: #c3c8ce;
+  --m0: #6250d6; --m1: #eda100; --bad: #d03b3b; --bad-text: #b3261e; --good-text: #006300;
+  --on-fill: #ffffff;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --ease: cubic-bezier(.2,.7,.2,1);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0d1014; --surface: #151a20; --ink: #eef1f4; --ink2: #b9c1ca; --muted: #8f99a3;
+  --grid: #252b32; --axis: #3a434d; --hair: rgba(255,255,255,.10); --wash: rgba(255,255,255,.04);
+  --ac: #3987e5; --ac-wash: rgba(57,135,229,.18); --light: #d95926; --pv: #199e70; --other: #4b545e;
+  --m0: #9085e9; --m1: #c98500; --bad: #e66767; --bad-text: #ff8a85; --good-text: #3ccf3c; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0d1014; --surface: #151a20; --ink: #eef1f4; --ink2: #b9c1ca; --muted: #8f99a3;
+  --grid: #252b32; --axis: #3a434d; --hair: rgba(255,255,255,.10); --wash: rgba(255,255,255,.04);
+  --ac: #3987e5; --ac-wash: rgba(57,135,229,.18); --light: #d95926; --pv: #199e70; --other: #4b545e;
+  --m0: #9085e9; --m1: #c98500; --bad: #e66767; --bad-text: #ff8a85; --good-text: #3ccf3c; color-scheme: dark; }
+
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font: 15px/1.5 var(--body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
+.pad { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--ac); outline-offset: 2px; border-radius: 4px; }
+
+/* header rail */
+header { background: var(--surface); border-bottom: 1px solid var(--hair); padding-block: 10px; display: flex; gap: 20px; align-items: center; }
+.brand { display: flex; flex-direction: column; min-width: 0; flex: none; }
+.brand b { font: 600 15px/1.2 var(--display); letter-spacing: .01em; }
+.brand span { font: 12px/1.3 var(--mono); color: var(--muted); }
+.rail { flex: 1; display: grid; grid-template-columns: repeat(11, 1fr); gap: 3px; min-width: 0; }
+.rail button { border: 0; background: none; padding: 0 0 2px; cursor: pointer; text-align: left; min-height: 34px; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; }
+.rail .ph { font: 500 10.5px/1.15 var(--mono); color: var(--muted); letter-spacing: .02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rail .bar { height: 4px; border-radius: 2px; background: var(--grid); transition: background .25s var(--ease); }
+.rail button[aria-current="step"] .bar { background: var(--ac); }
+.rail button.done .bar { background: var(--axis); }
+.rail button[aria-current="step"] .ph { color: var(--ink); }
+.rail button.cont .ph { visibility: hidden; }
+.compact { display: none; font: 12px/1.3 var(--mono); color: var(--ink2); }
+
+/* stage */
+main { overflow: auto; min-height: 0; }
+.step { min-height: 100%; padding-block: 28px; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 8fr); gap: 32px; align-items: start; max-width: 1440px; margin: 0 auto; box-sizing: border-box; align-content: start; }
+.step.wide { grid-template-columns: minmax(0, 1fr); }
+.copy { display: grid; gap: 14px; min-width: 0; align-content: start; }
+.eyebrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font: 500 12px/1.3 var(--mono); color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.chip { font: 500 11px/1 var(--mono); letter-spacing: .03em; text-transform: none; padding: 5px 8px; border-radius: 999px; border: 1px solid var(--hair); color: var(--ink2); background: var(--surface); }
+h1, h2 { font-family: var(--display); font-weight: 600; letter-spacing: -.01em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(40px, 6vw, 76px); line-height: 1; }
+h2 { font-size: clamp(26px, 3vw, 38px); line-height: 1.08; }
+.lede { font-size: 17px; color: var(--ink2); margin: 0; max-width: 60ch; }
+.points { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; max-width: 62ch; }
+.points li { padding-left: 18px; position: relative; color: var(--ink2); }
+.points li::before { content: ""; position: absolute; left: 0; top: .62em; width: 8px; height: 2px; background: var(--axis); }
+.points b { color: var(--ink); font-weight: 600; }
+.num { font-family: var(--mono); font-size: .93em; color: var(--ink); }
+.viz { display: grid; gap: 16px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; padding: 14px 16px 12px; min-width: 0; display: grid; gap: 8px; align-content: start; }
+.panel h3 { margin: 0; font: 600 14px/1.3 var(--body); }
+.panel .sub { margin: -4px 0 0; font-size: 12.5px; color: var(--muted); }
+.chart { min-width: 0; width: 100%; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--ink2); }
+.legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+.legend i.sq { width: 10px; height: 10px; border-radius: 2px; }
+.row2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.facts { display: flex; flex-wrap: wrap; gap: 10px 28px; }
+.fact { display: grid; gap: 2px; }
+.fact b { font: 600 28px/1.05 var(--display); }
+.fact span { font-size: 12.5px; color: var(--muted); }
+.fix { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: 2px 10px; align-items: baseline; padding: 10px 0; border-top: 1px solid var(--hair); }
+.fix:first-child { border-top: 0; }
+.fix .n { font: 500 12px/1 var(--mono); color: var(--muted); }
+.fix b { font-weight: 600; }
+.fix p { grid-column: 2; margin: 0; color: var(--ink2); font-size: 14px; }
+code { font: 13px/1.3 var(--mono); background: var(--wash); border: 1px solid var(--hair); padding: 1px 5px; border-radius: 4px; }
+.cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.card { border: 1px solid var(--hair); border-radius: 10px; padding: 12px 14px; background: var(--surface); display: grid; gap: 4px; align-content: start; }
+.card b { font-weight: 600; }
+.card p { margin: 0; color: var(--ink2); font-size: 14px; }
+.card .affects { font: 12px/1.35 var(--mono); color: var(--muted); }
+.flag { display: inline-flex; gap: 6px; align-items: center; font: 500 12px/1 var(--mono); color: var(--bad-text); }
+.flag svg { flex: none; }
+
+/* dashboard */
+.banner { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; border-radius: 8px; border: 1px dashed var(--axis); color: var(--ink2); font-size: 13.5px; background: var(--surface); }
+.controls { display: flex; flex-wrap: wrap; gap: 12px 28px; align-items: end; }
+.seg { display: grid; gap: 6px; }
+.seg > span { font: 500 12px/1 var(--mono); color: var(--muted); letter-spacing: .03em; text-transform: uppercase; }
+.seg div { display: inline-flex; border: 1px solid var(--axis); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; border-left: 1px solid var(--axis); background: var(--surface); padding: 0 14px; min-height: 40px; min-width: 64px; cursor: pointer; font: 500 14px/1 var(--mono); transition: background .15s var(--ease), color .15s var(--ease); }
+.seg button:first-child { border-left: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.seg button:hover:not([aria-pressed="true"]) { background: var(--wash); }
+.kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--hair); border-radius: 10px; padding: 14px 16px; display: grid; gap: 4px; align-content: start; }
+.kpi .label { font-size: 13px; color: var(--ink2); }
+.kpi .value { font: 600 40px/1.05 var(--display); letter-spacing: -.01em; }
+.kpi .value small { font: 500 16px/1 var(--body); color: var(--ink2); margin-left: 4px; }
+.kpi .note { font-size: 12.5px; color: var(--muted); }
+.kpi .value.flash { animation: flash .5s var(--ease); }
+.dash-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.recs { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: rec; }
+.recs li { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 8px; color: var(--ink2); font-size: 14px; counter-increment: rec; }
+.recs li::before { content: counter(rec); font: 600 12px/22px var(--mono); text-align: center; width: 22px; height: 22px; border-radius: 50%; background: var(--wash); border: 1px solid var(--hair); color: var(--ink); }
+.recs b { color: var(--ink); }
+.kv { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 12px; font-size: 13.5px; margin: 0; }
+.kv dt { color: var(--ink2); }
+.kv dd { margin: 0; font: 500 13px/1.5 var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+
+/* footer */
+footer { background: var(--surface); border-top: 1px solid var(--hair); padding-block: 8px; padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 12px; }
+.navbtn { min-height: 44px; min-width: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid var(--axis); background: var(--surface); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; font-weight: 500; transition: background .15s var(--ease); }
+.navbtn:hover { background: var(--wash); }
+.navbtn.primary { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.navbtn:disabled { opacity: .4; cursor: default; }
+.counter { font: 500 13px/1 var(--mono); color: var(--ink2); }
+.keys { margin-left: auto; font-size: 12.5px; color: var(--muted); display: flex; gap: 14px; flex-wrap: wrap; justify-content: flex-end; }
+kbd { font: 500 11px/1 var(--mono); padding: 3px 5px; border-radius: 4px; border: 1px solid var(--axis); background: var(--bg); color: var(--ink2); }
+.notes { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--ink); color: var(--surface); padding-block: 14px; padding-bottom: max(14px, env(safe-area-inset-bottom, 0px)); font-size: 15px; box-shadow: 0 -8px 24px rgba(0,0,0,.18); }
+.notes .in { max-width: 980px; margin: 0 auto; display: grid; gap: 6px; }
+.notes b { font: 500 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; opacity: .7; }
+.notes p { margin: 0; }
+
+/* tooltip */
+.tip { position: fixed; z-index: 30; pointer-events: none; background: var(--ink); color: var(--surface); font: 12.5px/1.4 var(--body); padding: 7px 9px; border-radius: 6px; max-width: 260px; box-shadow: 0 4px 14px rgba(0,0,0,.18); }
+.tip .t { font: 500 11px/1.3 var(--mono); opacity: .75; }
+.tip i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+
+/* SVG text + marks */
+.chart text { fill: var(--ink2); font: 11.5px var(--body); }
+.chart text.m { fill: var(--muted); font: 11px var(--mono); }
+.chart text.v { fill: var(--ink); font: 600 12px var(--mono); }
+.chart text.in { fill: var(--on-fill); font: 600 12px var(--mono); }
+.chart text.big { fill: var(--ink); font: 600 15px var(--display); }
+.chart .gl { stroke: var(--grid); stroke-width: 1; }
+.chart .ax { stroke: var(--axis); stroke-width: 1; }
+.chart [data-tip] { cursor: default; }
+
+/* motion: elements rest in their final state; .play adds the entry animation */
+@keyframes draw { from { stroke-dashoffset: 1; } }
+@keyframes gx { from { transform: scaleX(0); } }
+@keyframes gy { from { transform: scaleY(0); } }
+@keyframes fade { from { opacity: 0; transform: translateY(8px); } }
+@keyframes fadein { from { opacity: 0; } }
+@keyframes pop { 0% { opacity: 0; transform: scale(1.8) rotate(-14deg); } 60% { opacity: 1; } }
+@keyframes flash { from { color: var(--ac); } }
+.a-draw { stroke-dasharray: 1; stroke-dashoffset: 0; }
+.a-gx { transform-box: fill-box; transform-origin: left center; }
+.a-gy { transform-box: fill-box; transform-origin: center bottom; }
+.a-pop { transform-box: fill-box; transform-origin: center; }
+.play .copy > * { animation: fade .5s var(--ease) both; animation-delay: calc(var(--k, 0) * 70ms); }
+.play .a-draw { animation: draw var(--dur, 1600ms) var(--ease) both; animation-delay: calc(var(--d, 0) * 1ms); }
+.play .a-gx { animation: gx 700ms var(--ease) both; animation-delay: calc(var(--d, 0) * 1ms); }
+.play .a-gy { animation: gy 700ms var(--ease) both; animation-delay: calc(var(--d, 0) * 1ms); }
+.play .a-fade { animation: fadein 500ms var(--ease) both; animation-delay: calc(var(--d, 0) * 1ms); }
+.play .a-pop { animation: pop 520ms var(--ease) both; animation-delay: calc(var(--d, 0) * 1ms); }
+@media (prefers-reduced-motion: reduce) { .play *, .kpi .value.flash { animation: none !important; } }
+
+/* narrow screens */
+@media (max-width: 980px) {
+  .step { grid-template-columns: minmax(0, 1fr); gap: 20px; padding-block: 20px; }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .dash-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 720px) {
+  header { flex-wrap: wrap; gap: 6px 12px; }
+  .rail { flex-basis: 100%; grid-template-columns: repeat(11, 1fr); }
+  .rail .ph { display: none; }
+  .rail button { min-height: 16px; }
+  .compact { display: block; margin-left: auto; }
+  .row2, .cards { grid-template-columns: minmax(0, 1fr); }
+  .keys { display: none; }
+  .counter { margin-left: auto; }
+  .kpi .value { font-size: 32px; }
+}
+</style>
+
+<div class="app">
+  <header class="pad">
+    <div class="brand"><b>Who sets the peak?</b><span>TEB3123 · Group 8 · SDG 7</span></div>
+    <nav class="rail" id="rail" aria-label="Steps"></nav>
+    <div class="compact" id="compact"></div>
+  </header>
+  <main id="main" tabindex="-1"></main>
+  <footer class="pad">
+    <button class="navbtn" id="prev" aria-label="Previous step"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10 3 5 8l5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Back</button>
+    <button class="navbtn primary" id="next" aria-label="Next step">Next<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="m6 3 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+    <span class="counter" id="counter" aria-live="polite"></span>
+    <div class="keys"><span><kbd>←</kbd> <kbd>→</kbd> move</span><span><kbd>0</kbd>–<kbd>9</kbd> jump, <kbd>D</kbd> dashboard</span><button class="navbtn" id="notesBtn" style="min-height:32px;padding:0 10px;font-size:12.5px" aria-pressed="false">Speaker notes <kbd>N</kbd></button></div>
+  </footer>
+</div>
+<aside class="notes pad" id="notes" hidden aria-live="polite"><div class="in"><b>Speaker notes</b><p id="notesText"></p></div></aside>
+<div class="tip" id="tip" hidden></div>
+
+<script>const D=/*__DATA__*/null;</script>
+<script>
+(() => {
+"use strict";
+// ---------- helpers ----------
+const $ = (s, el = document) => el.querySelector(s);
+const fmt = (v, d = 0) => v == null ? "–" : Number(v).toLocaleString("en-GB", { minimumFractionDigits: d, maximumFractionDigits: d });
+const pct = (v, d = 0) => fmt(v, d) + "%";
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const lin = (d0, d1, r0, r1) => v => r0 + (v - d0) / (d1 - d0 || 1) * (r1 - r0);
+function ticks(max, n = 4) {
+  const raw = max / n, p = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * p).find(s => s >= raw);
+  const out = []; for (let v = 0; v <= max + 1e-9; v += step) out.push(+v.toFixed(6)); return out;
+}
+const niceMax = (max, n = 4) => { const t = ticks(max, n); return t[t.length - 1] < max ? t[t.length - 1] + (t[1] - t[0]) : t[t.length - 1]; };
+const tip = $("#tip");
+const showTip = (html, x, y) => { tip.innerHTML = html; tip.hidden = false; const w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.min(innerWidth - w - 8, Math.max(8, x + 14)) + "px"; tip.style.top = Math.max(8, y - h - 12) + "px"; };
+const hideTip = () => { tip.hidden = true; };
+document.addEventListener("pointerover", e => { const t = e.target.closest("[data-tip]"); if (t) showTip(t.dataset.tip, e.clientX, e.clientY); });
+document.addEventListener("pointermove", e => { const t = e.target.closest("[data-tip]"); if (t) showTip(t.dataset.tip, e.clientX, e.clientY); });
+document.addEventListener("pointerout", e => { if (e.target.closest("[data-tip]")) hideTip(); });
+const tipAttr = html => `data-tip="${esc(html)}"`;
+const dot = c => `<i style="background:var(${c})"></i>`;
+
+const E = D.evaluate, M = D.method, S = D.scenarios, X = D.data, MO = D.modes;
+const acTest = E.metrics.ac, lgTest = E.metrics.light;
+const frozenAc = acTest.find(m => m.frozen), tod = acTest.find(m => m.model === "time_of_day"), ridge = acTest.find(m => m.model === "ridge");
+const GROUP = { power: "Power", harmonics: "Harmonics", power_quality: "Power quality", temporal: "Temporal (lags)", calendar: "Calendar" };
+const FEATURE = f => f.replace(/^agg_/, "").replace(/_/g, " ").replace(/Real Power(\d)/, "Real power, phase $1").replace(/Apparent Power(\d)/, "Apparent power, phase $1")
+  .replace(/Current(\d)H(\d+)/, "Phase $1 current, harmonic $2").replace(/ratio (\d)H(\d+)/, "Harmonic $2 / fundamental, phase $1").replace(/THD(\d)/, "THD, phase $1").replace("hour sin", "Hour of day (sin)");
+const t0 = new Date(E.series.t0);
+const tAt = i => new Date(t0.getTime() + i * 15 * 60000);
+const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const tLabel = d => `${DOW[d.getDay()]} ${d.getDate()} ${MON[d.getMonth()]} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+const sh = S.peak_shaving, ah = S.after_hours, pd = S.peak_drivers_week6_pct, sp = S.solar_and_precooling;
+
+// ---------- chart builders (return SVG strings sized to the container width) ----------
+function linePath(xs, ys, x, y) {
+  let d = "", prev = null;
+  xs.forEach((xi, i) => { const v = ys[i]; if (v == null) { prev = null; return; }
+    d += (prev == null || xi - prev > 1 ? "M" : "L") + x(xi).toFixed(1) + "," + y(v).toFixed(1); prev = xi; });
+  return d;
+}
+function dayTicks(xs, x, H, top) {
+  let s = "";
+  const R = x(xs[xs.length - 1]);
+  xs.forEach(i => { const d = tAt(i); if (d.getHours() === 0 && d.getMinutes() === 0) {
+    s += `<line class="gl" x1="${x(i)}" x2="${x(i)}" y1="${top}" y2="${H}"/>` + (R - x(i) > 44 ? `<text class="m" x="${x(i) + 4}" y="${H + 14}">${DOW[d.getDay()]} ${d.getDate()}</text>` : ""); } });
+  return s;
+}
+function yAxis(tk, y, L, R) {
+  return tk.map(v => `<line class="gl" x1="${L}" x2="${R}" y1="${y(v)}" y2="${y(v)}"/><text class="m" x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${fmt(v)}</text>`).join("");
+}
+
+const charts = {
+  // step 0: the test week's building load drawing itself
+  hero(w) {
+    const H = Math.round(Math.min(340, Math.max(220, w * .42))), L = 34, R = w - 8, T = 18, B = H - 22;
+    const xs = E.series.t, mx = niceMax(Math.max(...E.series.building) * 1.08);
+    const x = lin(xs[0], xs[xs.length - 1], L, R), y = lin(0, mx, B, T);
+    const pi = E.series.building.indexOf(Math.max(...E.series.building));
+    const area = linePath(xs, E.series.ac, x, y) + `L${x(xs[xs.length - 1])},${B}L${x(xs[0])},${B}Z`;
+    return `<svg viewBox="0 0 ${w} ${H + 4}" role="img" aria-label="Building demand over the test week, 15-minute means, peak ${E.peak.kw} kilowatts on ${E.peak.t}">
+      ${yAxis(ticks(mx), y, L, R)}${dayTicks(xs, x, B, T)}
+      <path d="${area}" fill="var(--ac-wash)" class="a-fade" style="--d:1500"/>
+      <path d="${linePath(xs, E.series.building, x, y)}" pathLength="1" class="a-draw" style="--dur:2200ms" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <g class="a-pop" style="--d:2000"><circle cx="${x(xs[pi])}" cy="${y(E.series.building[pi])}" r="5" fill="var(--ink)" stroke="var(--surface)" stroke-width="2"/></g>
+      <text class="v a-fade" style="--d:2100" x="${Math.min(x(xs[pi]) + 10, R - 150)}" y="${y(E.series.building[pi]) + 4}">${fmt(E.peak.kw, 1)} kW peak · ${E.peak.t}</text>
+      <text class="m" x="${L}" y="${T - 6}">kW</text></svg>`;
+  },
+  // step 1 + dashboard: share bars
+  shares(w, rows) {
+    const L = Math.min(170, w * .34), R = w - 8, rowH = 30, gap = 34, H = rows.length * (rowH + gap);
+    const x = lin(0, 100, L, R);
+    const segs = [["AC", "--ac", "A/C"], ["LIGHT", "--light", "Lighting & sockets"], ["OTHER", "--other", "Everything else"]];
+    let s = "";
+    rows.forEach((r, i) => {
+      const y0 = i * (rowH + gap) + 18; let acc = 0;
+      s += `<text x="0" y="${y0 + rowH / 2 + 4}">${r.label}</text>`;
+      if (r.sub) s += `<text class="m" x="0" y="${y0 + rowH / 2 + 18}">${r.sub}</text>`;
+      segs.forEach(([k, c, name], j) => {
+        const v = r[k]; const x0 = x(acc) + (j ? 1 : 0), x1 = x(acc + v) - (j < 2 ? 1 : 0); acc += v;
+        const wd = Math.max(0, x1 - x0);
+        s += `<rect class="a-gx" style="--d:${300 + i * 350 + j * 120}" x="${x0}" y="${y0}" width="${wd}" height="${rowH}" rx="4" fill="var(${c})" ${tipAttr(`<div class="t">${r.label}</div>${dot(c)}${name}: <b>${pct(v, 1)}</b>`)}/>`;
+        if (wd > 46) s += `<text class="${k === "OTHER" ? "v" : "in"} a-fade" style="--d:${900 + i * 350}" x="${x0 + 8}" y="${y0 + rowH / 2 + 4}">${pct(v)}</text>`;
+      });
+    });
+    return `<svg viewBox="0 0 ${w} ${H}" role="img" aria-label="Share of building load by end use">${s}</svg>`;
+  },
+  // step 2: file availability grid
+  grid(w) {
+    const L = 64, cols = X.circuits.length, cw = (w - L) / cols, rh = 30, H = 22 + X.grid.length * rh;
+    let s = X.circuits.map((c, j) => `<text class="m" x="${L + j * cw + cw / 2}" y="12" text-anchor="middle">${c}</text>`).join("");
+    X.grid.forEach((row, i) => {
+      const wk = X.folders[i], y0 = 20 + i * rh;
+      s += `<text x="0" y="${y0 + rh / 2 + 3}">Week ${wk}</text>`;
+      row.forEach((ok, j) => {
+        const key = j === 0 ? "the main meter (model input)" : j === 1 ? "the A/C sub-meter (A/C target)" : j <= 4 ? "a lighting & sockets circuit (lighting target)" : "a circuit not used";
+        s += `<rect class="a-pop" style="--d:${120 + (i * cols + j) * 22}" x="${L + j * cw + 2}" y="${y0 + 2}" width="${cw - 4}" height="${rh - 4}" rx="4"
+          fill="${ok ? (j === 0 ? "var(--ink)" : j === 1 ? "var(--ac)" : j <= 4 ? "var(--light)" : "var(--other)") : "var(--surface)"}"
+          stroke="${ok ? "none" : "var(--axis)"}" stroke-dasharray="${ok ? "" : "3 3"}" ${tipAttr(`<div class="t">Week ${wk} · ${X.circuits[j]}</div>${ok ? "File present" : "<b>File missing</b>"}: ${key}`)}/>`;
+        if (!ok && cw > 54) s += `<text class="m" x="${L + j * cw + cw / 2}" y="${y0 + rh / 2 + 4}" text-anchor="middle">missing</text>`;
+      });
+    });
+    return `<svg viewBox="0 0 ${w} ${H}" role="img" aria-label="Which CLEMD files exist for each week">${s}</svg>`;
+  },
+  // step 2: real 1-second readings collapsing into 1-minute means
+  seconds(w) {
+    const rs = X.raw_sample, n = rs.kw.length, H = 200, L = 34, R = w - 8, T = 12, B = H - 22;
+    const lo = Math.floor(Math.min(...rs.kw) / 10) * 10, hi = Math.ceil(Math.max(...rs.kw) / 10) * 10;
+    const x = lin(0, n, L, R), y = lin(lo, hi, B, T);
+    let raw = ""; rs.kw.forEach((v, i) => raw += (i ? "L" : "M") + x(i).toFixed(1) + "," + y(v).toFixed(1));
+    let steps = ""; rs.minute_kw.forEach((v, i) => { steps += (i ? "L" : "M") + x(i * 60).toFixed(1) + "," + y(v).toFixed(1) + "L" + x(i * 60 + 60).toFixed(1) + "," + y(v).toFixed(1); });
+    const tk = []; for (let v = lo; v <= hi; v += 10) tk.push(v);
+    const mins = rs.minute_start;
+    const xt = [0, 5, 10, 15].filter(i => i < mins.length).map(i => `<text class="m" x="${x(i * 60)}" y="${H - 6}">${mins[i]}</text>`).join("");
+    const hits = rs.minute_kw.map((v, i) => `<rect x="${x(i * 60)}" y="${T}" width="${x(60) - x(0)}" height="${B - T}" fill="transparent" ${tipAttr(`<div class="t">${mins[i]}–${mins[i]}:59</div>60 one-second readings → mean <b>${fmt(v, 1)} kW</b>`)}/>`).join("");
+    return `<svg viewBox="0 0 ${w} ${H}" role="img" aria-label="Main-meter power, one-second readings and their one-minute means, 19 October 2023">
+      ${tk.map(v => `<line class="gl" x1="${L}" x2="${R}" y1="${y(v)}" y2="${y(v)}"/><text class="m" x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`).join("")}
+      <path d="${raw}" fill="none" stroke="var(--other)" stroke-width="1" class="a-fade"/>
+      <path d="${steps}" pathLength="1" class="a-draw" style="--d:500;--dur:1800ms" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round"/>
+      ${xt}${hits}</svg>`;
+  },
+  // step 3: what survives preparation, week by week
+  timeline(w) {
+    const L = 120, R = w - 8, wk = X.weeks, total = wk.reduce((a, b) => a + b.minutes, 0) + 8651, H = 150;
+    const x = lin(0, total, L, R); const rows = [["Main meter (input)", "--ink"], ["A/C sub-meter", "--ac"], ["Lighting circuits", "--light"]];
+    let s = "", acc = 8651;
+    s += `<rect x="${L}" y="18" width="${x(8651) - L - 3}" height="${3 * 34 - 8}" rx="4" fill="none" stroke="var(--axis)" stroke-dasharray="3 3"/>
+      <text class="m" x="${L + (x(8651) - L) / 2}" y="${18 + 3 * 17}" text-anchor="middle">wk 1 dropped</text>`;
+    wk.forEach((k, i) => {
+      const x0 = x(acc) + 1, x1 = x(acc + k.minutes) - 2; acc += k.minutes;
+      s += `<text class="m" x="${(x0 + x1) / 2}" y="12" text-anchor="middle">wk ${k.week}</text>`;
+      rows.forEach(([lab, c], r) => {
+        const has = r !== 1 || k.has_ac, y0 = 18 + r * 34;
+        if (has) s += `<rect class="a-gx" style="--d:${200 + i * 140 + r * 60}" x="${x0}" y="${y0}" width="${x1 - x0}" height="26" rx="4" fill="var(${c})" opacity="${k.week === M.test_week ? .45 : 1}" ${tipAttr(`<div class="t">Week ${k.week} · ${k.start}–${k.end}</div>${lab}: <b>${fmt(k.minutes)}</b> clean minutes${k.gap_min ? `<br>${k.gap_min}-minute outage removed (ended ${k.gap_at})` : ""}${k.week === M.test_week ? "<br>Sealed test week" : ""}`)}/>`;
+        else s += `<rect x="${x0}" y="${y0}" width="${x1 - x0}" height="26" rx="4" fill="none" stroke="var(--axis)" stroke-dasharray="3 3"/><text class="m" x="${(x0 + x1) / 2}" y="${y0 + 17}" text-anchor="middle">no file</text>`;
+        if (k.gap_min && has) { const gx = x0 + (x1 - x0) * k.gap_frac; s += `<rect class="a-pop" style="--d:1100" x="${gx - 2}" y="${y0 - 3}" width="4" height="32" rx="1" fill="var(--bad)"/>`; }
+      });
+      if (k.week === M.test_week) {
+        const cx = (x0 + x1) / 2, cy = 18 + 3 * 34 + 12;
+        s += `<g class="a-pop" style="--d:1500"><rect x="${cx - 9}" y="${cy - 1}" width="18" height="14" rx="3" fill="var(--ink)"/><path d="M${cx - 5} ${cy - 1}v-4a5 5 0 0 1 10 0v4" fill="none" stroke="var(--ink)" stroke-width="2"/></g>
+          <text class="v a-fade" style="--d:1600" x="${cx - 14}" y="${cy + 10}" text-anchor="end">sealed</text>`;
+      }
+    });
+    rows.forEach(([lab], r) => s += `<text x="0" y="${18 + r * 34 + 17}">${lab}</text>`);
+    return `<svg viewBox="0 0 ${w} ${H}" role="img" aria-label="Usable data per week after cleaning">${s}</svg>`;
+  },
+  // step 4: main meter fans out into feature groups
+  fan(w) {
+    const g = M.feature_groups, keys = ["power", "harmonics", "power_quality", "temporal", "calendar"];
+    const ex = { power: "real, reactive, apparent power per phase; within-minute std/min/max", harmonics: "odd current harmonics 3–15 per phase + ratios to fundamental",
+      power_quality: "voltage, current, PF, THD, frequency", temporal: "lags 1/5/15/60 min, rolling mean/std, 1-min change", calendar: "hour (sin/cos), day of week, weekend, office hours" };
+    const H = 300, nx = Math.min(150, w * .26), gx = nx + Math.max(60, w * .12), max = Math.max(...keys.map(k => g[k]));
+    const bw = Math.max(40, (w - gx - 8) * .42);
+    let s = `<rect x="0" y="${H / 2 - 34}" width="${nx}" height="68" rx="8" fill="var(--ink)"/>
+      <text class="in" x="${nx / 2}" y="${H / 2 - 6}" text-anchor="middle">Main meter</text><text class="in" x="${nx / 2}" y="${H / 2 + 12}" text-anchor="middle" style="font-weight:400">+ clock</text>`;
+    keys.forEach((k, i) => {
+      const cy = 30 + i * ((H - 60) / 4);
+      s += `<path d="M${nx},${H / 2} C${nx + 50},${H / 2} ${gx - 50},${cy} ${gx},${cy}" pathLength="1" class="a-draw" style="--d:${200 + i * 120};--dur:900ms" fill="none" stroke="var(--axis)" stroke-width="2"/>
+        <rect class="a-gx" style="--d:${700 + i * 120}" x="${gx}" y="${cy - 9}" width="${bw * g[k] / max}" height="18" rx="4" fill="var(--ac)" ${tipAttr(`<b>${GROUP[k]}</b> · ${g[k]} features<br>${ex[k]}`)}/>
+        <text class="v a-fade" style="--d:${900 + i * 120}" x="${gx + bw * g[k] / max + 8}" y="${cy + 4}">${g[k]}</text>
+        <text class="a-fade" style="--d:${800 + i * 120}" x="${gx}" y="${cy - 14}">${GROUP[k]}</text>`;
+    });
+    return `<svg viewBox="0 0 ${w} ${H}" role="img" aria-label="Feature groups built from the main meter">${s}</svg>`;
+  },
+  // step 5: expanding-window CV folds
+  folds(w) {
+    const n = M.n_rows, L = 56, R = w - 8, rh = 26, H = M.folds.length * (rh + 10) + 26, x = lin(0, n, L, R);
+    let s = "";
+    M.folds.forEach((f, i) => {
+      const y0 = i * (rh + 10);
+      s += `<text x="0" y="${y0 + rh / 2 + 4}">Fold ${i + 1}</text>
+        <rect class="a-gx" style="--d:${150 + i * 220}" x="${x(0)}" y="${y0}" width="${x(f.train_end) - x(0)}" height="${rh}" rx="4" fill="var(--ac-wash)" stroke="var(--ac)" stroke-width="1" ${tipAttr(`Fold ${i + 1} trains on minutes 1–${fmt(f.train_end)}`)}/>
+        <rect class="a-gx" style="--d:${350 + i * 220}" x="${x(f.val_start)}" y="${y0}" width="${x(f.val_end) - x(f.val_start)}" height="${rh}" rx="4" fill="var(--ac)" ${tipAttr(`Fold ${i + 1} validates on the next ${fmt(f.val_end - f.val_start)} minutes, after a ${M.gap_min}-minute gap`)}/>`;
+    });
+    const yl = M.folds.length * (rh + 10) + 14;
+    s += `<text class="m" x="${L}" y="${yl}">${M.train_weeks.ac.map(v => "wk " + v).join(" + ")} · ${fmt(n)} one-minute rows, oldest → newest</text>`;
+    return `<svg viewBox="0 0 ${w} ${H}" role="img" aria-label="Four expanding-window cross-validation folds">${s}</svg>`;
+  },
+  // step 5: CV MAE race + freeze stamp
+  race(w) {
+    const rows = [...M.cv.ac].sort((a, b) => b.mae - a.mae), L = Math.min(150, w * .32), R = w - 60, rh = 22, gap = 14;
+    const H = rows.length * (rh + gap) + 24, mx = niceMax(Math.max(...rows.map(r => r.mae))), x = lin(0, mx, L, R);
+    const ridgeCv = M.cv.ac.find(r => r.model === "ridge").mae, bar = ridgeCv * (1 - M.min_gain);
+    let s = ticks(mx).map(v => `<line class="gl" x1="${x(v)}" x2="${x(v)}" y1="0" y2="${H - 22}"/><text class="m" x="${x(v)}" y="${H - 6}" text-anchor="middle">${fmt(v, v % 1 ? 1 : 0)}</text>`).join("");
+    rows.forEach((r, i) => {
+      const y0 = i * (rh + gap) + 2, fr = r.model === M.frozen.ac.model;
+      s += `<text x="0" y="${y0 + rh / 2 + 4}" style="${fr ? "font-weight:600;fill:var(--ink)" : ""}">${r.name}</text>
+        <rect class="a-gx" style="--d:${200 + i * 160}" x="${L}" y="${y0}" width="${x(r.mae) - L}" height="${rh}" rx="4" fill="${fr ? "var(--ac)" : "var(--other)"}" ${tipAttr(`<b>${r.name}</b><br>CV MAE ${fmt(r.mae, 3)} kW · peak-window MAE ${fmt(r.peak_mae, 2)} kW`)}/>
+        <text class="v a-fade" style="--d:${600 + i * 160}" x="${x(r.mae) + 6}" y="${y0 + rh / 2 + 4}">${fmt(r.mae, 2)}</text>`;
+      if (fr) s += `<g class="a-pop" style="--d:1500"><rect x="${Math.min(x(r.mae) + 48, R - 30)}" y="${y0 - 6}" width="112" height="34" rx="3" fill="none" stroke="var(--bad)" stroke-width="2" transform="rotate(-6 ${Math.min(x(r.mae) + 104, R + 26)} ${y0 + 11})"/>
+        <text x="${Math.min(x(r.mae) + 104, R + 26)}" y="${y0 + 9}" text-anchor="middle" transform="rotate(-6 ${Math.min(x(r.mae) + 104, R + 26)} ${y0 + 11})" style="fill:var(--bad-text);font:600 11px var(--mono);letter-spacing:.08em">FROZEN</text>
+        <text x="${Math.min(x(r.mae) + 104, R + 26)}" y="${y0 + 22}" text-anchor="middle" transform="rotate(-6 ${Math.min(x(r.mae) + 104, R + 26)} ${y0 + 11})" style="fill:var(--bad-text);font:500 10px var(--mono)">${M.frozen_at}</text></g>`;
+    });
+    s += `<line x1="${x(bar)}" x2="${x(bar)}" y1="0" y2="${H - 22}" stroke="var(--ink2)" stroke-width="1"/><text class="m" x="${x(bar) + 4}" y="${H - 26}">must beat ${fmt(bar, 2)} (Ridge −${Math.round(M.min_gain * 100)}%)</text>`;
+    return `<svg viewBox="0 0 ${w} ${H}" role="img" aria-label="Cross-validated A/C error by model">${s}</svg>`;
+  },
+  // step 6: estimated vs measured A/C, test week, with crosshair
+  testweek(w) {
+    const H = Math.round(Math.min(300, Math.max(200, w * .36))), L = 34, R = w - 8, T = 14, B = H - 22, xs = E.series.t;
+    const mx = niceMax(Math.max(...E.series.ac, ...E.series.ac_pred) * 1.05), x = lin(xs[0], xs[xs.length - 1], L, R), y = lin(0, mx, B, T);
+    return `<svg viewBox="0 0 ${w} ${H + 4}" data-cross="testweek" role="img" aria-label="Estimated versus measured A/C power over the test week">
+      ${yAxis(ticks(mx), y, L, R)}${dayTicks(xs, x, B, T)}<text class="m" x="${L}" y="${T - 4}">kW</text>
+      <path d="${linePath(xs, E.series.ac, x, y)}" fill="none" stroke="var(--ink)" stroke-width="1.5" stroke-linejoin="round" class="a-fade"/>
+      <path d="${linePath(xs, E.series.ac_pred, x, y)}" pathLength="1" class="a-draw" style="--d:400;--dur:2200ms" fill="none" stroke="var(--ac)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <line class="xh" x1="0" x2="0" y1="${T}" y2="${B}" stroke="var(--ink2)" stroke-width="1" visibility="hidden"/>
+      <rect class="hit" x="${L}" y="${T}" width="${R - L}" height="${B - T}" fill="transparent" data-l="${L}" data-r="${R}"/></svg>`;
+  },
+  // step 6: test MAE with day-block bootstrap CI
+  ci(w) {
+    const rows = acTest, L = Math.min(150, w * .38), R = w - 12, rh = 26, H = rows.length * rh + 26;
+    const mx = niceMax(Math.max(...rows.map(r => r.hi))), x = lin(0, mx, L, R);
+    let s = ticks(mx, 3).map(v => `<line class="gl" x1="${x(v)}" x2="${x(v)}" y1="0" y2="${H - 22}"/><text class="m" x="${x(v)}" y="${H - 6}" text-anchor="middle">${fmt(v, v % 1 ? 1 : 0)}</text>`).join("");
+    rows.forEach((r, i) => {
+      const cy = i * rh + rh / 2, c = r.frozen ? "var(--ac)" : "var(--ink2)";
+      s += `<text x="0" y="${cy + 4}" style="${r.frozen ? "font-weight:600;fill:var(--ink)" : ""}">${r.name}</text>
+        <line class="a-gx" style="--d:${300 + i * 120}" x1="${x(r.lo)}" x2="${x(r.hi)}" y1="${cy}" y2="${cy}" stroke="${c}" stroke-width="2" stroke-linecap="round"/>
+        <circle class="a-pop" style="--d:${500 + i * 120}" cx="${x(r.mae)}" cy="${cy}" r="5" fill="${c}" stroke="var(--surface)" stroke-width="2" ${tipAttr(`<b>${r.name}</b>${r.frozen ? " (frozen)" : ""}<br>MAE ${fmt(r.mae, 2)} kW, 95% CI ${fmt(r.lo, 2)}–${fmt(r.hi, 2)}<br>Peak-window MAE ${fmt(r.peak_mae, 2)} kW · R² ${fmt(r.r2, 2)}`)}/>`;
+    });
+    return `<svg viewBox="0 0 ${w} ${H}" role="img" aria-label="Test-week mean absolute error with 95% confidence intervals">${s}</svg>`;
+  },
+  // step 6: SHAP by feature group
+  shap(w) {
+    const g = E.shap_groups, keys = Object.keys(g), L = Math.min(130, w * .36), R = w - 44, rh = 26, H = keys.length * rh + 4;
+    const x = lin(0, Math.max(...Object.values(g)), L, R);
+    return `<svg viewBox="0 0 ${w} ${H}" role="img" aria-label="Mean absolute SHAP contribution by feature group">${keys.map((k, i) => {
+      const y0 = i * rh + 4;
+      return `<text x="0" y="${y0 + 13}">${GROUP[k]}</text><rect class="a-gx" style="--d:${400 + i * 120}" x="${L}" y="${y0}" width="${x(g[k]) - L}" height="18" rx="4" fill="var(--ac)" ${tipAttr(`<b>${GROUP[k]}</b><br>Mean |SHAP| ${fmt(g[k], 2)} kW<br>Shuffling this group raises MAE by ${fmt(E.perm_groups[k], 2)} kW`)}/><text class="v a-fade" style="--d:${800 + i * 120}" x="${x(g[k]) + 6}" y="${y0 + 13}">${fmt(g[k], 2)}</text>`; }).join("")}</svg>`;
+  },
+  // step 7: daily profiles split into two operating modes
+  modes(w) {
+    const H = 250, L = 34, R = w - 8, T = 12, B = H - 22, days = MO.days;
+    const mx = niceMax(Math.max(...days.flatMap(d => d.kw))), x = lin(0, 23, L, R), y = lin(0, mx, B, T);
+    const path = a => a.map((v, i) => (i ? "L" : "M") + x(i).toFixed(1) + "," + y(v).toFixed(1)).join("");
+    const mean = c => { const ds = days.filter(d => d.cluster === c); return ds[0].kw.map((_, h) => ds.reduce((a, d) => a + d.kw[h], 0) / ds.length); };
+    let s = yAxis(ticks(mx), y, L, R) + [0, 6, 12, 18, 23].map(h => `<text class="m" x="${x(h)}" y="${H - 6}" text-anchor="middle">${String(h).padStart(2, "0")}:00</text>`).join("");
+    s += `<text class="m" x="${L}" y="${T - 2}">kW</text>`;
+    days.forEach((d, i) => s += `<path d="${path(d.kw)}" pathLength="1" class="a-draw" style="--d:${i * 40};--dur:900ms" fill="none" stroke="var(${d.cluster ? "--m1" : "--m0"})" stroke-opacity=".32" stroke-width="1.2"/>`);
+    [0, 1].forEach(c => s += `<path d="${path(mean(c))}" pathLength="1" class="a-draw" style="--d:${1400 + c * 300}" fill="none" stroke="var(${c ? "--m1" : "--m0"})" stroke-width="3" stroke-linejoin="round" ${tipAttr(`<b>${c ? "Non-working" : "Working"}-day mode</b> average<br>${MO.summary[c].days} days · ${fmt(MO.summary[c].building_kwh_day)} kWh/day`)}/>`);
+    return `<svg viewBox="0 0 ${w} ${H}" role="img" aria-label="Hourly building load for ${days.length} days, grouped into two operating modes">${s}</svg>`;
+  },
+  // step 7: one square per day
+  strip(w) {
+    const n = MO.days.length, cw = Math.min(30, (w - 2) / n), H = 46;
+    return `<svg viewBox="0 0 ${w} ${H}" role="img" aria-label="Operating mode of each day">${MO.days.map((d, i) => `
+      <rect class="a-pop" style="--d:${1200 + i * 30}" x="${i * cw + 1}" y="0" width="${cw - 3}" height="${cw - 3}" rx="3" fill="var(${d.cluster ? "--m1" : "--m0"})" ${d.cluster && !["Sat", "Sun"].includes(d.dow) ? 'stroke="var(--ink)" stroke-width="2"' : ""} ${tipAttr(`<div class="t">${d.dow} ${d.date}</div>${d.cluster ? "Non-working" : "Working"}-day mode${d.cluster && !["Sat", "Sun"].includes(d.dow) ? "<br><b>A weekday that behaved like a weekend</b>" : ""}`)}/>
+      ${cw > 16 ? `<text class="m" x="${i * cw + cw / 2 - 1}" y="${cw + 10}" text-anchor="middle" style="font-size:9.5px">${d.dow[0]}</text>` : ""}`).join("")}</svg>`;
+  },
+  // step 8: demand-triggered trim
+  trim(w) {
+    const rows = sh.scenarios, H = 210, L = 30, R = w - 8, T = 30, B = H - 44, mx = niceMax(Math.max(...rows.map(r => Math.max(r.max_demand_cut_kw, r.week6_cut_kw_measured)))), y = lin(0, mx, B, T);
+    const cw = (R - L) / rows.length, bw = Math.min(56, cw * .5);
+    let s = yAxis(ticks(mx, 3), y, L, R) + `<text class="m" x="${L}" y="${T - 14}">kW off the period's maximum demand</text>`;
+    rows.forEach((r, i) => {
+      const cx = L + cw * i + cw / 2;
+      s += `<rect class="a-gy" style="--d:${300 + i * 200}" x="${cx - bw / 2}" y="${y(r.max_demand_cut_kw)}" width="${bw}" height="${B - y(r.max_demand_cut_kw)}" rx="4" fill="var(--ac)" ${tipAttr(`<b>Trim A/C ${r.trim_pct}%</b> when demand ≥ ${fmt(sh.trigger_kw, 1)} kW<br>Cut ${fmt(r.max_demand_cut_kw, 1)} kW (model) · ${fmt(r.week6_cut_kw_measured, 1)} kW using the real sub-meter, week 6<br>RM ${fmt(r.rm_per_year[0])}–${fmt(r.rm_per_year[1])} per year`)}/>
+        <line class="a-fade" style="--d:${900 + i * 200}" x1="${cx - bw / 2 - 6}" x2="${cx + bw / 2 + 6}" y1="${y(r.week6_cut_kw_measured)}" y2="${y(r.week6_cut_kw_measured)}" stroke="var(--ink)" stroke-width="2"/>
+        <text class="v a-fade" style="--d:${800 + i * 200}" x="${cx}" y="${y(Math.max(r.max_demand_cut_kw, r.week6_cut_kw_measured)) - 8}" text-anchor="middle">${fmt(r.max_demand_cut_kw, 1)} kW</text>
+        <text x="${cx}" y="${B + 16}" text-anchor="middle" style="font-weight:600;fill:var(--ink)">${r.trim_pct}% trim</text>
+        <text class="m" x="${cx}" y="${B + 32}" text-anchor="middle">RM ${fmt(r.rm_per_year[0] / 1000, 1)}k–${fmt(r.rm_per_year[1] / 1000, 1)}k/yr</text>`;
+    });
+    return `<svg viewBox="0 0 ${w} ${H}" role="img" aria-label="Maximum-demand cut for 10, 20 and 30 percent A/C trim">${s}</svg>`;
+  },
+  // step 8: pre-cooling windows (negative = peak went up)
+  precool(w) {
+    const rows = sp.windows, L = 70, R = w - 8, rh = 28, H = rows.length * rh + 30;
+    const lo = Math.min(...rows.map(r => r.max_demand_cut_kw)), mx = Math.max(1, ...rows.map(r => r.max_demand_cut_kw));
+    const x = lin(Math.floor(lo) - 1, mx, L, R), z = x(0);
+    let s = `<line class="ax" x1="${z}" x2="${z}" y1="0" y2="${rows.length * rh}"/><text class="m" x="${z}" y="${H - 8}" text-anchor="end">no change</text>
+      <text class="m" x="${L}" y="${H - 8}">← peak goes up</text>`;
+    rows.forEach((r, i) => {
+      const y0 = i * rh + 4, v = r.max_demand_cut_kw;
+      s += `<text x="0" y="${y0 + 14}">${r.window}h</text>`;
+      if (v < 0) s += `<rect class="a-gx" style="--d:${300 + i * 160};transform-origin:right center" x="${x(v)}" y="${y0}" width="${z - x(v)}" height="18" rx="4" fill="var(--bad)" ${tipAttr(`Moving ${sp.precool_shift_pct}% of 14–16h A/C into <b>${r.window}h</b><br>raises the period's maximum by ${fmt(-v, 1)} kW (${fmt(-r.week6_max_cut_kw_measured_ac, 1)} kW with the real sub-meter)`)}/>
+        <text class="v a-fade" style="--d:${800 + i * 160}" x="${x(v) - 6}" y="${y0 + 13}" text-anchor="end">+${fmt(-v, 1)} kW</text>`;
+      else s += `<circle cx="${z}" cy="${y0 + 9}" r="4" fill="var(--ink2)" ${tipAttr(`<b>${r.window}h</b>: no change to the period's maximum`)}/><text class="m" x="${z - 10}" y="${y0 + 13}" text-anchor="end">0 kW · sun at ${fmt(r.pv_irradiance_vs_peak_pct)}% of its peak</text>`;
+    });
+    return `<svg viewBox="0 0 ${w} ${H}" role="img" aria-label="Effect of fixed pre-cooling windows on maximum demand">${s}</svg>`;
+  },
+  // step 9: CRISP-ML(Q) loop
+  loop(w) {
+    const ph = ["Business & data understanding", "Data preparation", "Modeling", "Evaluation", "Deployment", "Monitoring & maintenance"];
+    const H = Math.min(340, Math.max(260, w * .55)), cx = w / 2, cy = H / 2, rx = Math.min(w * .26, 200), ry = H * .36;
+    const pos = ph.map((_, i) => { const a = -Math.PI / 2 + i * 2 * Math.PI / ph.length; return [cx + rx * Math.cos(a), cy + ry * Math.sin(a)]; });
+    let s = `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" pathLength="1" class="a-draw" style="--dur:2000ms" fill="none" stroke="var(--axis)" stroke-width="2"/>`;
+    pos.forEach(([x, y], i) => {
+      const last = i === ph.length - 1, words = ph[i].split(" "), half = Math.ceil(words.length / 2);
+      const lines = words.length > 2 ? [words.slice(0, half).join(" "), words.slice(half).join(" ")] : [ph[i]];
+      const side = Math.abs(x - cx) < 4 ? 0 : x > cx ? 1 : -1, anchor = side ? (side > 0 ? "start" : "end") : "middle";
+      const y0 = side ? y - (lines.length - 1) * 7 + 4 : y < cy ? y - 14 - (lines.length - 1) * 14 : y + 24;
+      const st = `--d:${300 + i * 300};${last ? "font-weight:600;fill:var(--ink)" : ""}`;
+      s += `<g class="a-pop" style="--d:${200 + i * 300}"><circle cx="${x}" cy="${y}" r="7" fill="${last ? "var(--ac)" : "var(--ink)"}" stroke="var(--surface)" stroke-width="2"/></g>`
+        + lines.map((ln, k) => `<text class="a-fade" style="${st}" x="${x + side * 14}" y="${y0 + k * 14}" text-anchor="${anchor}">${ln}</text>`).join("");
+    });
+    s += `<text class="m a-fade" style="--d:2000" x="${cx}" y="${cy + 4}" text-anchor="middle">re-check against a short sub-meter campaign</text>`;
+    return `<svg viewBox="0 0 ${w} ${H}" role="img" aria-label="CRISP-ML(Q) cycle ending in monitoring and maintenance">${s}</svg>`;
+  },
+};
+
+// ---------- dashboard state ----------
+const state = { trim: 20, hours: "08-17" };
+function dashNumbers() {
+  const t = sh.scenarios.find(s => s.trim_pct === state.trim), a = ah.scenarios.find(s => s.office_hours === state.hours);
+  return { t, a };
+}
+
+// ---------- step content ----------
+const weekendDays = MO.days.filter(d => d.cluster === 1 && !["Sat", "Sun"].includes(d.dow));
+const fmtsDMY = Object.entries(X.date_formats).filter(([, f]) => f === "D/M/Y").map(([k]) => k);
+const STEPS = [
+  { phase: "Intro", title: "Who sets the peak?", render: () => `
+    <div class="copy">
+      <div class="eyebrow">TEB3123 Machine Learning · Group 8 <span class="chip">Energy Security · SDG 7</span></div>
+      <h1>Who sets the peak?</h1>
+      <p class="lede">We estimate a building's air-conditioning and lighting load from its main meter alone, then turn those estimates into peak-demand, cost and carbon decisions for UTP.</p>
+      <div class="facts"><div class="fact"><b>${fmt(E.peak.kw, 1)} kW</b><span>test-week peak, ${E.peak.t}</span></div><div class="fact"><b>${fmt(E.peak.ac, 1)} kW</b><span>of it was A/C (sub-meter)</span></div><div class="fact"><b>${fmt(E.peak.ac_pred, 1)} kW</b><span>our estimate, main meter only</span></div></div>
+    </div>
+    <div class="viz"><div class="panel"><h3>One office building, one week of demand</h3><p class="sub">15-minute means, CLEMD test week, 18–25 Oct 2023. Blue wash: measured A/C.</p><div class="chart" data-chart="hero"></div></div></div>`,
+    notes: `Open with the question, not the method. Every building's bill has a demand charge set by its single worst 15 minutes. On Thursday 19 October that was ${fmt(E.peak.kw, 1)} kilowatts, and ${fmt(E.peak.ac, 1)} of it was air-conditioning. Our model, using only the main meter, estimated ${fmt(E.peak.ac_pred, 1)}.` },
+
+  { phase: "Business understanding", section: "01 Define the problem", title: "The problem", render: () => `
+    <div class="copy">
+      <div class="eyebrow">01 · Define the problem <span class="chip">CRISP-DM · Business understanding</span></div>
+      <h2>A/C is ${pct(E.shares.ac_share_energy_pct)} of the energy but ${pct(E.shares.ac_share_peak_pct)} of the peak.</h2>
+      <ul class="points">
+        <li><b>Who decides:</b> UTP facilities and energy management. They pay a TNB demand charge of RM ${fmt(S.assumptions.rm_per_kw_month[0], 2)}–${fmt(S.assumptions.rm_per_kw_month[1], 2)} per kW of maximum demand every month.</li>
+        <li><b>The gap:</b> most buildings only have a main meter, so nobody can see which loads set the peak. Sub-metering every circuit is expensive.</li>
+        <li><b>Objective:</b> estimate A/C and lighting power from the main meter alone, then test peak, cost and carbon actions on those estimates.</li>
+        <li><b>Scope:</b> one CLEMD office building, 21 Sep to 25 Oct 2023. Results are scenarios for that building, not UTP measurements.</li>
+      </ul>
+    </div>
+    <div class="viz"><div class="panel"><h3>Share of whole-building load, measured by sub-meters</h3><p class="sub">Weeks 4–6. Peak windows: the top 5% of 15-minute demand (≥ ${fmt(E.shares.peak_threshold_kw, 1)} kW), ${pct(E.shares.peak_windows_in_office_hours_pct)} of them in weekday office hours.</p>
+      <div class="chart" data-chart="shares" data-rows="problem"></div>
+      <div class="legend"><span><i class="sq" style="background:var(--ac)"></i>A/C</span><span><i class="sq" style="background:var(--light)"></i>Lighting &amp; sockets</span><span><i class="sq" style="background:var(--other)"></i>Everything else</span></div></div></div>`,
+    notes: `This is the business case. A/C is under a third of the energy but over 40% of the load when the building peaks, so it is the load that sets the demand charge. Lighting's share actually shrinks at peak. The decision-maker is facilities management, and the decision is which load to control and when.` },
+
+  { phase: "Data understanding", section: "02 Understand the data", title: "The data", render: () => `
+    <div class="copy">
+      <div class="eyebrow">02 · Understand the data <span class="chip">CRISP-DM · Data understanding</span></div>
+      <h2>${X.csv_files} files, ${fmt(X.csv_gb, 1)} GB of one-second readings.</h2>
+      <ul class="points">
+        <li><b>Source:</b> the public CLEMD dataset (Scientific Data, 2024). Six weekly folders from a Malaysian office building, Sep–Oct 2023.</li>
+        <li><b>Main meter:</b> ${X.raw_columns - 2} signals every second: voltage, current, real/reactive/apparent power, power factor, THD and current harmonics on three phases.</li>
+        <li><b>Targets:</b> the A/C sub-meter (CP AC) and three lighting &amp; socket circuits. The A/C sub-meter only exists in weeks 4–6.</li>
+        <li><b>Quality:</b> week 1 has no main-meter file at all, and two weeks lack the A/C file. Those gaps decide what each model can train on.</li>
+      </ul>
+    </div>
+    <div class="viz">
+      <div class="panel"><h3>Which files exist, week by week</h3><div class="chart" data-chart="grid"></div>
+        <div class="legend"><span><i class="sq" style="background:var(--ink)"></i>Main meter (input)</span><span><i class="sq" style="background:var(--ac)"></i>A/C (target)</span><span><i class="sq" style="background:var(--light)"></i>Lighting &amp; sockets (target)</span><span><i class="sq" style="background:var(--other)"></i>Not used</span></div></div>
+      <div class="panel"><h3>Real readings: ${X.raw_sample.minute_kw.length} minutes before the test-week peak</h3><p class="sub">Main meter, 19 Oct 2023. Grey: ${fmt(X.raw_sample.kw.length)} one-second readings. Black: the one-minute means we keep.</p><div class="chart" data-chart="seconds"></div></div>
+    </div>`,
+    notes: `The raw data is large and messy: ${X.csv_files} CSV files, about ${fmt(X.csv_gb, 1)} gigabytes. One second of main-meter data has ${X.raw_columns - 2} signals. The grid shows the real problem: week 1 has no main meter, so it is useless, and only weeks 4 to 6 have the A/C sub-meter that we need as ground truth.` },
+
+  { phase: "Data preparation", section: "03 Prepare the data", title: "Preparation", render: () => `
+    <div class="copy">
+      <div class="eyebrow">03 · Prepare the data <span class="chip">CRISP-DM · Data preparation</span></div>
+      <h2>Six fixes before any model sees the data.</h2>
+      <div>
+        <div class="fix"><span class="n">1</span><b>Dropped week 1</b><p>No main-meter file, so there is no model input.</p></div>
+        <div class="fix"><span class="n">2</span><b>Fixed a file-name typo</b><p>${X.typos.map(t => `Week ${t.week}: <code>${t.file}</code> → <code>${t.fixed}</code>`).join(", ")}</p></div>
+        <div class="fix"><span class="n">3</span><b>Detected the date order per file</b><p>Weeks ${fmtsDMY.join(" and ")} write D/M/Y, the rest M/D/Y. We check which order maps row 1 to the folder's start date.</p></div>
+        <div class="fix"><span class="n">4</span><b>Removed a supply outage</b><p>${X.weeks.filter(k => k.gap_min).map(k => `${k.gap_min} minutes in week ${k.week}`).join("")}: every circuit read about 0 V. Lags never reach across a gap.</p></div>
+        <div class="fix"><span class="n">5</span><b>Resampled 1 s → 1 min</b><p>Mean, plus within-minute std, min and max of power. ${fmt(X.csv_gb, 1)} GB becomes ${fmt(X.parquet_mb, 1)} MB: ${fmt(X.rows)} minutes × ${X.signals} main-meter signals.</p></div>
+        <div class="fix"><span class="n">6</span><b>Sealed week ${M.test_week}</b><p>The test week is never loaded until the model is frozen.</p></div>
+      </div>
+    </div>
+    <div class="viz"><div class="panel"><h3>What survives, week by week</h3><p class="sub">Bar length = clean one-minute rows. Red tick: the removed outage.</p><div class="chart" data-chart="timeline"></div></div>
+      <div class="panel"><div class="facts"><div class="fact"><b>${fmt(X.csv_gb, 1)} GB → ${fmt(X.parquet_mb, 1)} MB</b><span>raw CSV to one clean table</span></div><div class="fact"><b>${fmt(X.rows)}</b><span>one-minute rows, weeks 2–6</span></div></div></div></div>`,
+    notes: `None of this is glamorous, but each fix prevents a silent error. The date-order bug is the dangerous one: reading 10/05 the wrong way puts October data in May with no error message. The outage would otherwise teach the model that zero volts is normal. And sealing week ${M.test_week} up front is what makes our test result honest.` },
+
+  { phase: "Data preparation", section: "04 Engineer the features", title: "Features", render: () => `
+    <div class="copy">
+      <div class="eyebrow">04 · Engineer the features <span class="chip">CRISP-DM · Data preparation</span></div>
+      <h2>${M.n_features} inputs, all from the main meter or the clock.</h2>
+      <ul class="points">
+        <li><b>No sub-meter as input.</b> Sub-meters are the answer we predict; using one as an input would be leakage and would not exist in a real UTP building.</li>
+        <li><b>Harmonics, on purpose.</b> Inverter-driven A/C compressors draw distorted current with strong 5th, 7th and 11th harmonics. That is an electrical fingerprint, not a timetable guess.</li>
+        <li><b>Temporal context:</b> lags of 1, 5, 15 and 60 minutes, rolling mean and spread, computed inside unbroken stretches only.</li>
+        <li><b>Calendar:</b> hour as sine/cosine, day of week, weekend, office hours 08:00–17:00.</li>
+        <li><b>${M.redundant_pairs} near-duplicate pairs</b> (|r| > 0.98) were flagged, so importance is read by feature group rather than by single feature.</li>
+      </ul>
+    </div>
+    <div class="viz"><div class="panel"><h3>Feature groups</h3><p class="sub">Number of features per group. Hover a bar for what is in it.</p><div class="chart" data-chart="fan"></div></div></div>`,
+    notes: `The key design rule: only use what UTP would actually have, which is a main meter and a clock. Harmonics are the clever part. A/C compressors with inverters distort the current in a recognisable way, so the model can pick out A/C even when total power looks the same.` },
+
+  { phase: "Modeling", section: "05 Explain the ML method", title: "Method", render: () => `
+    <div class="copy">
+      <div class="eyebrow">05 · Explain the ML method <span class="chip">CRISP-DM · Modeling</span></div>
+      <h2>Five models, tuned on the past, frozen before the test.</h2>
+      <ul class="points">
+        <li><b>Baselines first:</b> a time-of-day average (no electrical input) and Ridge regression. Any model has to beat these to matter.</li>
+        <li><b>Then trees:</b> random forest, XGBoost and LightGBM, each with a small grid agreed in the proposal.</li>
+        <li><b>Validation:</b> ${M.n_splits} expanding-window folds in time order with a ${M.gap_min}-minute gap, so no lag can see the validation period. Random shuffling would leak the future.</li>
+        <li><b>Freeze rule:</b> a tree model is chosen only if it cuts Ridge's CV error by at least ${Math.round(M.min_gain * 100)}%. Frozen on ${M.frozen_at}: <b>${M.frozen.ac.name}</b> for A/C, <b>${M.frozen.light.name}</b> for lighting.</li>
+      </ul>
+    </div>
+    <div class="viz"><div class="panel"><h3>Time-series cross-validation, A/C</h3><p class="sub">Pale: training data. Solid: the validation block that follows it.</p><div class="chart" data-chart="folds"></div></div>
+      <div class="panel"><h3>Cross-validated error, A/C (MAE, kW)</h3><p class="sub">Best setting per model, mean of the ${M.n_splits} folds. Lower is better.</p><div class="chart" data-chart="race"></div></div></div>`,
+    notes: `Two habits make this trustworthy. First, cross-validation only ever trains on the past and tests on the future, like real deployment. Second, we wrote down the selection rule before seeing results, and froze the choice in git before loading the test week. ${M.frozen.ac.name} won the A/C race clearly.` },
+
+  { phase: "Evaluation", section: "06 Evaluate and interpret", title: "Evaluation", render: () => `
+    <div class="copy">
+      <div class="eyebrow">06 · Evaluate and interpret <span class="chip">CRISP-DM · Evaluation</span></div>
+      <h2>On the sealed week, typical error is ${fmt(frozenAc.mae, 2)} kW on a ${fmt(E.ac_mean_kw, 1)} kW load.</h2>
+      <ul class="points">
+        <li><b>${Math.round(100 * (1 - frozenAc.mae / tod.mae))}% less error</b> than the timetable baseline and ${Math.round(100 * (1 - frozenAc.mae / ridge.mae))}% less than Ridge. Peak-window error is ${fmt(frozenAc.peak_mae, 2)} kW over ${E.n_peak_windows} peak windows.</li>
+        <li><b>Not a clean sweep:</b> the confidence intervals overlap with Ridge, and Ridge has fewer large misses (RMSE ${fmt(ridge.rmse, 2)} vs ${fmt(frozenAc.rmse, 2)}).</li>
+        <li><b>Where it errs:</b> ${fmt(E.error_by_day_type.weekday, 2)} kW on weekdays vs ${fmt(E.error_by_day_type.weekend, 2)} kW on weekends, worst at 08:00–14:00 when A/C ramps, and ${fmt(E.error_by_step.True, 1)} kW in minutes with a sudden &gt; 5 kW switch.</li>
+        <li><b>Why it works:</b> phase-2 real power and the 5th/7th/11th harmonics carry the estimate, which is the physical A/C signature.</li>
+        <li><b>Negative result:</b> the frozen lighting model (${M.frozen.light.name}) had the worst typical test error (${fmt(lgTest.find(m => m.frozen).mae, 2)} kW). Lighting cannot be reliably estimated from the main meter here.</li>
+      </ul>
+    </div>
+    <div class="viz">
+      <div class="panel"><h3>A/C estimated from the main meter vs measured, test week</h3><div class="legend"><span><i style="background:var(--ac)"></i>Estimated (main meter only)</span><span><i style="background:var(--ink)"></i>Measured (sub-meter)</span></div><div class="chart" data-chart="testweek"></div></div>
+      <div class="row2">
+        <div class="panel"><h3>Test error with 95% CI (kW)</h3><p class="sub">Day-block bootstrap, 2,000 resamples</p><div class="chart" data-chart="ci"></div></div>
+        <div class="panel"><h3>What the A/C model relies on</h3><p class="sub">Mean |SHAP| by feature group, kW</p><div class="chart" data-chart="shap"></div></div>
+      </div>
+    </div>`,
+    notes: `This is the one-time test on the sealed week. Hover the chart to compare the two lines minute by minute. Be upfront that the advantage over Ridge is not statistically decisive with one test week. The SHAP result matters for trust: the model leans on the electrical A/C fingerprint, not on the clock. Lighting failed, and we report that as a finding.` },
+
+  { phase: "Evaluation", section: "06 Evaluate · clustering", title: "Operating modes", render: () => `
+    <div class="copy">
+      <div class="eyebrow">06 · Evaluate · unsupervised <span class="chip">CRISP-DM · Evaluation</span></div>
+      <h2>The main meter alone tells working days from non-working days.</h2>
+      <ul class="points">
+        <li><b>Method:</b> k-means on each day's 24-hour building profile, scaled to its own maximum so days are compared by shape. Silhouette picks k = 2 (${fmt(MO.silhouette[2], 2)}; k = 3 scores ${fmt(MO.silhouette[3], 2)}).</li>
+        <li><b>Working days:</b> ${MO.summary[0].days} days at ${fmt(MO.summary[0].building_kwh_day)} kWh/day.</li>
+        <li><b>Non-working days:</b> ${MO.summary[1].days} days at ${fmt(MO.summary[1].building_kwh_day)} kWh/day, including ${weekendDays.map(d => `${d.dow} ${+d.date.slice(8)} ${MON[+d.date.slice(5, 7) - 1]}`).join(" and ")}. Thu 28 Sep 2023 was the Maulidur Rasul public holiday.</li>
+        <li><b>Still running:</b> even non-working days use about ${fmt(MO.summary[1].ac_after_kwh_day_measured)} kWh of A/C and ${fmt(MO.summary[1].light_after_kwh_day)} kWh of lighting and sockets. That is the after-hours target.</li>
+      </ul>
+    </div>
+    <div class="viz"><div class="panel"><h3>Hourly building load, ${MO.days.length} full days</h3><div class="legend"><span><i style="background:var(--m0)"></i>Working-day mode</span><span><i style="background:var(--m1)"></i>Non-working-day mode</span><span>Thick lines: mode averages</span></div><div class="chart" data-chart="modes"></div>
+      <h3>Mode of each day</h3><p class="sub">Outlined: weekdays the main meter put in the non-working mode.</p><div class="chart" data-chart="strip"></div></div></div>`,
+    notes: `This needs no labels at all. Clustering found the public holiday on its own, which shows the main meter is enough to know how a building is being used. The useful number is the after-hours load on non-working days: the building is empty, but A/C and lighting are still drawing power.` },
+
+  { phase: "Deployment", section: "07 Connect to sustainability", title: "Sustainability", render: () => `
+    <div class="copy">
+      <div class="eyebrow">07 · Connect to sustainability <span class="chip">CRISP-DM · Deployment</span></div>
+      <h2>Trim A/C only when demand is high: ${fmt(sh.scenarios.find(s => s.trim_pct === 20).max_demand_cut_kw, 1)} kW off the peak at 20%.</h2>
+      <ul class="points">
+        <li><b>Peak drivers:</b> in the test week's top-5% windows the model puts A/C at ${pct(pd.ac_estimated, 1)} of load; the sub-meter says ${pct(pd.ac_measured, 1)}. The main meter alone is enough to show A/C sets the peak.</li>
+        <li><b>Demand-triggered trim:</b> when demand reaches ${fmt(sh.trigger_kw, 1)} kW, trim A/C by 10–30%. Model-based cuts match the real sub-meter within ${fmt(Math.max(...sh.scenarios.map(s => Math.abs(s.week6_cut_kw_estimated - s.week6_cut_kw_measured))), 1)} kW.</li>
+        <li><b>Our proposal's pre-cooling idea backfired.</b> Moving ${sp.precool_shift_pct}% of 14:00–16:00 A/C into late morning raises the peak by ${fmt(-Math.min(...sp.windows.map(w => w.max_demand_cut_kw)), 1)} kW, because the building is already near peak at midday. We dropped it.</li>
+        <li><b>Solar already overlaps:</b> ${pct(sp.ac_energy_in_pv_hours_pct_estimated)} of A/C energy falls in rooftop-PV hours (${sp.pv_hours}). The gain is in limiting the peak, not shifting it.</li>
+      </ul>
+    </div>
+    <div class="viz"><div class="panel"><h3>Demand-triggered A/C trim</h3><p class="sub">Blue: cut from main-meter estimates (unseen weeks). Black tick: the same rule with the real sub-meter, week ${M.test_week}.</p><div class="chart" data-chart="trim"></div></div>
+      <div class="panel"><h3>Fixed pre-cooling: change in maximum demand</h3><p class="sub">${sp.precool_shift_pct}% of 14:00–16:00 A/C moved into each window. <span class="flag"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1 11 10H1Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6 4.5v2.5M6 8.6v.1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>raises the peak</span></p><div class="chart" data-chart="precool"></div></div></div>`,
+    notes: `This is where the marks are: insight over accuracy. The model's estimate drives a simple controller, cut A/C a little only when the building nears its peak, and the saving computed from our estimate matches the real sub-meter. And we changed our own recommendation: the pre-cooling idea from the proposal made the peak worse, so we say so.` },
+
+  { phase: "Monitoring & maintenance", section: "08 Conclude with limits", title: "Limits", render: () => `
+    <div class="copy">
+      <div class="eyebrow">08 · Conclude with limits <span class="chip">CRISP-ML(Q) · Monitoring &amp; maintenance</span></div>
+      <h2>What these results can and can't support.</h2>
+      <div class="cards">
+        <div class="card"><b>One building, one season</b><p>About three weeks of A/C ground truth and one test week, so confidence intervals are wide.</p><span class="affects">affects: every kW and RM figure</span></div>
+        <div class="card"><b>Different cooling system</b><p>The CLEMD building uses rooftop VRF units. UTP is largely on district cooling. The method transfers; this trained model does not.</p><span class="affects">affects: rollout to UTP</span></div>
+        <div class="card"><b>Lighting estimate unreliable</b><p>After-hours lighting savings use the measured sub-meter, not a main-meter estimate.</p><span class="affects">affects: after-hours kWh and tCO₂e</span></div>
+        <div class="card"><b>Scenario inputs</b><p>TNB rates from secondary sources, provisional grid factor ${fmt(S.assumptions.gef_t_per_mwh, 3)} t/MWh, annualised from ${S.assumptions.annualised_from}.</p><span class="affects">affects: RM and tCO₂e per year</span></div>
+      </div>
+      <ul class="points"><li><b>Next:</b> a two-week sub-meter campaign per new building to retrain and validate, monthly drift checks, weather inputs, and a 15-minute-ahead forecast so the trim can act before the peak.</li></ul>
+    </div>
+    <div class="viz"><div class="panel"><h3>CRISP-ML(Q): the loop does not end at deployment</h3><p class="sub">Models drift when buildings, seasons or tariffs change.</p><div class="chart" data-chart="loop"></div></div></div>`,
+    notes: `Close the technical story honestly. This is one building and one season. The trained model will not transfer to UTP's district-cooled buildings, but the method will, with a short sub-meter campaign per building. CRISP-ML(Q) adds the monitoring phase for exactly this reason.` },
+
+  { phase: "Deployment", section: "Stakeholder dashboard", title: "Dashboard", wide: true, render: () => `
+    <div class="copy">
+      <div class="eyebrow">For UTP facilities &amp; energy management <span class="chip">Main meter only</span></div>
+      <h2>What one building's main meter can tell you.</h2>
+      <div class="banner"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" style="flex:none;margin-top:2px"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4M8 4.8v.1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg><span>Scenario for one CLEMD-sized office building, not a UTP measurement. Built from main-meter estimates on ${S.basis.match(/\((\d+) days\)/)?.[1] ?? "20"} unseen days, annualised from ${S.assumptions.annualised_from}.</span></div>
+      <div class="controls">
+        <div class="seg"><span id="lblTrim">A/C trim at high demand</span><div role="group" aria-labelledby="lblTrim">${sh.scenarios.map(s => `<button id="trim${s.trim_pct}" data-trim="${s.trim_pct}" aria-pressed="${s.trim_pct === state.trim}">${s.trim_pct}%</button>`).join("")}</div></div>
+        <div class="seg"><span id="lblHours">Office hours</span><div role="group" aria-labelledby="lblHours">${ah.scenarios.map(s => `<button id="hours${s.office_hours}" data-hours="${s.office_hours}" aria-pressed="${s.office_hours === state.hours}">${s.office_hours.replace("-", "–")}</button>`).join("")}</div></div>
+      </div>
+    </div>
+    <div class="viz" id="dash"></div>`,
+    notes: `Hand the dashboard to the stakeholder. Use the two selectors live: show the 10, 20 and 30% trim options, then switch the office-hours definition to show the savings hold up. Point at the banner every time someone quotes a number. Finish on the four recommendations.` },
+];
+
+function dashBody() {
+  const { t, a } = dashNumbers();
+  return `<div class="kpis">
+      <div class="kpi"><span class="label">A/C share of peak demand</span><span class="value">${pct(pd.ac_estimated)}</span><span class="note">estimated · ${pct(pd.ac_measured, 1)} measured, test week</span></div>
+      <div class="kpi"><span class="label">Peak cut at ${t.trim_pct}% trim</span><span class="value flash">${fmt(t.max_demand_cut_kw, 1)}<small>kW</small></span><span class="note">trigger ${fmt(sh.trigger_kw, 1)} kW · max ${fmt(sh.base_max_15min_kw, 1)} kW</span></div>
+      <div class="kpi"><span class="label">Demand-charge saving</span><span class="value flash">RM ${fmt(t.rm_per_year[0] / 1000, 1)}k–${fmt(t.rm_per_year[1] / 1000, 1)}k</span><span class="note">per year · RM ${fmt(t.rm_per_month[0])}–${fmt(t.rm_per_month[1])} per month</span></div>
+      <div class="kpi"><span class="label">After-hours savings (${a.office_hours.replace("-", "–")} office day)</span><span class="value flash">${fmt(a.saved_tco2e_per_year, 1)}<small>tCO₂e/yr</small></span><span class="note">${fmt(a.saved_kwh_per_year)} kWh/yr · ${fmt(a.pct_of_utp_scope2, 3)}% of UTP Scope 2</span></div>
+    </div>
+    <div class="dash-grid">
+      <div class="panel"><h3>Who sets the peak?</h3><p class="sub">Top 5% demand windows, test week</p><div class="chart" data-chart="shares" data-rows="drivers"></div>
+        <div class="legend"><span><i class="sq" style="background:var(--ac)"></i>A/C</span><span><i class="sq" style="background:var(--light)"></i>Lighting</span><span><i class="sq" style="background:var(--other)"></i>Other</span></div></div>
+      <div class="panel"><h3>Can you trust the estimate?</h3>
+        <dl class="kv"><dt>Typical A/C error, test week</dt><dd>${fmt(frozenAc.mae, 2)} kW</dd><dt>95% interval</dt><dd>${fmt(frozenAc.lo, 2)}–${fmt(frozenAc.hi, 2)} kW</dd><dt>Average A/C load</dt><dd>${fmt(E.ac_mean_kw, 1)} kW</dd><dt>Error in peak windows</dt><dd>${fmt(frozenAc.peak_mae, 2)} kW</dd><dt>Peak cut: model vs sub-meter (${t.trim_pct}%)</dt><dd>${fmt(t.week6_cut_kw_estimated, 1)} vs ${fmt(t.week6_cut_kw_measured, 1)} kW</dd><dt>A/C after hours/day: model vs sub-meter</dt><dd>${fmt(a.week6_ac_after_kwh_day_estimated, 1)} vs ${fmt(a.week6_ac_after_kwh_day_measured, 1)} kWh</dd></dl>
+        <p class="sub" style="margin:0">The model over-estimates after-hours A/C, so after-hours savings lean optimistic.</p></div>
+      <div class="panel"><h3>After-hours energy (${a.office_hours.replace("-", "–")} office day)</h3>
+        <dl class="kv"><dt>A/C outside office hours (estimated)</dt><dd>${fmt(a.ac_after_kwh_day_estimated, 1)} kWh/day</dd><dt>Lighting &amp; sockets (sub-meter)</dt><dd>${fmt(a.light_after_kwh_day, 1)} kWh/day</dd><dt>Assumed cuts</dt><dd>A/C ${Math.round(ah.cuts.ac * 100)}% · lighting ${Math.round(ah.cuts.light * 100)}%</dd><dt>Saved per year</dt><dd>${fmt(a.saved_kwh_per_year)} kWh</dd><dt>Grid factor</dt><dd>${fmt(S.assumptions.gef_t_per_mwh, 3)} t/MWh</dd></dl></div>
+    </div>
+    <div class="dash-grid">
+      <div class="panel" style="grid-column: span 2"><h3>Recommendations</h3><ol class="recs">
+        <li><span><b>Add a demand-triggered A/C trim</b> at about ${fmt(sh.trigger_kw)} kW, starting at 10–20%. It cuts ${fmt(sh.scenarios[0].max_demand_cut_kw, 1)}–${fmt(sh.scenarios[1].max_demand_cut_kw, 1)} kW off the monthly maximum with little comfort impact.</span></li>
+        <li><span><b>Schedule A/C and lighting off after hours and on non-working days.</b> Non-working days still use ${fmt(MO.summary[1].ac_after_kwh_day_measured)} kWh of A/C and ${fmt(MO.summary[1].light_after_kwh_day)} kWh of lighting each.</span></li>
+        <li><span><b>Don't adopt fixed-time pre-cooling.</b> On this building it raised the peak by ${fmt(-Math.min(...sp.windows.map(w => w.max_demand_cut_kw)), 1)} kW.</span></li>
+        <li><span><b>Before rollout, sub-meter each new building for two weeks</b> to retrain and validate, then check monthly for drift.</span></li></ol></div>
+      <div class="panel"><h3>Operating modes</h3><dl class="kv"><dt>Working days</dt><dd>${MO.summary[0].days} · ${fmt(MO.summary[0].building_kwh_day)} kWh/day</dd><dt>Non-working days</dt><dd>${MO.summary[1].days} · ${fmt(MO.summary[1].building_kwh_day)} kWh/day</dd><dt>A/C, non-working day</dt><dd>${fmt(MO.summary[1].ac_after_kwh_day_measured)} kWh/day</dd></dl></div>
+    </div>`;
+}
+
+const ROWS = {
+  problem: () => [{ label: "All 15-min windows", sub: "share of energy", AC: E.shares.ac_share_energy_pct, LIGHT: E.shares.light_share_energy_pct, OTHER: 100 - E.shares.ac_share_energy_pct - E.shares.light_share_energy_pct },
+                  { label: "Top 5% windows", sub: "share of peak", AC: E.shares.ac_share_peak_pct, LIGHT: E.shares.light_share_peak_pct, OTHER: 100 - E.shares.ac_share_peak_pct - E.shares.light_share_peak_pct }],
+  drivers: () => [{ label: "Measured", sub: "sub-meters", AC: pd.ac_measured, LIGHT: pd.light_measured, OTHER: 100 - pd.ac_measured - pd.light_measured },
+                  { label: "Estimated", sub: "main meter only", AC: pd.ac_estimated, LIGHT: pd.light_estimated, OTHER: 100 - pd.ac_estimated - pd.light_estimated }],
+};
+
+// ---------- rendering + navigation ----------
+const main = $("#main"), rail = $("#rail");
+let cur = -1;
+function mountCharts(root) {
+  root.querySelectorAll("[data-chart]").forEach(el => {
+    const w = Math.max(260, Math.floor(el.clientWidth));
+    el.innerHTML = el.dataset.rows ? charts[el.dataset.chart](w, ROWS[el.dataset.rows]()) : charts[el.dataset.chart](w);
+  });
+  root.querySelectorAll("[data-cross]").forEach(bindCross);
+}
+function bindCross(svg) {
+  const hit = svg.querySelector(".hit"), xh = svg.querySelector(".xh"), L = +hit.dataset.l, R = +hit.dataset.r, xs = E.series.t;
+  const at = e => { const r = svg.getBoundingClientRect(), vx = (e.clientX - r.left) * (svg.viewBox.baseVal.width / r.width);
+    const target = xs[0] + (vx - L) / (R - L) * (xs[xs.length - 1] - xs[0]); let i = 0, best = Infinity;
+    xs.forEach((v, j) => { const d = Math.abs(v - target); if (d < best) { best = d; i = j; } }); return [i, L + (xs[i] - xs[0]) / (xs[xs.length - 1] - xs[0]) * (R - L)]; };
+  hit.addEventListener("pointermove", e => { const [i, x] = at(e); xh.setAttribute("x1", x); xh.setAttribute("x2", x); xh.setAttribute("visibility", "visible");
+    showTip(`<div class="t">${tLabel(tAt(xs[i]))}</div>${dot("--ac")}Estimated <b>${fmt(E.series.ac_pred[i], 1)} kW</b><br>${dot("--ink")}Measured <b>${fmt(E.series.ac[i], 1)} kW</b><br><span style="opacity:.75">Building ${fmt(E.series.building[i], 1)} kW</span>`, e.clientX, e.clientY); });
+  hit.addEventListener("pointerleave", () => { xh.setAttribute("visibility", "hidden"); hideTip(); });
+}
+function renderDash(flash) {
+  const box = $("#dash"); if (!box) return;
+  box.innerHTML = dashBody(); mountCharts(box);
+  if (!flash) box.querySelectorAll(".flash").forEach(el => el.classList.remove("flash"));
+}
+function go(i, opts = {}) {
+  i = Math.max(0, Math.min(STEPS.length - 1, i));
+  if (i === cur && !opts.force) return;
+  cur = i; const s = STEPS[i]; hideTip();
+  main.innerHTML = `<section class="step pad${s.wide ? " wide" : ""}" aria-label="${esc(s.title)}">${s.render()}</section>`;
+  const sec = main.firstElementChild;
+  [...sec.querySelectorAll(".copy > *")].forEach((el, k) => el.style.setProperty("--k", k));
+  mountCharts(sec); renderDash(false);
+  if (!opts.still) requestAnimationFrame(() => sec.classList.add("play"));
+  main.scrollTop = 0;
+  rail.querySelectorAll("button").forEach((b, j) => { b.toggleAttribute("aria-current", j === i); if (j === i) b.setAttribute("aria-current", "step"); b.classList.toggle("done", j < i); });
+  $("#counter").textContent = `${i} / ${STEPS.length - 1}`;
+  $("#compact").textContent = `${i}/${STEPS.length - 1} · ${s.phase}`;
+  $("#prev").disabled = i === 0; $("#next").disabled = i === STEPS.length - 1;
+  $("#notesText").textContent = s.notes;
+  const h = i === STEPS.length - 1 ? "#dashboard" : `#step-${i}`;
+  if (location.hash !== h) history.replaceState(null, "", h);
+  document.title = i ? `${s.title} · Who Sets the Peak?` : "Who Sets the Peak?";
+}
+const SHORT = {"Intro": "Intro", "Business understanding": "Business", "Data understanding": "Data", "Data preparation": "Preparation", "Modeling": "Modeling", "Evaluation": "Evaluation", "Deployment": "Deployment", "Monitoring & maintenance": "Monitoring"};
+rail.innerHTML = STEPS.map((s, i) => `<button aria-label="Step ${i}: ${esc(s.title)} (${esc(s.phase)})" class="${i && STEPS[i - 1].phase === s.phase && !s.wide ? "cont" : ""}"><span class="ph">${s.wide ? "Dashboard" : esc(SHORT[s.phase])}</span><span class="bar"></span></button>`).join("");
+rail.querySelectorAll("button").forEach((b, i) => b.addEventListener("click", () => go(i)));
+$("#prev").addEventListener("click", () => go(cur - 1));
+$("#next").addEventListener("click", () => go(cur + 1));
+const notes = $("#notes"), notesBtn = $("#notesBtn");
+const toggleNotes = () => { notes.hidden = !notes.hidden; notesBtn.setAttribute("aria-pressed", String(!notes.hidden)); };
+notesBtn.addEventListener("click", toggleNotes);
+main.addEventListener("click", e => {
+  const b = e.target.closest("[data-trim],[data-hours]"); if (!b) return;
+  if (b.dataset.trim) state.trim = +b.dataset.trim; else state.hours = b.dataset.hours;
+  main.querySelectorAll("[data-trim]").forEach(x => x.setAttribute("aria-pressed", String(+x.dataset.trim === state.trim)));
+  main.querySelectorAll("[data-hours]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.hours === state.hours)));
+  renderDash(true);
+});
+document.addEventListener("keydown", e => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key;
+  if (["ArrowRight", "PageDown"].includes(k) || (k === " " && !e.target.closest("button"))) { e.preventDefault(); go(cur + 1); }
+  else if (["ArrowLeft", "PageUp"].includes(k)) { e.preventDefault(); go(cur - 1); }
+  else if (k === "Home") go(0); else if (k === "End" || k === "d" || k === "D") go(STEPS.length - 1);
+  else if (/^[0-9]$/.test(k)) go(+k);
+  else if (k === "n" || k === "N") toggleNotes();
+});
+const fromHash = () => { const h = location.hash.slice(1); return h === "dashboard" ? STEPS.length - 1 : /^step-\d+$/.test(h) ? +h.slice(5) : 0; };
+addEventListener("hashchange", () => go(fromHash()));
+let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => go(cur, { force: true, still: true }), 150); });
+go(fromHash(), { force: true });
+})();
+</script>
