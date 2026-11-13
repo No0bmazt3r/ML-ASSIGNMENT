@@ -1,8 +1,4 @@
-"""Baselines + tree models, tuned with expanding-window CV on dev weeks only, then frozen.
-
-Proposal Section 4.3 steps 4-5 / Phases 1-2. The test week (6) is never loaded here.
-Writes results/cv_results.csv (every config x fold) and results/freeze.json (the model freeze record).
-"""
+# step 3: train the baselines and tree models with time-series cross-validation, then freeze the best one
 import json
 import subprocess
 import time
@@ -21,12 +17,14 @@ from xgboost import XGBRegressor
 
 from features import RESULTS, TARGETS, dataset
 
-N_SPLITS, GAP = 4, 60  # 4 expanding folds; 60-min gap so the longest lag can't see the validation fold
-MIN_GAIN_OVER_RIDGE = 0.05  # a tree model must cut Ridge's CV MAE by >= 5% to be chosen (proposal 4.4)
+# 4 folds in time order, with a 60 minute gap so the longest lag cannot see the validation part
+N_SPLITS, GAP = 4, 60
+# a tree model has to beat ridge by at least 5% or we just keep ridge
+MIN_GAIN_OVER_RIDGE = 0.05
 
 
+# baseline 1: average value for the same hour and day type (weekday/weekend), no meter data at all
 class TimeOfDay(BaseEstimator, RegressorMixin):
-    """Baseline 1: mean target for the same hour on the same day type (weekday/weekend). No electrical input."""
 
     def fit(self, X, y):
         self.table_ = y.groupby([X.index.day_of_week >= 5, X.index.hour]).mean()
@@ -38,7 +36,7 @@ class TimeOfDay(BaseEstimator, RegressorMixin):
         return np.array([self.table_.get(k, self.default_) for k in keys])
 
 
-# Small, pre-agreed search spaces (proposal Phase 2). Edit here BEFORE freezing, never after.
+# the models and the small grids we agreed on in the proposal
 MODELS = {
     "time_of_day": (TimeOfDay, {}),
     "ridge": (lambda **p: make_pipeline(StandardScaler(), Ridge(**p)), {"alpha": [0.1, 1, 10, 100]}),
@@ -54,8 +52,8 @@ MODELS = {
 }
 
 
+# our metrics: MAE, RMSE, R2, error in the peak windows and energy share error
 def scores(y, pred, agg_kw) -> dict:
-    """Proposal 4.4 metrics. Peak windows = top 5% of 15-min building demand within the evaluated period."""
     err = pred - y
     q = pd.DataFrame({"y": y, "pred": pred, "agg": agg_kw}).resample("15min").mean().dropna()
     peak = q[q["agg"] >= q["agg"].quantile(0.95)]
@@ -68,6 +66,7 @@ def scores(y, pred, agg_kw) -> dict:
     }
 
 
+# try every model and setting on the same 4 folds
 def cross_validate(target: str) -> pd.DataFrame:
     X, y, meta = dataset(target)
     print(f"\n[{target}] {len(X)} rows, weeks {sorted(meta['week'].unique())}, {X.shape[1]} features")
@@ -86,8 +85,8 @@ def cross_validate(target: str) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+# pick the best setting of each model, then apply the 5% rule against ridge
 def choose(cv: pd.DataFrame) -> dict:
-    """Best config per model by mean CV MAE; then the freeze rule against Ridge."""
     summary = cv.groupby(["model", "params"]).mean(numeric_only=True).drop(columns="fold").reset_index()
     best = summary.loc[summary.groupby("model")["mae"].idxmin()].set_index("model")
     ridge_mae = best.loc["ridge", "mae"]
@@ -103,6 +102,7 @@ def choose(cv: pd.DataFrame) -> dict:
     }
 
 
+# run CV for both targets and write freeze.json (never overwrite an existing freeze)
 def main():
     RESULTS.mkdir(exist_ok=True)
     cv = pd.concat([cross_validate(t) for t in ("ac", "light")])
@@ -120,7 +120,8 @@ def main():
         "targets": {t: choose(cv[cv.target == t]) for t in ("ac", "light")},
     }
     path = RESULTS / "freeze.json"
-    if path.exists():  # never overwrite the committed freeze: a rerun must reproduce it
+    # if the freeze already exists we only check that the rerun picks the same model
+    if path.exists():
         old = json.loads(path.read_text())
         same = all(old["targets"][t][k] == freeze["targets"][t][k] for t in TARGETS for k in ("chosen_model", "params"))
         (RESULTS / "freeze_rerun.json").write_text(json.dumps(freeze, indent=2))

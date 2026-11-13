@@ -1,10 +1,3 @@
-"""k-means on daily load-profile shapes + after-hours energy per operating mode (proposal Objective 5).
-
-Clusters use the main meter only (normalised 24-h building profile), so they work where only a main
-meter exists. Weeks 2-6 give ~30 full days. Per cluster: measured A/C and lighting after-hours energy
-(where sub-meters exist) and the frozen model's out-of-sample A/C estimate (weeks 2, 3 and 6).
-Writes results/cluster_*.csv and figures/results/cluster_profiles.png.
-"""
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.dates as mdates
@@ -21,22 +14,24 @@ K_RANGE = range(2, 7)
 COLORS = [AC, LIGHT, INK2, "#1baf7a", "#eda100", "#8a5cd6"]
 
 
+# one row per full day: 24 hourly values of building power
 def daily_profiles(df):
-    """Hourly mean building kW per day; keep days with all 24 hours >= 45 min of data."""
     hourly = df["agg_p_kw"].resample("1h").agg(["mean", "count"])
     hourly = hourly[hourly["count"] >= 45]["mean"]
     prof = hourly.groupby([hourly.index.date, hourly.index.hour]).first().unstack()
     return prof.dropna()
 
 
+# step 6: k-means on the daily shapes to find operating modes, pick k with the silhouette score
 def main():
-    df = load(include_test=True)  # clustering is unsupervised: it never sees a target
+    df = load(include_test=True)
     pred = pd.read_csv(RESULTS / "predictions.csv", index_col=0, parse_dates=True)
     df = df.join(pred[["ac_pred_kw"]])
     prof = daily_profiles(df)
-    shape = prof.div(prof.max(axis=1), axis=0)  # compare days by shape, not size
+    shape = prof.div(prof.max(axis=1), axis=0)
 
     search = []
+    # try k = 2 to 6 and keep the best silhouette
     for k in K_RANGE:
         km = KMeans(k, n_init=50, random_state=0).fit(shape)
         search.append({"k": k, "silhouette": silhouette_score(shape, km.labels_), "inertia": km.inertia_})
@@ -44,16 +39,14 @@ def main():
     search.to_csv(RESULTS / "cluster_k_search.csv", index=False)
     k = int(search.loc[search["silhouette"].idxmax(), "k"])
     km = KMeans(k, n_init=50, random_state=0).fit(shape)
-    # order clusters by daily energy so cluster 0 is always the heaviest mode
     energy = prof.sum(axis=1)
     order = energy.groupby(km.labels_).mean().sort_values(ascending=False).index
     labels = pd.Series(pd.Series(range(k), index=order).loc[km.labels_].to_numpy(), index=prof.index, name="cluster")
 
-    # after-hours energy per day (kWh = mean kW over minutes / 60 * minutes)
     t = df.index
     after = ~((t.day_of_week < 5) & (t.hour >= WORK_START) & (t.hour < WORK_END))
     day = pd.Index(t.date, name="date")
-    kwh = lambda s: s.groupby(day).sum() / 60  # 1-min kW samples -> kWh
+    kwh = lambda s: s.groupby(day).sum() / 60
     per_day = pd.DataFrame({
         "building_kwh": kwh(df["agg_p_kw"]),
         "ac_kwh_measured": kwh(df["ac_kw"]).where(df["ac_kw"].notna().groupby(day).any()),

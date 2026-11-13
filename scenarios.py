@@ -1,10 +1,3 @@
-"""UTP scenario analysis from the model's out-of-sample estimates (proposal Section 5.2, Objective 6).
-
-Uses only main-meter-derived A/C estimates (weeks 2, 3 and 6: never the training weeks), because that
-is all UTP would have in practice. Week 6 also has the sub-meter, so each headline is checked against it.
-Every figure is a labelled SCENARIO for one CLEMD-sized building, not a UTP measurement.
-Writes results/scenarios.json and figures/results/scenario_*.png.
-"""
 import json
 
 import matplotlib
@@ -16,26 +9,28 @@ import pandas as pd
 from evaluate import AC, FIG, INK2, LIGHT
 from features import RESULTS, ROOT, TEST_WEEK
 
-# --- scenario assumptions (all stated in the report) -----------------------------
-RM_PER_KW_MONTH = (89.27, 97.06)  # TNB MV demand charge (capacity + network), standard / ToU, refs [7, 8]
-GEF_T_PER_MWH = 0.740             # Peninsular grid emission factor 2024 (provisional), ref [18]
-UTP_SCOPE2_T = 20_270             # UTP purchased-electricity emissions, 20.27 million kgCO2e/yr, ref [17]
-PV_MWP, PR_RANGE = 7.4, (0.75, 0.78, 0.80)  # UTP rooftop PV, assumed performance ratios
-TRIMS = (0.10, 0.20, 0.30)        # A/C trim during peak windows (modest for comfort, Section 5.5)
-PRECOOL_SHIFT = 0.20              # share of 14:00-16:00 A/C energy moved earlier
-PRECOOL_WINDOWS = [(8, 10), (9, 11), (10, 12), (11, 13)]  # proposal assumed 11-13 (solar peak)
-AFTER_CUT = {"ac": 0.50, "light": 0.30}  # after-hours reduction scenarios
-OFFICE_HOURS = [(8, 17), (8, 18), (7, 19)]  # sensitivity of the after-hours definition
+# step 7: turn the A/C estimates into peak, cost, solar and carbon scenarios for one building
+# TNB demand charge (RM per kW per month) and the grid emission factor
+RM_PER_KW_MONTH = (89.27, 97.06)
+GEF_T_PER_MWH = 0.740
+UTP_SCOPE2_T = 20_270
+PV_MWP, PR_RANGE = 7.4, (0.75, 0.78, 0.80)
+# the options we test
+TRIMS = (0.10, 0.20, 0.30)
+PRECOOL_SHIFT = 0.20
+PRECOOL_WINDOWS = [(8, 10), (9, 11), (10, 12), (11, 13)]
+AFTER_CUT = {"ac": 0.50, "light": 0.30}
+OFFICE_HOURS = [(8, 17), (8, 18), (7, 19)]
 PV_COLOR = "#1baf7a"
 
 
+# cut A/C by some % whenever building demand is above the threshold, then find the new peak
 def shave(agg, ac, trim, thr):
-    """Max demand after trimming A/C by `trim` whenever demand >= thr (a demand-limiting controller)."""
     return (agg - trim * ac * (agg >= thr)).max()
 
 
+# move part of the afternoon A/C into an earlier window (same total energy)
 def precool(q, ac_col, shift, window=(11, 13)):
-    """Move `shift` of weekday 14-16h A/C energy into `window` (energy neutral). Returns new building series."""
     new = q["agg_p_kw"].copy()
     wd = q.index.day_of_week < 5
     for d in np.unique(q.index[wd].date):
@@ -49,16 +44,18 @@ def precool(q, ac_col, shift, window=(11, 13)):
     return new
 
 
+# average hourly solar output shape at UTP from the NASA data
 def pv_profile():
     path = ROOT / "data" / "external" / "nasa_power_utp_oct2023_utc.csv"
     lines = path.read_text().splitlines()
     nasa = pd.read_csv(path, skiprows=lines.index("-END HEADER-") + 1)
     nasa.index = pd.to_datetime(nasa[["YEAR", "MO", "DY", "HR"]].astype(int).set_axis(
-        ["year", "month", "day", "hour"], axis=1)) + pd.Timedelta(hours=8)  # UTC -> MYT
+        ["year", "month", "day", "hour"], axis=1)) + pd.Timedelta(hours=8)
     ghi = nasa["ALLSKY_SFC_SW_DWN"].loc["2023-10-04":"2023-10-24"]
-    return ghi.groupby(ghi.index.hour).mean()  # mean W/m2 by hour of day
+    return ghi.groupby(ghi.index.hour).mean()
 
 
+# run all scenarios on the weeks the model never trained on and save scenarios.json
 def main():
     p = pd.read_csv(RESULTS / "predictions.csv", index_col=0, parse_dates=True)
     est = p[p["ac_pred_kw"].notna()]
@@ -68,7 +65,6 @@ def main():
     out = {"basis": "frozen-model A/C estimates on unseen weeks 2, 3, 6 "
                     f"({q.index.normalize().nunique()} days); week 6 checked against the sub-meter"}
 
-    # 1. peak drivers: who supplies the top-5% windows (week 6: estimate vs measured)
     pk = w6[w6["agg_p_kw"] >= w6["agg_p_kw"].quantile(0.95)]
     tot = pk["agg_p_kw"].sum()
     out["peak_drivers_week6_pct"] = {
@@ -81,15 +77,15 @@ def main():
                                                       & (pk.index.hour < 17)), 1),
     }
 
-    # 2. peak shaving: trim A/C when demand >= the top-5% threshold, then RECOMPUTE the max
     thr = q["agg_p_kw"].quantile(0.95)
     base_max = q["agg_p_kw"].max()
     shaving = []
+    # peak shaving for each trim size
     for trim in TRIMS:
         cut = base_max - shave(q["agg_p_kw"], q["ac_pred_kw"], trim, thr)
         cut_w6_est = w6["agg_p_kw"].max() - shave(w6["agg_p_kw"], w6["ac_pred_kw"], trim, thr)
         cut_w6_meas = w6["agg_p_kw"].max() - shave(w6["agg_p_kw"], w6["ac_kw"], trim, thr)
-        naive = trim * q.loc[q["agg_p_kw"].idxmax(), "ac_pred_kw"]  # proposal's upper bound
+        naive = trim * q.loc[q["agg_p_kw"].idxmax(), "ac_pred_kw"]
         shaving.append({"trim_pct": int(trim * 100), "max_demand_cut_kw": round(cut, 2),
                         "naive_upper_bound_kw": round(naive, 2),
                         "week6_cut_kw_estimated": round(cut_w6_est, 2), "week6_cut_kw_measured": round(cut_w6_meas, 2),
@@ -97,13 +93,13 @@ def main():
                         "rm_per_year": [round(12 * cut * r) for r in RM_PER_KW_MONTH]})
     out["peak_shaving"] = {"base_max_15min_kw": round(base_max, 1), "trigger_kw": round(thr, 1), "scenarios": shaving}
 
-    # 3. solar timing + pre-cooling
     ghi = pv_profile()
     pv_hours = ghi[ghi > 0.1 * ghi.max()].index
     ac_h = q["ac_pred_kw"].groupby(q.index.hour).sum()
     wd = q.index.day_of_week < 5
     daily_max_old = q.loc[wd, "agg_p_kw"].groupby(q.index[wd].date).max()
     windows = []
+    # pre-cooling test for each window
     for win in PRECOOL_WINDOWS:
         new = precool(q, "ac_pred_kw", PRECOOL_SHIFT, win)
         daily_max_new = new[wd].groupby(q.index[wd].date).max()
@@ -126,9 +122,9 @@ def main():
         "best_window": best["window"],
     }
 
-    # 4. after-hours energy -> kWh, tCO2e (sensitivity to the office-hours definition)
     after = []
     days = est.index.normalize().nunique()
+    # after-hours savings and tCO2e for each office-hours definition
     for start, end in OFFICE_HOURS:
         t = est.index
         off = ~((t.day_of_week < 5) & (t.hour >= start) & (t.hour < end))
@@ -151,7 +147,6 @@ def main():
                           "label": "SCENARIOS for one CLEMD-sized building, not UTP measurements"}
     (RESULTS / "scenarios.json").write_text(json.dumps(out, indent=2, default=str))
 
-    # --- figures ----------------------------------------------------------------
     d = out["peak_drivers_week6_pct"]
     fig, ax = plt.subplots(figsize=(8, 3))
     for i, (lab, a, l) in enumerate([("Measured (sub-meters)", d["ac_measured"], d["light_measured"]),
@@ -166,7 +161,7 @@ def main():
     ax.set_title("Who sets the peak? The model recovers the A/C share from the main meter")
     fig.savefig(FIG / "scenario_peak_drivers.png"); plt.close(fig)
 
-    day = q.index[wd][np.argmax(q.loc[wd, "agg_p_kw"].to_numpy())].date()  # the period's peak weekday
+    day = q.index[wd][np.argmax(q.loc[wd, "agg_p_kw"].to_numpy())].date()
     sel = q.index.date == day
     fig, ax = plt.subplots(figsize=(9, 4))
     ax2 = ax.twinx()
@@ -184,7 +179,6 @@ def main():
     fig.savefig(FIG / "scenario_precooling.png"); plt.close(fig)
 
     print(json.dumps(out, indent=2, default=str))
-    # self-check: shaving can never raise the peak, and a bigger trim never cuts less
     cuts = [s["max_demand_cut_kw"] for s in shaving]
     assert all(c >= 0 for c in cuts) and cuts == sorted(cuts)
 

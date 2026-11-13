@@ -1,8 +1,3 @@
-"""Problem/data figures (EDA, workflow, split) + headline stats, from data/processed/clemd_1min.parquet.
-
-Run after the rest of the pipeline. Writes figures/proposal/*.png and figures/proposal/stats.json.
-Figure titles carry no numbers: the report's captions number them.
-"""
 import json
 
 import matplotlib
@@ -20,10 +15,10 @@ from scenarios import PR_RANGE, PV_COLOR as PV, PV_MWP, pv_profile
 
 FIG = ROOT / "figures" / "proposal"
 FIG.mkdir(parents=True, exist_ok=True)
+# step 8: figures for the problem and data chapters (uses weeks 4-6)
 df = pd.read_parquet(DATA)
-df = df[df["week"] >= 4]  # these figures use the A/C weeks only
+df = df[df["week"] >= 4]
 
-# Colour follows the entity in every figure (same palette as the results figures)
 OTHER, INK = "#c3c2b7", "#0b0b0b"
 plt.rcParams.update({
     "figure.facecolor": SURF, "axes.facecolor": SURF, "savefig.facecolor": SURF,
@@ -35,6 +30,7 @@ plt.rcParams.update({
 })
 
 
+# save a figure into figures/proposal
 def save(fig, name):
     fig.savefig(FIG / name)
     plt.close(fig)
@@ -48,7 +44,7 @@ q15 = df[["agg_p_kw", "ac_kw", "light_kw", "other_kw"]].resample("15min").mean()
 peak = q15[q15["agg_p_kw"] >= q15["agg_p_kw"].quantile(0.95)]
 stats = {}
 
-# ---- workflow -------------------------------------------------------
+# figure: project workflow
 fig, ax = plt.subplots(figsize=(13, 3.2))
 ax.axis("off"); ax.set_xlim(0, 12.9); ax.set_ylim(0, 3.2)
 steps = [("Problem", "Which loads set\nthe peak?"), ("Data", "CLEMD main meter\n+ sub-meters (1 s)"),
@@ -66,9 +62,9 @@ for i, (head, body) in enumerate(steps):
 ax.set_title("Project workflow")
 save(fig, "fig01_workflow.png")
 
-# ---- data availability ----------------------------------------------
+# figure: which files exist for each week
 circuits = ["Aggregate", "CP AC", "DB TG", "DB T1", "DB ML 1", "DB ML 2", "EMSB 1", "SSB MF"]
-avail = np.array([  # 1 ok, 0 missing, 0.5 unusable duplicate (from DATASET_NOTES inventory)
+avail = np.array([
     [0, 1, 1, 1, 1, 0.5, 1, 1], [1, 0, 1, 1, 1, 0, 1, 1], [1, 0, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 0, 0, 1], [1, 1, 1, 1, 1, 1, 1, 1]])
 weeks = ["W1 16–21 Sep", "W2 21–27 Sep", "W3 27 Sep–4 Oct", "W4 4–11 Oct", "W5 11–18 Oct", "W6 18–25 Oct"]
@@ -91,8 +87,8 @@ for s in ax.spines.values():
 ax.set_title("CLEMD file availability (outlined: modelling set)")
 save(fig, "fig03_data_availability.png")
 
-# ---- week 6 time series ---------------------------------------------
 w6 = q15.loc["2023-10-19":"2023-10-24"]
+# figure: one week of building, A/C and lighting load
 fig, ax = plt.subplots(figsize=(11, 4))
 ax.plot(w6.index, w6["agg_p_kw"], color=INK2, lw=1.5, label="Whole building (main meter)")
 ax.plot(w6.index, w6["ac_kw"], color=AC, label="Air-conditioning (CP AC)")
@@ -104,7 +100,7 @@ ax.xaxis.set_major_formatter(mdates.DateFormatter("%a %d %b"))
 ax.set_title("Building, A/C and lighting load (19–24 Oct 2023)")
 save(fig, "fig04_week6_timeseries.png")
 
-# ---- average daily profile, weekday vs weekend ----------------------
+# figure: average daily profile, weekdays and weekends
 fig, axes = plt.subplots(1, 2, figsize=(11, 4), sharey=True)
 for ax, (wk, title) in zip(axes, [(False, "Weekdays"), (True, "Weekends")]):
     prof = df[df["weekend"] == wk].groupby("hour")[["ac_kw", "light_kw", "other_kw"]].mean()
@@ -122,7 +118,7 @@ fig.suptitle("Average daily load profile", x=0.01, ha="left",
              fontweight="bold", fontsize=12)
 save(fig, "fig05_daily_profile.png")
 
-# ---- share of energy vs share of peak --------------------------------
+# share of energy for A/C, lighting and other
 def shares(frame):
     tot = frame["agg_p_kw"].sum()
     return [frame[c].sum() / tot * 100 for c in ("ac_kw", "light_kw", "other_kw")]
@@ -133,6 +129,7 @@ stats["ac_share_peak_pct"], stats["light_share_peak_pct"], _ = [round(v, 1) for 
 stats["peak_threshold_kw"] = round(q15["agg_p_kw"].quantile(0.95), 1)
 stats["peak_windows_in_office_hours_pct"] = round(
     100 * np.mean([(not t.day_of_week >= 5) and WORK_START <= t.hour < WORK_END for t in peak.index]), 1)
+# figure: A/C share of energy vs share of the peak
 fig, ax = plt.subplots(figsize=(9, 3.4))
 labels = ["All 15-min windows\n(share of energy)", "Top 5% demand windows\n(share of peak)"]
 for i, vals in enumerate([energy, peaks]):
@@ -149,7 +146,7 @@ ax.grid(axis="y", visible=False)
 ax.set_title("A/C share grows at peak demand")
 save(fig, "fig02_energy_vs_peak_share.png")
 
-# ---- A/C heatmap day x hour -----------------------------------------
+# figure: hourly A/C heatmap for each day
 hm = df.groupby([df.index.date, "hour"])["ac_kw"].mean().unstack().dropna(how="all")
 hm = hm.loc[[d for d in hm.index if hm.loc[d].notna().sum() >= 20]]
 fig, ax = plt.subplots(figsize=(10, 5.6))
@@ -166,7 +163,7 @@ cb = fig.colorbar(im, ax=ax, pad=0.09); cb.set_label("Mean A/C power (kW)"); cb.
 ax.set_title("Hourly A/C load for each day")
 save(fig, "fig06_ac_heatmap.png")
 
-# ---- main meter vs A/C (why ML is needed) ---------------------------
+# figure: building total vs A/C, office hours highlighted
 s = q15.sample(min(1500, len(q15)), random_state=0)
 hrs = s.index.hour
 fig, ax = plt.subplots(figsize=(7.5, 5))
@@ -182,7 +179,7 @@ ax.text(0.98, 0.04, f"Overall Pearson r = {r:.2f}, but at 40–60 kW total\nthe 
 ax.set_title("Total building power versus A/C power")
 save(fig, "fig08_agg_vs_ac.png")
 
-# ---- candidate feature correlation ----------------------------------
+# figure: correlation of main meter signals with A/C
 feat = {
     "Total real power": "agg_p_kw", "Total reactive power": "agg_q_kvar", "Total apparent power": "agg_s_kva",
     "Within-minute power std": "agg_p_kw_std", "PF phase 1": "agg_PF1", "PF phase 2": "agg_PF2",
@@ -202,8 +199,8 @@ ax.grid(axis="y", visible=False)
 ax.set_title("Main-meter signals correlated with A/C power")
 save(fig, "fig07_feature_correlation.png")
 
-# ---- A/C profile vs modelled UTP rooftop PV --------------------------
-pv_mw = PV_MWP * pv_profile() / 1000 * PR_RANGE[1]  # mid performance ratio (0.78)
+# figure: weekday A/C vs modelled rooftop solar
+pv_mw = PV_MWP * pv_profile() / 1000 * PR_RANGE[1]
 ac_prof = df[~df["weekend"]].groupby("hour")["ac_kw"].mean()
 pv_hours = pv_mw[pv_mw > 0.1 * pv_mw.max()].index
 ac_hourly = df["ac_kw"].resample("1h").mean().dropna()
@@ -224,7 +221,7 @@ ax.legend(loc="upper left", fontsize=8.5)
 ax.set_title("Weekday A/C demand versus modelled rooftop solar")
 save(fig, "fig10_ac_vs_solar.png")
 
-# ---- chronological split -------------------------------------------
+# figure: train/test split timeline
 fig, ax = plt.subplots(figsize=(11, 2.6))
 daily = df["agg_p_kw"].resample("1h").mean()
 ax.plot(daily.index, daily, color=INK2, lw=1)
@@ -238,7 +235,7 @@ ax.xaxis.set_major_formatter(mdates.DateFormatter("%d %b"))
 ax.set_title("Chronological train/test split (A/C target; lighting also trains on weeks 2-3)")
 save(fig, "fig09_split.png")
 
-# ---- headline numbers -------------------------------------------------------
+# save the headline numbers used in the report
 stats.update({
     "rows_1min": len(df), "days": int(pd.Series(df.index.date).nunique()),
     "mean_building_kw": round(df["agg_p_kw"].mean(), 1), "mean_ac_kw": round(df["ac_kw"].mean(), 1),

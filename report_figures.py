@@ -1,7 +1,3 @@
-"""Extra figures for the final report (distributions, prep flow, model comparison, residuals,
-consistency, lighting test, scenarios). Reads results/ and the processed parquet only: no new results.
-Run after scenarios.py. Writes figures/report/*.png.
-"""
 import json
 
 import matplotlib
@@ -22,11 +18,13 @@ NAMES = {"time_of_day": "Time-of-day avg.", "ridge": "Ridge", "random_forest": "
 ORDER = list(NAMES)
 
 
+# step 9: extra figures for the report, saved into figures/report
 def save(fig, name):
     fig.savefig(FIG / name)
     plt.close(fig)
 
 
+# histogram of the two targets
 def distributions():
     _, y_ac, _ = dataset("ac")
     _, y_l, _ = dataset("light")
@@ -44,6 +42,7 @@ def distributions():
             "ac_below_1kw_pct": round(100 * float((y_ac < 1).mean()), 1)}
 
 
+# data preparation flow with the record counts
 def prep_flow():
     df = load(include_test=True)
     n_ac = len(dataset("ac")[0]); n_l = len(dataset("light")[0])
@@ -67,6 +66,7 @@ def prep_flow():
     save(fig, "fig_prep_flow.png")
 
 
+# test MAE of every model with bootstrap intervals
 def model_comparison():
     tm = pd.read_csv(RESULTS / "test_metrics.csv").set_index(["target", "model"])
     panels = [("ac", "mae", "mae_ci", "A/C: MAE, all test minutes"),
@@ -91,6 +91,7 @@ def model_comparison():
     save(fig, "fig_model_comparison.png")
 
 
+# residual plots for the frozen A/C model
 def residuals():
     p = pd.read_csv(RESULTS / "predictions.csv", index_col=0, parse_dates=True)
     w6 = p[p["week"] == TEST_WEEK]
@@ -127,6 +128,7 @@ def residuals():
             "under_45_65_pct": round(100 * float((q.loc[office & q["agg_p_kw"].between(45, 65), "res"] < 0).mean()), 0)}
 
 
+# MAE per CV fold and the week 4 -> week 5 check
 def consistency():
     cv = pd.read_csv(RESULTS / "cv_results.csv").query("target == 'ac'")
     freeze = json.loads((RESULTS / "freeze.json").read_text())
@@ -154,6 +156,7 @@ def consistency():
     save(fig, "fig_consistency.png")
 
 
+# lighting estimate vs measured on the test week
 def lighting_test():
     p = pd.read_csv(RESULTS / "predictions.csv", index_col=0, parse_dates=True)
     q = p[p["week"] == TEST_WEEK][["light_kw", "light_pred_kw"]].resample("15min").mean().dropna()
@@ -167,6 +170,7 @@ def lighting_test():
     return {"light_meas_mean": round(float(q["light_kw"].mean()), 2), "light_pred_mean": round(float(q["light_pred_kw"].mean()), 2)}
 
 
+# peak shaving and after-hours scenario bars
 def scenarios():
     s = json.loads((RESULTS / "scenarios.json").read_text())
     sh = pd.DataFrame(s["peak_shaving"]["scenarios"])
@@ -193,6 +197,7 @@ def scenarios():
     save(fig, "fig_scenarios.png")
 
 
+# make all the report figures
 def main():
     FIG.mkdir(parents=True, exist_ok=True)
     stats = {**distributions(), **residuals(), **lighting_test()}

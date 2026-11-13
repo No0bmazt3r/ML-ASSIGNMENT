@@ -1,11 +1,4 @@
-"""Feature-group ablation for the frozen A/C model (report Section 4.4), dev weeks only.
-
-Same LightGBM settings, same TimeSeriesSplit folds as train.py; only the input columns change.
-The test week is never loaded and the frozen model/freeze.json are untouched: this is evidence
-about the features, not a new model choice. Also answers Section 7.4's open question: how
-accurate is the method if a UTP meter logs only kW (no harmonics / power quality)?
-Writes results/ablation_cv.csv.
-"""
+# step 3b: retrain the frozen A/C model with some feature groups removed to see what each group adds
 import json
 
 import numpy as np
@@ -16,10 +9,11 @@ from features import RESULTS, build, dataset, load
 from train import GAP, MODELS, N_SPLITS, scores
 
 
+# the feature sets we compare (all features, without each group, kW-only meter, etc.)
 def feature_sets(cols: list[str], groups: dict[str, str]) -> dict[str, list[str]]:
     by = lambda *g: [c for c in cols if groups[c] in g]
     kw_total = ["agg_p_kw", "agg_p_kw_std", "agg_p_kw_min", "agg_p_kw_max"]
-    duplicates = {c for c in cols if c.startswith("ratio_") or c.endswith("H1")}  # Section 4.2: exact copies / constants
+    duplicates = {c for c in cols if c.startswith("ratio_") or c.endswith("H1")}
     sets = {"all 98 features (frozen)": cols}
     for g in ("harmonics", "power_quality", "temporal", "calendar"):
         sets[f"without {g.replace('_', ' ')}"] = [c for c in cols if groups[c] != g]
@@ -30,6 +24,7 @@ def feature_sets(cols: list[str], groups: dict[str, str]) -> dict[str, list[str]
     return sets
 
 
+# same folds and same LightGBM settings as train.py, only the input columns change
 def main():
     X, y, meta = dataset("ac")
     _, groups = build(load())
@@ -53,7 +48,7 @@ def main():
     summary["mae_change_vs_full_pct"] = 100 * (summary["mae"] / full - 1)
     summary.round(4).to_csv(RESULTS / "ablation_cv.csv", index=False)
     print(summary.round(3).to_string(index=False))
-    # self-check: the full set reproduces the frozen CV MAE in freeze.json
+    # check: with all features we should get the same CV error as the frozen model
     frozen = json.loads((RESULTS / "freeze.json").read_text())["targets"]["ac"]["cv_best_per_model"]["lightgbm"]["mae"]
     assert np.isclose(full, frozen, atol=1e-3), (full, frozen)
 

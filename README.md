@@ -209,7 +209,7 @@ gantt
 | `D` | Stakeholder dashboard |
 | `T` | Light / dark theme |
 
-It is generated from `dashboard/template.html` and the files above; rerun `build_dashboard.py` after any result changes.
+It is generated from `dashboard/template.html` and the files above; rerun `build_dashboard.py` after any result changes. Rebuilding needs the raw CLEMD folders (the data step reads a raw sample); the shipped `index.html` is already built. Team phone numbers are read from an optional `public/phones.json`, which is not included.
 
 <p align="center">
   <img src="figures/readme/limits-loop.png" alt="Limits step with the CRISP-ML(Q) cycle: four phases done, deployment and monitoring proposed next" width="900">

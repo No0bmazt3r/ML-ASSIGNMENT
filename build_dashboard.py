@@ -1,9 +1,5 @@
-"""Build the presentation walkthrough + stakeholder dashboard: dashboard/index.html.
-
-Every number on screen comes from this repo: results/*, figures/proposal/stats.json, the processed
-parquet and the raw CLEMD folders. Run after run_all.sh. Injects one JSON blob into
-dashboard/template.html; nothing is recomputed in the browser.
-"""
+# step 10: build the presentation + dashboard page (dashboard/index.html)
+# it puts all the numbers from results/ into the template as one JSON blob
 import base64
 import io
 import json
@@ -20,12 +16,14 @@ from prepare_data import CLEMD, FILE_ALIASES, P, WEEKS, date_format
 from train import GAP, MIN_GAIN_OVER_RIDGE, N_SPLITS
 
 OUT = ROOT / "dashboard"
+# circuits shown in the file grid and nicer model names for the page
 CIRCUITS = ["Aggregate", "CP AC", "DB TG", "DB T1", "DB ML 1", "DB ML 2", "EMSB 1", "SSB MF"]
 NAMES = {"time_of_day": "Time-of-day average", "ridge": "Ridge regression", "random_forest": "Random forest",
          "xgboost": "XGBoost", "lightgbm": "LightGBM"}
 r = lambda x, n=2: None if x is None or pd.isna(x) else round(float(x), n)
 
 
+# numbers for the data and preparation steps (needs the raw CLEMD folders)
 def data_story():
     folders = sorted(p for p in CLEMD.iterdir() if p.is_dir())
     csvs = list(CLEMD.rglob("*.csv"))
@@ -39,7 +37,7 @@ def data_story():
             if hit and hit != f"{c}.csv":
                 typos.append({"week": int(f.name.split("-")[0]), "file": hit, "fixed": f"{c}.csv"})
         grid.append(row)
-        if f.name in WEEKS and row[0]:  # which date order this week's main-meter file uses
+        if f.name in WEEKS and row[0]:
             week, start = WEEKS[f.name]
             agg = f / next(n for n in FILE_ALIASES["Aggregate"] if (f / n).exists())
             fmt = date_format(pd.read_csv(agg, nrows=1, dtype=str)["Date"].iloc[0], start)
@@ -53,14 +51,13 @@ def data_story():
                       "minutes": len(g), "has_ac": bool(g["ac_kw"].notna().any()),
                       "gap_min": int(gaps.max()), "gap_frac": r(gaps.values.argmax() / len(g), 3), "gap_at": f"{gaps.idxmax():%a %d %b %H:%M}" if gaps.max() > 0 else None})
 
-    # real 1-second readings around the test week's peak (19 Oct 2023, 15:50-16:10)
     agg6 = folders[-1] / "Aggregate.csv"
     ncols = len(pd.read_csv(agg6, nrows=0).columns)
     raw = pd.read_csv(agg6, skiprows=range(1, 57002), nrows=1200, usecols=["Date", "Time", *P], dtype={"Date": str, "Time": str})
     raw.index = pd.to_datetime(raw["Date"] + " " + raw["Time"], format="%d/%m/%Y %I:%M:%S %p")
     p = raw[P].sum(axis=1) / 1000
     m = p.resample("1min").agg(["mean", "count"])
-    m = m[m["count"] == 60]["mean"]  # whole minutes only
+    m = m[m["count"] == 60]["mean"]
     p = p[(p.index >= m.index[0]) & (p.index < m.index[-1] + pd.Timedelta("1min"))]
     return {
         "csv_files": len(csvs), "csv_gb": r(sum(c.stat().st_size for c in csvs) / 1e9, 1),
@@ -73,6 +70,7 @@ def data_story():
     }
 
 
+# numbers for the features and method steps
 def method_story(freeze):
     X, _, _ = dataset("ac")
     folds = [{"train_end": int(tr[-1]) + 1, "val_start": int(va[0]), "val_end": int(va[-1]) + 1}
@@ -93,6 +91,7 @@ def method_story(freeze):
     }
 
 
+# numbers and series for the evaluation step
 def evaluate_story(stats):
     tm = pd.read_csv(RESULTS / "test_metrics.csv")
     metrics = {t: [{"model": row.model, "name": NAMES[row.model], "frozen": bool(row.frozen), "mae": r(row.mae),
@@ -130,35 +129,38 @@ def evaluate_story(stats):
     }
 
 
-# Team page: names and IDs from the report cover, roles from Appendix E. Photos live in public/;
-# a member without a photo is shown with initials. To add one, drop the PNG in public/ and set its file name here.
+# team page: name, student ID, role and photo file in public/
+# phone numbers are read from public/phones.json if it exists (that file is not shared)
 TEAM = [
-    ("Izzatul Najwa Binti Che Zaki", "22007298", "Data acquisition, cleaning and quality log", "Izzatul.png", "+60 17-447 3402"),
-    ("Nurul Izzati Binti Razali", "22007868", "Feature engineering and baselines", "Izzati.png", "+60 11-1198 6867"),
-    ("Daphne Binti Douglas", "22006239", "Tree models, tuning, freeze and test", "Daphne.png", "+60 19-484 7922"),
-    ("Siti Nurmasyitah Binti Ab Aziz", "22007601", "Explainability, error analysis and clustering", "Masyitah (1).png", "+60 11-1021 5901"),
-    ("Sharvin A/L Kanesan", "22006930", "Scenarios, figures, integration and dashboard", "Sharvin (4).png", "+60 11-2626 8129"),
+    ("Izzatul Najwa Binti Che Zaki", "22007298", "Data acquisition, cleaning and quality log", "Izzatul.png"),
+    ("Nurul Izzati Binti Razali", "22007868", "Feature engineering and baselines", "Izzati.png"),
+    ("Daphne Binti Douglas", "22006239", "Tree models, tuning, freeze and test", "Daphne.png"),
+    ("Siti Nurmasyitah Binti Ab Aziz", "22007601", "Explainability, error analysis and clustering", "Masyitah (1).png"),
+    ("Sharvin A/L Kanesan", "22006930", "Scenarios, figures, integration and dashboard", "Sharvin (4).png"),
 ]
 
 
+# shrink each photo and put it inside the page so it works offline
 def team_story():
-    """Each photo is trimmed to its visible pixels, shrunk to 600 px and embedded as a data URI,
-    so index.html stays one offline file and no part of the person is cropped on the page."""
+    phones_file = ROOT / "public" / "phones.json"
+    phones = json.loads(phones_file.read_text()) if phones_file.exists() else {}
     out = []
-    for name, sid, role, photo, phone in TEAM:
+    for name, sid, role, photo in TEAM:
+        phone = phones.get(name)
         src = None
         if photo and (ROOT / "public" / photo).exists():
             im = Image.open(ROOT / "public" / photo).convert("RGBA")
             im = im.crop(im.getchannel("A").getbbox())
             im.thumbnail((600, 600))
-            buf = io.BytesIO(); im.save(buf, "WEBP", quality=86, method=6)  # keeps transparency, ~10x smaller than PNG
+            buf = io.BytesIO(); im.save(buf, "WEBP", quality=86, method=6)
             src = "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode()
         initials = "".join(w[0] for w in name.split()[:2]).upper()
         out.append({"name": name, "id": sid, "role": role, "photo": src, "initials": initials,
-                    "phone": phone, "tel": "+" + "".join(c for c in phone if c.isdigit())})
+                    "phone": phone, "tel": "+" + "".join(c for c in phone if c.isdigit()) if phone else None})
     return out
 
 
+# daily profiles and cluster summary for the operating modes step
 def modes_story():
     prof = daily_profiles(load(include_test=True))
     days = pd.read_csv(RESULTS / "cluster_days.csv", index_col=0)
@@ -173,6 +175,7 @@ def modes_story():
     }
 
 
+# collect everything, fill the template and run a few checks
 def main():
     freeze = json.loads((RESULTS / "freeze.json").read_text())
     stats = json.loads((ROOT / "figures" / "proposal" / "stats.json").read_text())
@@ -185,7 +188,6 @@ def main():
     html = (OUT / "template.html").read_text().replace("/*__DATA__*/null", blob)
     (OUT / "index.html").write_text(html)
     print(f"wrote {OUT / 'index.html'} ({len(html) / 1e3:.0f} kB, data {len(blob) / 1e3:.0f} kB)")
-    # self-check: the blob landed and the headline numbers match the source files
     assert "/*__DATA__*/" not in html
     assert len(data["evaluate"]["series"]["ac"]) == len(data["evaluate"]["series"]["ac_pred"]) > 500
     assert len(data["modes"]["days"]) == sum(s["days"] for s in data["modes"]["summary"].values())

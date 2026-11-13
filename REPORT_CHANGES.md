@@ -310,7 +310,7 @@ Redundant pairs (|r| > 0.98, weeks 2–5): `results/redundant_feature_pairs.csv`
 
 ### Appendix D Implementation Instructions
 
-**Repository:** `ML-ASSIGNMENT/`. This report is `FINAL_REPORT.md` at its root, and all figure links are relative to it. The code is submitted with this report as a zip of the `ML-ASSIGNMENT/` folder (without `.venv/` and `data/`, which are recreated by steps 1–2).
+**Repository:** `ML-ASSIGNMENT/`. This report is `FINAL_REPORT.md` at its root, and all figure links are relative to it. The code is submitted with this report as `Group8_TEB3123_ML_Code.zip`. It includes the processed dataset (`data/processed/clemd_1min.parquet`) and the NASA file, so steps 2–9 run without downloading anything; only `prepare_data.py` (step 1) and a dashboard rebuild need the raw CLEMD folders from figshare.
 
 1. **Environment.** Python 3.11 (tested on 3.11.17, Linux/WSL2).
    ```bash

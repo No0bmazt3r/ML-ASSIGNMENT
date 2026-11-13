@@ -1,11 +1,3 @@
-"""Interpretation of the frozen models on the test week (proposal Section 4.3 step 7).
-
-A/C (LightGBM): global SHAP, SHAP summed by feature group, grouped permutation importance,
-and a local SHAP explanation of the week's highest-demand 15-min window.
-Lighting (Ridge): standardised coefficients.
-Writes results/shap_*.csv, results/permutation_importance_groups.csv, results/ridge_light_coefficients.csv
-and figures/results/shap_*.png, importance_by_group.png.
-"""
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -19,23 +11,24 @@ from features import RESULTS, TEST_WEEK, build, load
 N_REPEATS = 5
 
 
+# step 5: explain the frozen A/C model with SHAP and grouped permutation importance
 def main():
     X, df = full_table()
-    _, groups = build(load().head(100))  # feature -> group map
+    _, groups = build(load().head(100))
     group = pd.Series(groups)
     train = df["week"].isin(TRAIN_WEEKS["ac"]) & df["ac_kw"].notna()
     test = df["week"] == TEST_WEEK
     model = frozen("ac").fit(X[train], df.loc[train, "ac_kw"])
     Xt, yt = X[test], df.loc[test, "ac_kw"]
 
-    # --- SHAP (exact TreeSHAP) --------------------------------------------------
+    # SHAP value of every feature for every test minute, then averaged by feature and by group
     sv = pd.DataFrame(shap.TreeExplainer(model).shap_values(Xt), index=Xt.index, columns=Xt.columns)
     glob = sv.abs().mean().sort_values(ascending=False).rename("mean_abs_shap_kw")
     glob.to_frame().assign(group=group).to_csv(RESULTS / "shap_global_ac.csv")
     by_group = sv.T.groupby(group).sum().T.abs().mean().sort_values(ascending=False).rename("mean_abs_shap_kw")
     by_group.to_csv(RESULTS / "shap_groups_ac.csv")
 
-    # local: the highest 15-min building-demand window of the test week
+    # local explanation for the highest 15-minute window of the test week
     q = df.loc[test, "agg_p_kw"].resample("15min").mean()
     t0 = q.idxmax()
     win = sv.loc[t0:t0 + pd.Timedelta("14min")].mean().sort_values(key=abs, ascending=False)
@@ -46,7 +39,7 @@ def main():
     pred_win = model.predict(Xt.loc[t0:t0 + pd.Timedelta("14min")]).mean()
     meas_win = yt.loc[t0:t0 + pd.Timedelta("14min")].mean()
 
-    # --- grouped permutation importance (correlated features permuted together) ---
+    # permutation importance: shuffle one whole feature group and see how much the error goes up
     rng = np.random.default_rng(0)
     mae0 = np.abs(model.predict(Xt) - yt).mean()
     perm = {}
@@ -54,19 +47,19 @@ def main():
         rises = []
         for _ in range(N_REPEATS):
             Xp = Xt.copy()
-            Xp[list(cols)] = Xp[list(cols)].to_numpy()[rng.permutation(len(Xp))]  # rows shuffled jointly
+            Xp[list(cols)] = Xp[list(cols)].to_numpy()[rng.permutation(len(Xp))]
             rises.append(np.abs(model.predict(Xp) - yt).mean() - mae0)
         perm[g] = {"mae_increase_kw": np.mean(rises), "std": np.std(rises), "n_features": len(cols)}
     perm = pd.DataFrame(perm).T.sort_values("mae_increase_kw", ascending=False)
     perm.to_csv(RESULTS / "permutation_importance_groups.csv")
 
-    # --- lighting Ridge: standardised coefficients --------------------------------
+    # ridge coefficients for the lighting model
     trl = df["week"].isin(TRAIN_WEEKS["light"])
     ridge = frozen("light").fit(X[trl], df.loc[trl, "light_kw"])
     coef = pd.Series(ridge[-1].coef_, index=X.columns).sort_values(key=abs, ascending=False)
     coef.rename("coef_kw_per_sd").to_frame().assign(group=group).to_csv(RESULTS / "ridge_light_coefficients.csv")
 
-    # --- figures ------------------------------------------------------------------
+    # figures: top 15 features, beeswarm, groups and the peak window
     top = glob.head(15)[::-1]
     fig, ax = plt.subplots(figsize=(8, 5))
     ax.barh(top.index, top.values, color=AC, height=0.6)
@@ -104,7 +97,6 @@ def main():
     print(f"\npeak window {t0}: building {q.max():.1f} kW, A/C measured {meas_win:.1f}, estimated {pred_win:.1f}")
     print(local.round(3).to_string())
     print("\nlighting Ridge top coefficients:\n", coef.head(10).round(3).to_string())
-    # self-check: SHAP is additive (base + sum of contributions = prediction)
     ev = shap.TreeExplainer(model).expected_value
     assert np.allclose(ev + sv.iloc[:50].sum(axis=1), model.predict(Xt.iloc[:50]), atol=1e-3)
 

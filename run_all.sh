@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# Full pipeline from raw CLEMD CSVs to every result and figure (~13 min, mostly train.py CV), then opens the UI.
-#   ./run_all.sh              run every step, then open the dashboard
-#   ./run_all.sh ui           just open the dashboard (no rerun)
-#   ./run_all.sh <step> ...   run only those steps, e.g. ./run_all.sh ablation build_dashboard
-#   PY=python ./run_all.sh    use another interpreter
+# runs the whole project in order and then opens the dashboard
+# ./run_all.sh            -> run everything (about 13 min)
+# ./run_all.sh ui         -> only open the dashboard
+# ./run_all.sh train ...  -> only run the steps you list
 set -euo pipefail
 cd "$(dirname "$0")"
 PY=${PY:-.venv/bin/python}
@@ -12,7 +11,8 @@ STEPS=(prepare_data features train ablation evaluate explain cluster scenarios m
 open_ui() {
   local page=dashboard/index.html
   echo "== opening $page"
-  if command -v wslpath >/dev/null; then explorer.exe "$(wslpath -w "$page")" || true  # explorer.exe exits 1 on success
+  # explorer.exe on WSL returns 1 even when it works, so ignore that
+  if command -v wslpath >/dev/null; then explorer.exe "$(wslpath -w "$page")" || true
   elif command -v xdg-open >/dev/null; then xdg-open "$page"
   elif command -v open >/dev/null; then open "$page"
   else echo "open $PWD/$page in a browser"; fi

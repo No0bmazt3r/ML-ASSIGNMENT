@@ -9,8 +9,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
 <script>try { const t = localStorage.getItem("wsp-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <style>
-/* A meter-panel presenter. Header: title + circular stepper. Each step fills the viewport:
-   copy on the left (facts pinned to the bottom), instrument panels on the right stretching to full height. */
+/* colours for light mode, dark mode is further down */
 :root {
   --bg: #eceff3; --surface: #ffffff; --surface2: #f4f6f9; --ink: #0b1420; --ink2: #3b4757; --muted: #657182;
   --grid: #e3e7ec; --axis: #c2c9d2; --wash: rgba(11,20,32,.05);
@@ -42,7 +41,7 @@ body { background: var(--bg); color: var(--ink); font: 17px/1.55 var(--body); fo
 button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--ac); outline-offset: 3px; border-radius: 6px; }
 
-/* ---------- header ---------- */
+/* top bar with the title */
 header { background: var(--surface); padding-top: 14px; padding-bottom: 8px; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 8px 32px; transition: background .3s var(--ease); }
 .brand b { display: block; font: 700 22px/1.1 var(--display); letter-spacing: -.01em; }
 .brand span { font-size: 13.5px; color: var(--muted); }
@@ -56,7 +55,7 @@ header { background: var(--surface); padding-top: 14px; padding-bottom: 8px; dis
 :root[data-theme="dark"] .iconbtn .moon { display: block; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .iconbtn .sun { display: none; } :root:not([data-theme="light"]) .iconbtn .moon { display: block; } }
 
-/* circular stepper */
+/* the step circles at the top */
 .stepper { grid-column: 1 / -1; display: flex; align-items: flex-start; padding: 10px 30px 28px; }
 .st { flex: none; position: relative; border: 0; background: none; padding: 0; cursor: pointer; width: 46px; height: 46px; }
 .st .dot { position: relative; width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); box-shadow: inset 0 0 0 2px var(--axis); color: var(--muted); transition: background .35s var(--ease) var(--dl, 0ms), box-shadow .35s var(--ease) var(--dl, 0ms), color .35s var(--ease) var(--dl, 0ms), transform .35s var(--spring) var(--dl, 0ms); }
@@ -83,7 +82,7 @@ header { background: var(--surface); padding-top: 14px; padding-bottom: 8px; dis
 .ln.next::after { content: ""; position: absolute; top: -1px; left: 0; width: 6px; height: 6px; border-radius: 50%; background: var(--ac); animation: flow 1.8s var(--ease) infinite; }
 @keyframes flow { 0% { left: 0; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { left: calc(100% - 6px); opacity: 0; } }
 
-/* ---------- stage ---------- */
+/* main area: text on the left, charts on the right */
 main { overflow: auto; min-height: 0; scrollbar-width: none; }
 main::-webkit-scrollbar, html::-webkit-scrollbar { display: none; }
 html { scrollbar-width: none; }
@@ -116,7 +115,7 @@ h2 { font-size: clamp(26px, min(3.3vw, 5.3vh), 54px); line-height: 1.02; }
 .row2 { flex: 1 1 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; min-height: 0; }
 code { font: 14px/1.3 var(--mono); background: var(--wash); padding: 1px 6px; border-radius: 5px; }
 
-/* preparation: vertical icon timeline */
+/* the list with icons and a line joining them */
 .fixes { --ico: clamp(30px, 4.4vh, 44px); display: grid; gap: 0; margin: 0; padding: 0; list-style: none; }
 .fixes li { display: grid; grid-template-columns: var(--ico) minmax(0, 1fr); gap: 0 14px; position: relative; padding-bottom: clamp(4px, 1.3vh, 14px); }
 .fixes li::before { content: ""; position: absolute; left: calc(var(--ico) / 2 - 1px); top: var(--ico); bottom: 0; width: 2px; background: var(--grid); }
@@ -134,7 +133,7 @@ code { font: 14px/1.3 var(--mono); background: var(--wash); padding: 1px 6px; bo
 @keyframes grow { to { transform: scaleY(1); } }
 @keyframes popin { from { transform: scale(.3); opacity: 0; } }
 
-/* limits cards */
+/* cards on the limits step */
 .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .card { border-radius: 14px; padding: clamp(10px, 1.6vh, 16px) 16px; background: var(--surface); display: grid; gap: 6px; align-content: start; transition: transform .25s var(--spring); }
 .card:hover { transform: translateY(-2px); }
@@ -143,7 +142,7 @@ code { font: 14px/1.3 var(--mono); background: var(--wash); padding: 1px 6px; bo
 .card .affects { font-size: clamp(12px, 1.5vh, 13.5px); color: var(--muted); }
 .flag { display: inline-flex; gap: 6px; align-items: center; font-weight: 600; color: var(--bad-text); }
 
-/* ---------- dashboard ---------- */
+/* dashboard step */
 .dhead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 40px; align-items: end; }
 .banner { display: flex; gap: 10px; align-items: flex-start; padding: 12px 16px; border-radius: 12px; background: var(--surface2); color: var(--ink2); font-size: 15px; max-width: 80ch; }
 .controls { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: end; }
@@ -174,7 +173,7 @@ code { font: 14px/1.3 var(--mono); background: var(--wash); padding: 1px 6px; bo
 .kv dt { color: var(--ink2); }
 .kv dd { margin: 0; font-weight: 600; text-align: right; }
 
-/* ---------- team ---------- */
+/* team page with the flip cards */
 .step.team { grid-template-rows: auto minmax(0, 1fr); }
 .thead { text-align: center; display: grid; gap: 6px; justify-items: center; }
 .thead h2 { font-size: clamp(36px, min(4.4vw, 7vh), 72px); }
@@ -204,7 +203,7 @@ code { font: 14px/1.3 var(--mono); background: var(--wash); padding: 1px 6px; bo
 .member .sid { font-weight: 600; font-size: 14px; color: var(--ac); background: var(--ac-wash); padding: 3px 10px; border-radius: 6px; letter-spacing: .03em; }
 .member .role { font-size: clamp(12.5px, 1.6vh, 14px); color: var(--muted); line-height: 1.35; min-height: 2.7em; }
 
-/* ---------- footer ---------- */
+/* bottom bar with back / next */
 footer { background: var(--surface); padding-top: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 12px; transition: background .3s var(--ease); }
 .navbtn { min-height: 48px; padding: 0 22px; border-radius: 999px; border: 0; background: var(--surface2); cursor: pointer; display: inline-flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16px; transition: background .2s var(--ease), transform .2s var(--spring); }
 .navbtn:hover { background: var(--wash); }
@@ -220,12 +219,12 @@ footer { background: var(--surface); padding-top: 12px; padding-bottom: max(12px
 .keys { margin-left: auto; font-size: 14px; color: var(--muted); display: flex; gap: 16px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
 kbd { font: 500 12px/1 var(--mono); padding: 4px 6px; border-radius: 5px; background: var(--surface2); color: var(--ink2); }
 
-/* tooltip */
+/* hover tooltip */
 .tip { position: fixed; z-index: 30; pointer-events: none; background: var(--ink); color: var(--on-ink); font: 14px/1.45 var(--body); padding: 9px 12px; border-radius: 10px; max-width: 300px; box-shadow: 0 8px 24px rgba(0,0,0,.22); transition: opacity .12s var(--ease); }
 .tip .t { font-size: 12.5px; opacity: .72; margin-bottom: 2px; }
 .tip i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; }
 
-/* SVG text + marks */
+/* chart text and lines */
 .chart text { fill: var(--ink2); font: 14px var(--body); }
 .chart text.m { fill: var(--muted); font: 13px var(--body); }
 .chart text.v { fill: var(--ink); font: 600 14px var(--body); }
@@ -237,7 +236,7 @@ kbd { font: 500 12px/1 var(--mono); padding: 4px 6px; border-radius: 5px; backgr
 .chart rect[data-tip]:hover, .chart circle[data-tip]:hover { opacity: .78; }
 .chart .hl { fill: none; stroke: transparent; stroke-width: 12; pointer-events: stroke; }
 
-/* motion: elements rest in their final state; .play adds the entry animation */
+/* animations, they only run when the step gets the play class */
 @keyframes draw { from { stroke-dashoffset: 1; } }
 @keyframes gx { from { transform: scaleX(0); } }
 @keyframes gy { from { transform: scaleY(0); } }
@@ -266,7 +265,7 @@ kbd { font: 500 12px/1 var(--mono); padding: 4px 6px; border-radius: 5px; backgr
   .loopdot { display: none; }
 }
 
-/* ---------- short screens: a tighter header so steps 0-9 fit one screen ---------- */
+/* smaller sizes for short screens so each step fits without scrolling */
 @media (max-height: 920px) and (min-width: 1101px) {
   header { padding-top: 10px; padding-bottom: 4px; }
   .brand b { font-size: 19px; }
@@ -313,7 +312,7 @@ kbd { font: 500 12px/1 var(--mono); padding: 4px 6px; border-radius: 5px; backgr
   .chart { min-height: min(var(--minh, 220px), 14vh); }
   footer { padding-top: 6px; padding-bottom: 6px; } .navbtn { min-height: 38px; font-size: 15px; }
 }
-/* ---------- narrow screens ---------- */
+/* phones and small windows */
 @media (max-width: 1100px) {
   .step { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; gap: 24px; }
   .viz .panel, .row2 { flex: none; }
@@ -368,7 +367,7 @@ kbd { font: 500 12px/1 var(--mono); padding: 4px 6px; border-radius: 5px; backgr
 <script>
 (() => {
 "use strict";
-// ---------- helpers ----------
+// small helper functions
 const $ = (s, el = document) => el.querySelector(s);
 const fmt = (v, d = 0) => v == null ? "–" : Number(v).toLocaleString("en-GB", { minimumFractionDigits: d, maximumFractionDigits: d });
 const pct = (v, d = 0) => fmt(v, d) + "%";
@@ -404,14 +403,14 @@ const sh = S.peak_shaving, ah = S.after_hours, pd = S.peak_drivers_week6_pct, sp
 const ABL = M.ablation || [];
 const cvTod = M.cv.ac.find(r => r.model === "time_of_day");
 
-// peak windows of the test week by hour of day (computed from the same 15-minute series the hero draws)
+// count the top 5% demand windows of the test week for each hour
 const PEAK_HOURS = (() => {
   const b = E.series.building.filter(v => v != null), s = [...b].sort((p, q) => p - q), thr = s[Math.floor(.95 * (s.length - 1))];
   const n = Array(24).fill(0); E.series.building.forEach((v, i) => { if (v != null && v >= thr) n[tAt(E.series.t[i]).getHours()]++; });
   return { n, thr, total: n.reduce((a, c) => a + c, 0) };
 })();
 
-// ---------- chart builders: (w, h, rows?) -> SVG string sized to the container ----------
+// all the charts, each one returns an svg sized to its box
 function linePath(xs, ys, x, y) {
   let d = "", prev = null;
   xs.forEach((xi, i) => { const v = ys[i]; if (v == null) { prev = null; return; }
@@ -430,7 +429,7 @@ function yAxis(tk, y, L, R) {
 const svg = (w, h, label, body, extra = "") => `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}" ${extra}>${body}</svg>`;
 
 const charts = {
-  // intro: the test week's building load drawing itself, with a crosshair
+  // intro chart: one week of building load
   hero(w, h) {
     const L = 40, R = w - 10, T = 26, B = h - 28, xs = E.series.t, mx = niceMax(Math.max(...E.series.building) * 1.08);
     const x = lin(xs[0], xs[xs.length - 1], L, R), y = lin(0, mx, B, T);
@@ -446,7 +445,7 @@ const charts = {
       <line class="xh" x1="0" x2="0" y1="${T}" y2="${B}" stroke="var(--ink2)" stroke-width="1" visibility="hidden"/>
       <rect class="hit" x="${L}" y="${T}" width="${R - L}" height="${B - T}" fill="transparent" data-l="${L}" data-r="${R}"/>`, `data-cross="hero"`);
   },
-  // problem + dashboard: share bars
+  // bars for A/C, lighting and other share
   shares(w, h, rows) {
     const L = clamp(w * .3, 120, 190), R = w - 10, band = h / rows.length, rowH = clamp(band * .42, 30, 64);
     const x = lin(0, 100, L, R), segs = [["AC", "--ac", "A/C"], ["LIGHT", "--light", "Lighting & sockets"], ["OTHER", "--other", "Everything else"]];
@@ -463,7 +462,7 @@ const charts = {
     });
     return svg(w, h, "Share of building load by end use", s);
   },
-  // problem: when the peaks happen
+  // how many peak windows happen in each hour
   peakhours(w, h) {
     const L = 34, R = w - 6, T = 22, B = h - 26, n = PEAK_HOURS.n, st = Math.max(1, Math.ceil(Math.max(...n) / 4)), mx = st * Math.ceil(Math.max(...n) / st), tk = Array.from({ length: mx / st + 1 }, (_, k) => k * st);
     const cw = (R - L) / 24, x = i => L + i * cw, y = lin(0, mx, B, T);
@@ -476,7 +475,7 @@ const charts = {
     });
     return svg(w, h, "Number of top-5% demand windows by hour of day, test week", s);
   },
-  // data: file availability grid
+  // grid of which files exist per week
   grid(w, h) {
     const L = 72, cols = X.circuits.length, cw = (w - L) / cols, rh = clamp((h - 26) / X.grid.length, 28, 64);
     let s = X.circuits.map((c, j) => `<text class="m" x="${L + j * cw + cw / 2}" y="14" text-anchor="middle">${c}</text>`).join("");
@@ -493,7 +492,7 @@ const charts = {
     });
     return svg(w, h, "Which CLEMD files exist for each week", s);
   },
-  // data: real 1-second readings collapsing into 1-minute means
+  // raw 1-second readings vs the 1-minute averages
   seconds(w, h) {
     const rs = X.raw_sample, n = rs.kw.length, L = 40, R = w - 10, T = 14, B = h - 26;
     const lo = Math.floor(Math.min(...rs.kw) / 10) * 10, hi = Math.ceil(Math.max(...rs.kw) / 10) * 10;
@@ -510,7 +509,7 @@ const charts = {
       <path d="${steps}" pathLength="1" class="a-draw" style="--d:500;--dur:1800ms" fill="none" stroke="var(--ac)" stroke-width="2.4" stroke-linejoin="round"/>
       ${xt}${hits}`);
   },
-  // preparation: what survives, week by week
+  // what data is left for each week after cleaning
   timeline(w, h) {
     const L = 150, R = w - 10, wk = X.weeks, total = wk.reduce((a, b) => a + b.minutes, 0) + 8651;
     const rh = clamp((h - 70) / 3, 30, 110), top = 26;
@@ -536,7 +535,7 @@ const charts = {
     rows.forEach(([lab], r) => s += `<text x="0" y="${top + r * rh + (rh - 10) / 2 + 5}" style="font-weight:600;fill:var(--ink)">${lab}</text>`);
     return svg(w, h, "Usable data per week after cleaning", s);
   },
-  // features: main meter fans out into feature groups
+  // main meter split into the feature groups
   fan(w, h) {
     const g = M.feature_groups, keys = ["power", "harmonics", "power_quality", "temporal", "calendar"];
     const ex = { power: "real, reactive, apparent power per phase; within-minute std/min/max", harmonics: "odd current harmonics 3–15 per phase + ratios to fundamental",
@@ -554,7 +553,7 @@ const charts = {
     });
     return svg(w, h, "Feature groups built from the main meter", s);
   },
-  // features: ablation, CV MAE per feature set
+  // ablation results
   ablation(w, h) {
     if (!ABL.length) return svg(w, h, "Ablation not available", `<text class="m" x="0" y="20">Run ablation.py, then build_dashboard.py</text>`);
     const rows = [...ABL].sort((a, b) => a.mae - b.mae), L = clamp(w * .42, 170, 300), R = w - 60, band = (h - 30) / rows.length, bh = clamp(band * .56, 12, 28);
@@ -571,7 +570,7 @@ const charts = {
     s += `<line x1="${x(cvTod.mae)}" x2="${x(cvTod.mae)}" y1="0" y2="${h - 24}" stroke="var(--ink2)" stroke-width="1.5" stroke-dasharray="4 4" ${tipAttr(`<b>Timetable baseline</b><br>CV MAE ${fmt(cvTod.mae, 2)} kW`)}/>`;
     return svg(w, h, "Cross-validated A/C error for each feature set", s);
   },
-  // method: expanding-window CV folds
+  // the 4 cross-validation folds
   folds(w, h) {
     const n = M.n_rows, L = 64, R = w - 10, k = M.folds.length, rh = clamp((h - 36) / k * .62, 22, 46), band = (h - 36) / k, x = lin(0, n, L, R);
     let s = "";
@@ -584,7 +583,7 @@ const charts = {
     s += `<text class="m" x="${L}" y="${h - 6}">${M.train_weeks.ac.map(v => "wk " + v).join(" + ")} · ${fmt(n)} one-minute rows, oldest → newest</text>`;
     return svg(w, h, "Four expanding-window cross-validation folds", s);
   },
-  // method: CV MAE race + freeze stamp
+  // CV error of each model and the frozen stamp
   race(w, h) {
     const rows = [...M.cv.ac].sort((a, b) => b.mae - a.mae), L = clamp(w * .3, 130, 180), R = w - 150, band = (h - 30) / rows.length, rh = clamp(band * .55, 18, 36);
     const mx = niceMax(Math.max(...rows.map(r => r.mae))), x = lin(0, mx, L, R);
@@ -595,7 +594,7 @@ const charts = {
       s += `<text x="0" y="${y0 + rh / 2 + 5}" style="${fr ? "font-weight:600;fill:var(--ink)" : ""}">${r.name}</text>
         <rect class="a-gx" style="--d:${200 + i * 160}" x="${L}" y="${y0}" width="${x(r.mae) - L}" height="${rh}" rx="${rh / 2}" fill="${fr ? "var(--ac)" : "var(--other)"}" ${tipAttr(`<b>${r.name}</b><br>CV MAE ${fmt(r.mae, 3)} kW · peak-window MAE ${fmt(r.peak_mae, 2)} kW`)}/>
         <text class="v a-fade" style="--d:${600 + i * 160}" x="${x(r.mae) + 8}" y="${y0 + rh / 2 + 5}">${fmt(r.mae, 2)}</text>`;
-      if (fr) { const cy = clamp(y0 + rh / 2, 26, h - 26 - 28);  // keep the rotated stamp inside the plot, above the axis labels
+      if (fr) { const cy = clamp(y0 + rh / 2, 26, h - 26 - 28);  // keep the stamp inside the chart
         s += `<g class="a-pop" style="--d:1500" ${tipAttr(`<b>Frozen ${M.frozen_at}</b><br>Committed before the test week was loaded`)}><g transform="rotate(-6 ${sx} ${cy})"><rect x="${sx - 58}" y="${cy - 19}" width="116" height="38" rx="4" fill="var(--surface)" stroke="var(--bad)" stroke-width="2"/>
         <text x="${sx}" y="${cy - 2}" text-anchor="middle" style="fill:var(--bad-text);font:700 13px var(--body);letter-spacing:.12em">FROZEN</text>
         <text x="${sx}" y="${cy + 13}" text-anchor="middle" style="fill:var(--bad-text);font:500 12px var(--body)">${M.frozen_at}</text></g></g>`; }
@@ -603,7 +602,7 @@ const charts = {
     s += `<line x1="${x(bar)}" x2="${x(bar)}" y1="0" y2="${h - 26}" stroke="var(--ink2)" stroke-width="1.5" stroke-dasharray="4 4" ${tipAttr(`<b>Freeze rule</b><br>A tree model must beat Ridge by ${Math.round(M.min_gain * 100)}%: CV MAE ≤ ${fmt(bar, 2)} kW`)}/>`;
     return svg(w, h, "Cross-validated A/C error by model", s);
   },
-  // evaluation: estimated vs measured A/C, test week, with crosshair
+  // estimated vs measured A/C on the test week
   testweek(w, h) {
     const L = 40, R = w - 10, T = 20, B = h - 28, xs = E.series.t;
     const mx = niceMax(Math.max(...E.series.ac, ...E.series.ac_pred) * 1.05), x = lin(xs[0], xs[xs.length - 1], L, R), y = lin(0, mx, B, T);
@@ -614,7 +613,7 @@ const charts = {
       <line class="xh" x1="0" x2="0" y1="${T}" y2="${B}" stroke="var(--ink2)" stroke-width="1" visibility="hidden"/>
       <rect class="hit" x="${L}" y="${T}" width="${R - L}" height="${B - T}" fill="transparent" data-l="${L}" data-r="${R}"/>`, `data-cross="testweek"`);
   },
-  // evaluation: test MAE with day-block bootstrap CI
+  // test error with 95% intervals
   ci(w, h) {
     const rows = acTest, L = clamp(w * .36, 120, 170), R = w - 14, band = (h - 28) / rows.length;
     const mx = niceMax(Math.max(...rows.map(r => r.hi))), x = lin(0, mx, L, R);
@@ -629,7 +628,7 @@ const charts = {
     });
     return svg(w, h, "Test-week mean absolute error with 95% confidence intervals", s);
   },
-  // evaluation: SHAP by feature group
+  // SHAP importance by group
   shap(w, h) {
     const g = E.shap_groups, keys = Object.keys(g), L = clamp(w * .36, 110, 150), R = w - 52, band = h / keys.length, bh = clamp(band * .5, 14, 30);
     const x = lin(0, Math.max(...Object.values(g)), L, R);
@@ -637,7 +636,7 @@ const charts = {
       const y0 = i * band + (band - bh) / 2;
       return `<text x="0" y="${y0 + bh / 2 + 5}">${GROUP[k]}</text><rect class="a-gx" style="--d:${400 + i * 120}" x="${L}" y="${y0}" width="${x(g[k]) - L}" height="${bh}" rx="${bh / 2}" fill="var(--ac)" ${tipAttr(`<b>${GROUP[k]}</b><br>Mean |SHAP| ${fmt(g[k], 2)} kW<br>Shuffling this group raises MAE by ${fmt(E.perm_groups[k], 2)} kW`)}/><text class="v a-fade" style="--d:${800 + i * 120}" x="${x(g[k]) + 8}" y="${y0 + bh / 2 + 5}">${fmt(g[k], 2)}</text>`; }).join(""));
   },
-  // modes: daily profiles split into two operating modes
+  // daily load lines coloured by cluster
   modes(w, h) {
     const L = 40, R = w - 10, T = 20, B = h - 28, days = MO.days;
     const mx = niceMax(Math.max(...days.flatMap(d => d.kw))), x = lin(0, 23, L, R), y = lin(0, mx, B, T);
@@ -655,7 +654,7 @@ const charts = {
         <path d="${p}" class="hl" ${tipAttr(`<b>${c ? "Non-working" : "Working"}-day mode</b> average<br>${MO.summary[c].days} days · ${fmt(MO.summary[c].building_kwh_day)} kWh/day`)}/>`; });
     return svg(w, h, `Hourly building load for ${days.length} days, grouped into two operating modes`, s);
   },
-  // modes: one square per day
+  // one square per day showing its cluster
   strip(w, h) {
     const n = MO.days.length, cw = Math.min(42, (w - 2) / n), sq = Math.min(cw - 4, h - 18);
     return svg(w, h, "Operating mode of each day", MO.days.map((d, i) => {
@@ -663,7 +662,7 @@ const charts = {
       return `<rect class="a-pop" style="--d:${1200 + i * 30}" x="${i * cw + 2}" y="0" width="${sq}" height="${sq}" rx="6" fill="var(${d.cluster ? "--m1" : "--m0"})" ${odd ? 'stroke="var(--ink)" stroke-width="2.5"' : ""} ${tipAttr(`<div class="t">${d.dow} ${d.date}</div>${d.cluster ? "Non-working" : "Working"}-day mode${odd ? "<br><b>A weekday that behaved like a weekend</b>" : ""}`)}/>
       ${cw > 18 ? `<text class="m" x="${i * cw + 2 + sq / 2}" y="${sq + 15}" text-anchor="middle" style="font-size:11px">${d.dow[0]}</text>` : ""}`; }).join(""));
   },
-  // sustainability: demand-triggered trim
+  // peak cut for each trim size
   trim(w, h) {
     const rows = sh.scenarios, L = 36, R = w - 10, T = 34, B = h - 50, mx = niceMax(Math.max(...rows.map(r => Math.max(r.max_demand_cut_kw, r.week6_cut_kw_measured)))), y = lin(0, mx, B, T);
     const cw = (R - L) / rows.length, bw = Math.min(90, cw * .5);
@@ -678,7 +677,7 @@ const charts = {
     });
     return svg(w, h, "Maximum-demand cut for 10, 20 and 30 percent A/C trim", s);
   },
-  // sustainability: pre-cooling windows (negative = peak went up)
+  // pre-cooling result for each window
   precool(w, h) {
     const rows = sp.windows, L = 84, R = w - 10, band = (h - 32) / rows.length, bh = clamp(band * .5, 16, 30);
     const lo = Math.min(...rows.map(r => r.max_demand_cut_kw)), mx = Math.max(1, ...rows.map(r => r.max_demand_cut_kw));
@@ -694,7 +693,7 @@ const charts = {
     });
     return svg(w, h, "Effect of fixed pre-cooling windows on maximum demand", s);
   },
-  // limits: CRISP-ML(Q) as a clockwise cycle; filled = done in this project, dashed = proposed next
+  // CRISP-ML(Q) circle, filled = done, dashed = next steps
   loop(w, h) {
     const ph = [
       { n: "Business & data understanding", ic: "target", d: "Demand charge set by the peak; CLEMD files audited", done: 1 },
@@ -709,7 +708,7 @@ const charts = {
     let s = `<defs><marker id="loopArrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="var(--ac)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>`;
     const ring = Array.from({ length: 121 }, (_, k) => P(-Math.PI / 2 + k * 2 * Math.PI / 120)).map((q, k) => (k ? "L" : "M") + q[0].toFixed(1) + "," + q[1].toFixed(1)).join("") + "Z";
     s += `<path id="loopRing" d="${ring}" fill="none" stroke="var(--grid)" stroke-width="10" stroke-linecap="round"/>`;
-    // clockwise arcs between neighbouring phases, stopping short of each node so the arrowhead is visible
+    // arrows between the phases
     ph.forEach((p, i) => {
       const gap = (r + 14) / Math.max(rx, ry), t0 = ang(i) + gap, t1 = ang(i + 1) - gap, pts = [];
       for (let k = 0; k <= 24; k++) pts.push(P(t0 + (t1 - t0) * k / 24));
@@ -733,11 +732,11 @@ const charts = {
   },
 };
 
-// ---------- dashboard state ----------
+// selected trim and office hours on the dashboard
 const state = { trim: 20, hours: "08-17" };
 const dashNumbers = () => ({ t: sh.scenarios.find(s => s.trim_pct === state.trim), a: ah.scenarios.find(s => s.office_hours === state.hours) });
 
-// ---------- step content ----------
+// icons and the content of every step
 const ICON = {
   bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>', target: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r=".6"/>',
   data: '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3.1 3 7 3s7-1.3 7-3"/>', funnel: '<path d="M4 5h16l-6 7v6l-4 2v-8z"/>',
@@ -908,7 +907,7 @@ const STEPS = [
     <div class="thead"><h2>Group 8</h2><p>Lecture Group 2 · Energy Security, SDG 7</p><p class="course">TEB3123 Machine Learning · September 2026</p></div>
     <div class="members">${D.team.map(m => `<div class="member" role="button" tabindex="0" aria-pressed="false" aria-label="${esc(m.name)}: show contact details"><div class="flip">
       <div class="face front"><div class="ph${m.photo ? "" : " noimg"}">${m.photo ? `<img src="${m.photo}" alt="${esc(m.name)}">` : `<span class="mono" aria-hidden="true">${m.initials}</span>`}</div><b>${esc(m.name)}</b><span class="sid">${m.id}</span><span class="role">${esc(m.role)}</span><span class="hint">Click for details</span></div>
-      <div class="face back"><span class="bn">${esc(m.name)}</span><dl><div><dt>Student ID</dt><dd>${m.id}</dd></div><div><dt>Course</dt><dd>TEB3123 Machine Learning<br>Group 8 · Lecture Group 2</dd></div><div><dt>Role</dt><dd>${esc(m.role)}</dd></div><div><dt>Phone</dt><dd><a href="tel:${m.tel}">${esc(m.phone)}</a></dd></div></dl><span class="hint">Click to flip back</span></div>
+      <div class="face back"><span class="bn">${esc(m.name)}</span><dl><div><dt>Student ID</dt><dd>${m.id}</dd></div><div><dt>Course</dt><dd>TEB3123 Machine Learning<br>Group 8 · Lecture Group 2</dd></div><div><dt>Role</dt><dd>${esc(m.role)}</dd></div>${m.phone ? `<div><dt>Phone</dt><dd><a href="tel:${m.tel}">${esc(m.phone)}</a></dd></div>` : ""}</dl><span class="hint">Click to flip back</span></div>
     </div></div>`).join("")}</div>`,
   },
 ];
@@ -944,7 +943,7 @@ const ROWS = {
                   { label: "Estimated", sub: "main meter only", AC: pd.ac_estimated, LIGHT: pd.light_estimated, OTHER: 100 - pd.ac_estimated - pd.light_estimated }],
 };
 
-// ---------- rendering + navigation ----------
+// showing a step and moving between steps
 const DASH = STEPS.findIndex(s => s.label === "Dashboard");
 const main = $("#main"), rail = $("#rail");
 let cur = -1;
@@ -974,7 +973,7 @@ function renderDash(flash) {
 function paintRail(i, prev) {
   const fwd = i > prev;
   rail.querySelectorAll(".st").forEach((b, j) => {
-    // moving forward: each newly finished connector fills, then the next dot lights up after it
+    // fill the lines one by one when going forward
     const lag = fwd && j > prev && j <= i ? (j - prev - 1) * 220 + 380 : 0;
     b.style.setProperty("--dl", lag + "ms");
     b.classList.toggle("done", j < i);
