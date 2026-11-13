@@ -4,11 +4,14 @@ Every number on screen comes from this repo: results/*, figures/proposal/stats.j
 parquet and the raw CLEMD folders. Run after run_all.sh. Injects one JSON blob into
 dashboard/template.html; nothing is recomputed in the browser.
 """
+import base64
+import io
 import json
 from datetime import datetime
 
 import numpy as np
 import pandas as pd
+from PIL import Image
 from sklearn.model_selection import TimeSeriesSplit
 
 from cluster import daily_profiles
@@ -127,6 +130,35 @@ def evaluate_story(stats):
     }
 
 
+# Team page: names and IDs from the report cover, roles from Appendix E. Photos live in public/;
+# a member without a photo is shown with initials. To add one, drop the PNG in public/ and set its file name here.
+TEAM = [
+    ("Izzatul Najwa Binti Che Zaki", "22007298", "Data acquisition, cleaning and quality log", None, "+60 17-447 3402"),
+    ("Nurul Izzati Binti Razali", "22007868", "Feature engineering and baselines", "Izzati.png", "+60 11-1198 6867"),
+    ("Daphne Binti Douglas", "22006239", "Tree models, tuning, freeze and test", "Daphne.png", "+60 19-484 7922"),
+    ("Siti Nurmasyitah Binti Ab Aziz", "22007601", "Explainability, error analysis and clustering", "Masyitah (1).png", "+60 11-1021 5901"),
+    ("Sharvin A/L Kanesan", "22006930", "Scenarios, figures, integration and dashboard", "Sharvin (4).png", "+60 11-2626 8129"),
+]
+
+
+def team_story():
+    """Each photo is trimmed to its visible pixels, shrunk to 600 px and embedded as a data URI,
+    so index.html stays one offline file and no part of the person is cropped on the page."""
+    out = []
+    for name, sid, role, photo, phone in TEAM:
+        src = None
+        if photo and (ROOT / "public" / photo).exists():
+            im = Image.open(ROOT / "public" / photo).convert("RGBA")
+            im = im.crop(im.getchannel("A").getbbox())
+            im.thumbnail((600, 600))
+            buf = io.BytesIO(); im.save(buf, "WEBP", quality=86, method=6)  # keeps transparency, ~10x smaller than PNG
+            src = "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode()
+        initials = "".join(w[0] for w in name.split()[:2]).upper()
+        out.append({"name": name, "id": sid, "role": role, "photo": src, "initials": initials,
+                    "phone": phone, "tel": "+" + "".join(c for c in phone if c.isdigit())})
+    return out
+
+
 def modes_story():
     prof = daily_profiles(load(include_test=True))
     days = pd.read_csv(RESULTS / "cluster_days.csv", index_col=0)
@@ -147,7 +179,7 @@ def main():
     data = {
         "built": f"{datetime.now():%d %b %Y}",
         "data": data_story(), "method": method_story(freeze), "evaluate": evaluate_story(stats),
-        "modes": modes_story(), "scenarios": json.loads((RESULTS / "scenarios.json").read_text()),
+        "modes": modes_story(), "team": team_story(), "scenarios": json.loads((RESULTS / "scenarios.json").read_text()),
     }
     blob = json.dumps(data, separators=(",", ":"), default=str).replace("</", "<\\/")
     html = (OUT / "template.html").read_text().replace("/*__DATA__*/null", blob)

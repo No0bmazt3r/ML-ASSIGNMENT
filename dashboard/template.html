@@ -174,6 +174,36 @@ code { font: 14px/1.3 var(--mono); background: var(--wash); padding: 1px 6px; bo
 .kv dt { color: var(--ink2); }
 .kv dd { margin: 0; font-weight: 600; text-align: right; }
 
+/* ---------- team ---------- */
+.step.team { grid-template-rows: auto minmax(0, 1fr); }
+.thead { text-align: center; display: grid; gap: 6px; justify-items: center; }
+.thead h2 { font-size: clamp(36px, min(4.4vw, 7vh), 72px); }
+.thead p { margin: 0; color: var(--ink2); font-size: clamp(15px, 2vh, 19px); }
+.thead .course { color: var(--ac); font-weight: 600; }
+.members { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: clamp(12px, 1.4vw, 22px); min-height: 0; }
+.member { position: relative; min-height: 0; perspective: 1400px; cursor: pointer; border-radius: 18px; outline-offset: 4px; }
+.member .flip { position: absolute; inset: 0; transform-style: preserve-3d; transition: transform .7s var(--spring); }
+.member.flipped .flip { transform: rotateY(180deg); }
+.member .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; border-radius: 18px; background: var(--surface); padding: clamp(14px, 2vh, 22px) 16px clamp(14px, 2vh, 22px); display: grid; grid-template-rows: minmax(0, 1fr) auto auto auto auto; justify-items: center; text-align: center; gap: 8px; transition: transform .3s var(--spring); }
+.member:hover .front { transform: translateY(-4px); }
+.member .back { transform: rotateY(180deg); background: var(--ac); color: #fff; grid-template-rows: none; align-content: center; gap: clamp(8px, 1.6vh, 14px); padding: 22px 18px; }
+.member .back .bn { font: 700 clamp(19px, 2.6vh, 24px)/1.2 var(--display); }
+.member .back dl { margin: 0; display: grid; gap: clamp(6px, 1.2vh, 10px); width: 100%; }
+.member .back dt { font-size: 12.5px; opacity: .78; }
+.member .back dd { margin: 0; font-weight: 600; font-size: clamp(14px, 1.8vh, 16px); line-height: 1.35; }
+.member .back a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+.member .back .hint, .member .front .hint { font-size: 12px; opacity: .7; }
+.member .ph { position: relative; width: 100%; height: 100%; min-height: 140px; border-radius: 14px; overflow: hidden; }
+.member .ph::before { content: ""; position: absolute; left: 50%; bottom: 0; width: min(96%, 44vh); aspect-ratio: 1; transform: translate(-50%, 18%); border-radius: 50%; background: var(--surface2); }
+.member img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; transform-origin: bottom center; transition: transform .35s var(--spring); }
+.member:hover img { transform: scale(1.03); }
+.member .ph.noimg { display: grid; place-items: center; }
+.member .ph.noimg::before { display: none; }
+.member .mono { position: relative; width: min(70%, 22vh); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: var(--ac-wash); color: var(--ac); font: 700 clamp(36px, 6vh, 64px)/1 var(--display); }
+.member .front b { font-size: clamp(15px, 1.9vh, 18px); line-height: 1.25; min-height: 2.5em; display: flex; align-items: center; }
+.member .sid { font-weight: 600; font-size: 14px; color: var(--ac); background: var(--ac-wash); padding: 3px 10px; border-radius: 6px; letter-spacing: .03em; }
+.member .role { font-size: clamp(12.5px, 1.6vh, 14px); color: var(--muted); line-height: 1.35; min-height: 2.7em; }
+
 /* ---------- footer ---------- */
 footer { background: var(--surface); padding-top: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; gap: 12px; transition: background .3s var(--ease); }
 .navbtn { min-height: 48px; padding: 0 22px; border-radius: 999px; border: 0; background: var(--surface2); cursor: pointer; display: inline-flex; align-items: center; gap: 10px; font-weight: 600; font-size: 16px; transition: background .2s var(--ease), transform .2s var(--spring); }
@@ -224,7 +254,7 @@ kbd { font: 500 12px/1 var(--mono); padding: 4px 6px; border-radius: 5px; backgr
 .step.fwd { animation: slidef .55s var(--ease) both; }
 .step.back { animation: slideb .55s var(--ease) both; }
 .play .copy > * { animation: rise .55s var(--ease) both; animation-delay: calc(80ms + var(--k, 0) * 80ms); }
-.play .panel, .play .kpi { animation: rise .6s var(--ease) both; animation-delay: calc(160ms + var(--k, 0) * 110ms); }
+.play .panel, .play .kpi, .play .member { animation: rise .6s var(--ease) both; animation-delay: calc(160ms + var(--k, 0) * 110ms); }
 .play .a-draw { animation: draw var(--dur, 1600ms) var(--ease) both; animation-delay: calc(var(--d, 0) * 1ms + 200ms); }
 .play .a-gx { animation: gx 700ms var(--ease) both; animation-delay: calc(var(--d, 0) * 1ms + 200ms); }
 .play .a-gy { animation: gy 700ms var(--ease) both; animation-delay: calc(var(--d, 0) * 1ms + 200ms); }
@@ -290,6 +320,8 @@ kbd { font: 500 12px/1 var(--mono); padding: 4px 6px; border-radius: 5px; backgr
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dgrid { grid-template-columns: minmax(0, 1fr); }
   .dgrid > * { grid-column: auto !important; }
+  .members { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .member { min-height: 440px; }
   .dhead { grid-template-columns: minmax(0, 1fr); }
   .st .lb { display: none; }
   .st, .st .dot { width: 36px; height: 36px; }
@@ -872,6 +904,13 @@ const STEPS = [
     </div>
     <div class="kpis" id="kpis"></div>
     <div class="dgrid" id="dash"></div>`, },
+  { label: "Team", icon: "user", title: "Team", wide: true, team: true, render: () => `
+    <div class="thead"><h2>Group 8</h2><p>Lecture Group 2 · Energy Security, SDG 7</p><p class="course">TEB3123 Machine Learning · September 2026</p></div>
+    <div class="members">${D.team.map(m => `<div class="member" role="button" tabindex="0" aria-pressed="false" aria-label="${esc(m.name)}: show contact details"><div class="flip">
+      <div class="face front"><div class="ph${m.photo ? "" : " noimg"}">${m.photo ? `<img src="${m.photo}" alt="${esc(m.name)}">` : `<span class="mono" aria-hidden="true">${m.initials}</span>`}</div><b>${esc(m.name)}</b><span class="sid">${m.id}</span><span class="role">${esc(m.role)}</span><span class="hint">Click for details</span></div>
+      <div class="face back"><span class="bn">${esc(m.name)}</span><dl><div><dt>Student ID</dt><dd>${m.id}</dd></div><div><dt>Course</dt><dd>TEB3123 Machine Learning<br>Group 8 · Lecture Group 2</dd></div><div><dt>Role</dt><dd>${esc(m.role)}</dd></div><div><dt>Phone</dt><dd><a href="tel:${m.tel}">${esc(m.phone)}</a></dd></div></dl><span class="hint">Click to flip back</span></div>
+    </div></div>`).join("")}</div>`,
+  },
 ];
 
 function dashKpis() {
@@ -906,6 +945,7 @@ const ROWS = {
 };
 
 // ---------- rendering + navigation ----------
+const DASH = STEPS.findIndex(s => s.label === "Dashboard");
 const main = $("#main"), rail = $("#rail");
 let cur = -1;
 function mountCharts(root) {
@@ -949,10 +989,10 @@ function go(i, opts = {}) {
   i = Math.max(0, Math.min(STEPS.length - 1, i));
   if (i === cur && !opts.force) return;
   const prev = cur < 0 ? i : cur; cur = i; const s = STEPS[i]; hideTip();
-  main.innerHTML = `<section class="step pad${s.wide ? " wide" : ""}${opts.still || prev === i ? "" : i > prev ? " fwd" : " back"}" aria-label="${esc(s.title)}">${s.render()}</section>`;
+  main.innerHTML = `<section class="step pad${s.wide ? " wide" : ""}${s.team ? " team" : ""}${opts.still || prev === i ? "" : i > prev ? " fwd" : " back"}" aria-label="${esc(s.title)}">${s.render()}</section>`;
   const sec = main.firstElementChild;
   [...sec.querySelectorAll(".copy > *")].forEach((el, k) => el.style.setProperty("--k", k));
-  [...sec.querySelectorAll(".panel, .kpi")].forEach((el, k) => el.style.setProperty("--k", k));
+  [...sec.querySelectorAll(".panel, .kpi, .member")].forEach((el, k) => el.style.setProperty("--k", k));
   mountCharts(sec); renderDash(false);
   [...sec.querySelectorAll(".kpi")].forEach((el, k) => el.style.setProperty("--k", k));
   if (!opts.still) requestAnimationFrame(() => sec.classList.add("play"));
@@ -960,7 +1000,7 @@ function go(i, opts = {}) {
   paintRail(i, opts.still ? i : prev);
   $("#counter").innerHTML = `<b>${i} / ${STEPS.length - 1}</b> · ${esc(s.title)}`;
   $("#prev").disabled = i === 0; $("#next").disabled = i === STEPS.length - 1;
-  const hsh = i === STEPS.length - 1 ? "#dashboard" : `#step-${i}`;
+  const hsh = i === DASH ? "#dashboard" : s.team ? "#team" : `#step-${i}`;
   if (location.hash !== hsh) history.replaceState(null, "", hsh);
   document.title = i ? `${s.title} · Who Sets the Peak?` : "Who Sets the Peak?";
 }
@@ -975,7 +1015,10 @@ const toggleTheme = () => {
   try { localStorage.setItem("wsp-theme", root.dataset.theme); } catch (e) {}
 };
 $("#themeBtn").addEventListener("click", toggleTheme);
+const flipCard = c => { c.classList.toggle("flipped"); c.setAttribute("aria-pressed", String(c.classList.contains("flipped"))); };
+main.addEventListener("keydown", e => { const c = e.target.closest(".member"); if (c && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.stopPropagation(); flipCard(c); } });
 main.addEventListener("click", e => {
+  const card = e.target.closest(".member"); if (card && !e.target.closest("a")) { flipCard(card); return; }
   const b = e.target.closest("[data-trim],[data-hours]"); if (!b) return;
   if (b.dataset.trim) state.trim = +b.dataset.trim; else state.hours = b.dataset.hours;
   main.querySelectorAll("[data-trim]").forEach(x => x.setAttribute("aria-pressed", String(+x.dataset.trim === state.trim)));
@@ -985,13 +1028,13 @@ main.addEventListener("click", e => {
 document.addEventListener("keydown", e => {
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key;
-  if (["ArrowRight", "PageDown"].includes(k) || (k === " " && !e.target.closest("button"))) { e.preventDefault(); go(cur + 1); }
+  if (["ArrowRight", "PageDown"].includes(k) || (k === " " && !e.target.closest("button, [role=button]"))) { e.preventDefault(); go(cur + 1); }
   else if (["ArrowLeft", "PageUp"].includes(k)) { e.preventDefault(); go(cur - 1); }
-  else if (k === "Home") go(0); else if (k === "End" || k === "d" || k === "D") go(STEPS.length - 1);
+  else if (k === "Home") go(0); else if (k === "End") go(STEPS.length - 1); else if (k === "d" || k === "D") go(DASH);
   else if (/^[0-9]$/.test(k)) go(+k);
   else if (k === "t" || k === "T") toggleTheme();
 });
-const fromHash = () => { const h = location.hash.slice(1); return h === "dashboard" ? STEPS.length - 1 : /^step-\d+$/.test(h) ? +h.slice(5) : 0; };
+const fromHash = () => { const h = location.hash.slice(1); return h === "dashboard" ? DASH : h === "team" ? STEPS.length - 1 : /^step-\d+$/.test(h) ? +h.slice(5) : 0; };
 addEventListener("hashchange", () => go(fromHash()));
 let rz; addEventListener("resize", () => { clearTimeout(rz); rz = setTimeout(() => go(cur, { force: true, still: true }), 150); });
 go(fromHash(), { force: true });
