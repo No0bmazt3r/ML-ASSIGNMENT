@@ -133,7 +133,7 @@ def evaluate_story(stats):
 # Team page: names and IDs from the report cover, roles from Appendix E. Photos live in public/;
 # a member without a photo is shown with initials. To add one, drop the PNG in public/ and set its file name here.
 TEAM = [
-    ("Izzatul Najwa Binti Che Zaki", "22007298", "Data acquisition, cleaning and quality log", None, "+60 17-447 3402"),
+    ("Izzatul Najwa Binti Che Zaki", "22007298", "Data acquisition, cleaning and quality log", "Izzatul.png", "+60 17-447 3402"),
     ("Nurul Izzati Binti Razali", "22007868", "Feature engineering and baselines", "Izzati.png", "+60 11-1198 6867"),
     ("Daphne Binti Douglas", "22006239", "Tree models, tuning, freeze and test", "Daphne.png", "+60 19-484 7922"),
     ("Siti Nurmasyitah Binti Ab Aziz", "22007601", "Explainability, error analysis and clustering", "Masyitah (1).png", "+60 11-1021 5901"),

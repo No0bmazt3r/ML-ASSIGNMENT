@@ -229,7 +229,7 @@ One building, about three weeks of A/C ground truth and one season, so confidenc
 
 <table>
 <tr>
-<td align="center" width="20%"><img src="public/initials-IN.svg" width="140" alt="Izzatul Najwa Binti Che Zaki"><br><b>Izzatul Najwa Binti Che Zaki</b><br><sub>22007298</sub><br><sub>Data acquisition, cleaning and quality log</sub></td>
+<td align="center" width="20%"><img src="public/Izzatul.png" width="140" alt="Izzatul Najwa Binti Che Zaki"><br><b>Izzatul Najwa Binti Che Zaki</b><br><sub>22007298</sub><br><sub>Data acquisition, cleaning and quality log</sub></td>
 <td align="center" width="20%"><img src="public/Izzati.png" width="140" alt="Nurul Izzati Binti Razali"><br><b>Nurul Izzati Binti Razali</b><br><sub>22007868</sub><br><sub>Feature engineering and baselines</sub></td>
 <td align="center" width="20%"><img src="public/Daphne.png" width="140" alt="Daphne Binti Douglas"><br><b>Daphne Binti Douglas</b><br><sub>22006239</sub><br><sub>Tree models, tuning, freeze and test</sub></td>
 <td align="center" width="20%"><img src="public/Masyitah%20(1).png" width="140" alt="Siti Nurmasyitah Binti Ab Aziz"><br><b>Siti Nurmasyitah Binti Ab Aziz</b><br><sub>22007601</sub><br><sub>Explainability, error analysis and clustering</sub></td>
