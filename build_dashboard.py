@@ -82,6 +82,8 @@ def method_story(freeze):
         "n_rows": len(X), "n_features": X.shape[1], "folds": folds, "n_splits": N_SPLITS, "gap_min": GAP,
         "feature_groups": {g: int(n) for g, n in groups.items()}, "redundant_pairs": redundant,
         "cv": cv, "min_gain": MIN_GAIN_OVER_RIDGE,
+        "ablation": pd.read_csv(RESULTS / "ablation_cv.csv")[["feature_set", "n_features", "mae", "mae_sd", "peak_mae"]]
+                      .round(3).to_dict(orient="records"),
         "frozen": {t: {"model": freeze["targets"][t]["chosen_model"], "name": NAMES[freeze["targets"][t]["chosen_model"]],
                        "params": freeze["targets"][t]["params"]} for t in TARGETS},
         "frozen_at": freeze["frozen_at"][:10], "train_weeks": freeze["train_weeks"], "test_week": freeze["test_week"],

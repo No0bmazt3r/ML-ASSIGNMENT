@@ -21,8 +21,9 @@ data/external/nasa_power_utp_oct2023_utc.csv           NASA POWER hourly, UTP (4
 
 ## Pipeline
 
-Run everything with `./run_all.sh` (~12 min; `PY=python ./run_all.sh` to use another interpreter),
-or one step with `.venv/bin/python <script>.py`. Steps must run in this order: each reads the previous
+Run everything and open the dashboard with `./run_all.sh` (~13 min). `./run_all.sh ui` only opens the dashboard;
+`./run_all.sh ablation build_dashboard` runs just those steps; `PY=python ./run_all.sh` uses another interpreter.
+A single script also runs directly: `.venv/bin/python <script>.py`. Steps must run in this order: each reads the previous
 step's output. Every script ends with `assert` self-checks, so a clean run with no traceback means the
 outputs are consistent. All randomness is seeded (`random_state=0`, `default_rng(0)`), so a rerun
 regenerates the same `results/` numbers.
@@ -44,7 +45,7 @@ regenerates the same `results/` numbers.
 Figures for steps 4–7 go to `figures/results/`. **Findings: see [RESULTS.md](RESULTS.md). Final report: [FINAL_REPORT.md](FINAL_REPORT.md).**
 
 **Presentation:** open `dashboard/index.html` in any browser (works offline once fonts are cached; falls back to
-system fonts otherwise). Arrow keys or click to move, `0`–`9` jump to a step, `D` dashboard, `N` speaker notes.
+system fonts otherwise). Arrow keys or click to move, `0`–`9` jump to a step, `D` dashboard, `T` light/dark theme.
 It is generated from `dashboard/template.html` + the files above; rerun `build_dashboard.py` after any result changes.
 
 ## Rules we follow
