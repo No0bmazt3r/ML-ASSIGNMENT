@@ -1,0 +1,10 @@
+feature_set,n_features,mae,mae_sd,rmse,peak_mae,energy_share_err_pp,mae_change_vs_full_pct
+all 98 features (frozen),98,0.9872,0.2237,2.3645,2.5871,-0.9049,0.0
+without harmonics,45,1.1949,0.2763,2.7345,2.3044,-0.3929,21.0386
+without power quality,82,0.99,0.1893,2.3823,2.8227,-1.1789,0.2763
+without temporal,89,0.9753,0.2532,2.2947,2.8536,-0.9277,-1.2099
+without calendar,93,1.051,0.2175,2.5531,4.3472,-1.6457,6.4566
+duplicates removed (73),73,1.0107,0.1869,2.4088,3.1471,-1.286,2.3797
+"power meter, no harmonics/PQ",29,1.6915,0.297,3.377,4.1092,-1.4854,71.3376
+kW-only meter,18,2.0139,0.4455,3.9437,4.9324,-0.6301,103.9915
+calendar only,5,3.0537,0.8669,5.021,6.5466,-4.1135,209.3229

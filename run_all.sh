@@ -3,6 +3,6 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 PY=${PY:-.venv/bin/python}  # override: PY=python ./run_all.sh
-for step in prepare_data features train evaluate explain cluster scenarios make_figures report_figures build_dashboard; do
+for step in prepare_data features train ablation evaluate explain cluster scenarios make_figures report_figures build_dashboard; do
   echo "== $step"; $PY "$step.py"
 done

@@ -74,6 +74,25 @@ Peak windows = top 5% of 15-min building demand in the test week (29 windows, �
   measured 30.4 kW; phase-2 power contributes +12.4 kW above the 5.9 kW baseline, 5th harmonics and THD add
   ~+3 kW (`figures/results/shap_local_peak.png`).
 
+## 2b. Feature-group ablation (dev weeks only) — `ablation.py`, `results/ablation_cv.csv`
+
+Frozen LightGBM settings, same 4 CV folds on weeks 4–5, only the inputs change. Test week not used.
+
+| Feature set | n | CV MAE kW | vs all | CV peak MAE kW |
+|---|---|---|---|---|
+| All (frozen) | 98 | 0.99 | — | 2.59 |
+| Without harmonics | 45 | 1.20 | +21% | 2.30 |
+| Without power quality | 82 | 0.99 | +0.3% | 2.82 |
+| Without temporal | 89 | 0.98 | −1.2% | 2.85 |
+| Without calendar | 93 | 1.05 | +6.5% | 4.35 |
+| Duplicates removed | 73 | 1.01 | +2.4% | 3.15 |
+| Power meter, no harmonics/PQ | 29 | 1.69 | +71% | 4.11 |
+| kW-only meter | 18 | 2.01 | +104% | 4.93 |
+| Calendar only | 5 | 3.05 | +209% | 6.55 |
+
+Harmonics carry the most unique information; duplicates can go at no cost; a kW-only meter doubles the error
+but still beats the timetable baseline (CV 2.99) by 33%.
+
 ## 3. Operating modes and after-hours use (RQ4) — `cluster.py`
 
 k-means on normalised 24-h building profiles (main meter only, 28 full days, weeks 2–6).

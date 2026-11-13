@@ -32,6 +32,7 @@ regenerates the same `results/` numbers.
 | 1. Clean + resample 1 s → 1 min (weeks 2–6) | `prepare_data.py` | `data/processed/clemd_1min.parquet` |
 | 2. Feature dictionary + redundancy check | `features.py` | `results/feature_dictionary.csv`, `results/redundant_feature_pairs.csv` |
 | 3. Baselines + RF/XGBoost/LightGBM, time-series CV, **model freeze** | `train.py` | `results/cv_results.csv`, `results/freeze.json` |
+| 3b. Feature-group ablation (dev weeks only, frozen settings) | `ablation.py` | `results/ablation_cv.csv` |
 | 4. One-time test on week 6, bootstrap CIs, robustness, error analysis | `evaluate.py` | `results/test_metrics.csv`, `results/predictions.csv`, … |
 | 5. SHAP + permutation importance | `explain.py` | `results/shap_*.csv`, `results/permutation_importance_groups.csv` |
 | 6. k-means operating modes, after-hours energy | `cluster.py` | `results/cluster_*.csv` |

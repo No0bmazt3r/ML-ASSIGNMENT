@@ -1,23 +1,23 @@
 # TEB3123 MACHINE LEARNING
-## FINAL PROJECT REPORT
+## Group Project Final Report
 
-**September 2026 semester**
+**September 2026**
+
+> **About this file.** This is the complete, corrected version of the report. It follows the team's Word/PDF version (`ML Project Report Template.pdf`) section by section, with the same wording, chapter structure and figure/table numbers, and with every fix from `REPORT_CHANGES.md` already applied. Use it to see any section in full. (Delete this note in the submitted Word file.)
 
 | | |
 |---|---|
 | **Project Title** | ML-Based Air-Conditioning and Lighting Load Disaggregation in Malaysian Institutional Buildings for Peak-Demand Reduction Towards UTP's Net-Zero Carbon Campus Goal |
-| **Course** | TEB3123 Machine Learning, Universiti Teknologi PETRONAS |
-| **Lecturer** | **[TODO: lecturer name]** |
-| **Lecture Session Group** | **[TODO: Group 1 / Group 2]** |
+| **Lecture Session Group** | Group 2 |
 | **Project Group No.** | 8 |
 | **UTP Grand Challenge** | Energy Security |
-| **Relevant SDG** | SDG 7: Affordable and Clean Energy (primary); SDG 13: Climate Action (secondary) |
+| **Relevant SDG** | SDG 7: Affordable and Clean Energy (Primary); SDG 13: Climate Action (Secondary) |
 | **Dataset Name / Source** | CLEMD: Circuit-Level Electrical Measurements Dataset, Al-Khadher et al., figshare, https://doi.org/10.6084/m9.figshare.c.6946581 [1] |
 | **Submission Date** | 13 November 2026 |
 
 ### Group Members
 
-| No. | Student Name | Student ID |
+| No | Student name | Student ID |
 |---|---|---|
 | 1 | IZZATUL NAJWA BINTI CHE ZAKI | 22007298 |
 | 2 | NURUL IZZATI BINTI RAZALI | 22007868 |
@@ -29,13 +29,13 @@
 
 ## Executive Summary
 
-Purchased electricity makes up 99.7% of UTP's Scope 1 and 2 emissions [2], and large customers pay about RM 89–97 per kW per month for their highest 15-minute demand [3], [4]. Every UTP building has a main meter on the i-BMS [5], but it cannot show which loads set the peak. This project, aligned with the **Energy Security** Grand Challenge (**SDG 7**), tests whether machine learning can estimate a building's air-conditioning (A/C) and lighting load from its main meter alone, so that UTP Property Management can target peak and after-hours measures without sub-metering.
+Purchased electricity makes up 99.7% of UTP's Scope 1 and 2 emissions [2], and large customers pay about RM 89–97 per kW per month for their highest 15-minute demand [3], [4]. Every UTP building has a main meter on the i-BMS [5], but it cannot show which loads set the peak. This project, aligned with the Energy Security Grand Challenge (SDG 7), tests whether machine learning can estimate a building's air-conditioning (A/C) and lighting load from its main meter alone, so that UTP Property Management can target peak and after-hours measures without sub-metering.
 
 We used CLEMD, a public 1-second dataset from a Kuala Lumpur university building (16 September–25 October 2023) whose circuit sub-meters give ground truth [6]. From 41,680 cleaned one-minute records we built 98 main-meter features, compared a time-of-day baseline, Ridge, Random Forest, XGBoost and LightGBM with time-series cross-validation, froze the choice, and tested once on a sealed week (19–24 October).
 
-The frozen LightGBM model estimated A/C power with a mean absolute error (MAE) of **1.24 kW** (95% CI 0.57–1.88) against an average A/C load of 6.5 kW. That is 45% lower than the timetable baseline and 21% lower than Ridge, and 1.52 kW in the 29 peak windows. From the main meter alone it put A/C at **44.0%** of peak load (measured 45.4%), relying on phase-2 power and the harmonic signature of inverter compressors. Lighting could not be estimated reliably.
+The frozen LightGBM model estimated A/C power with a mean absolute error (MAE) of 1.24 kW (95% CI 0.56–1.87) against an average A/C load of 6.5 kW. That is 45% lower than the timetable baseline and 21% lower than Ridge, and 1.52 kW in the 29 peak windows. From the main meter alone it put A/C at 44.0% of peak load (measured 45.4%), relying on phase-2 power and the harmonic signature of inverter compressors. Lighting could not be estimated reliably.
 
-**Recommendation.** Trimming A/C by 20% whenever demand exceeds 53 kW would cut this building's maximum demand by about 5.8 kW, or roughly RM 6,200–6,700 a year (scenario). Pre-cooling during the solar peak, which our proposal suggested, would instead *raise* the peak by 5.2 kW, so it should not be adopted. Cutting after-hours A/C by half and lighting by 30% would save about 9 MWh, or 6.8 tCO₂e, a year per building.
+**Recommendation.** Trimming A/C by 20% whenever demand exceeds 53 kW would cut this building's maximum demand by about 5.8 kW, or roughly RM 6,200–6,700 a year (scenario). Pre-cooling during the solar peak, which our proposal suggested, would instead raise the peak by 5.2 kW, so it should not be adopted. Cutting after-hours A/C by half and lighting by 30% would save about 9 MWh, or 6.8 tCO₂e, a year per building.
 
 **Main limitation.** The model was trained on one VRF-cooled building, with three weeks of A/C ground truth from a single season. UTP's district-cooled buildings would need a short sub-metered pilot before the model could be used there.
 
@@ -43,29 +43,20 @@ The frozen LightGBM model estimated A/C power with a mean absolute error (MAE) o
 
 ## Project Infographic
 
-> **[TODO: insert the one-page infographic image here, e.g. `![Project infographic](figures/infographic.png)`. It must be a single page placed immediately after the executive summary and embedded in this report. A separate file does not count.]**
->
-> Content to place on it. Every number below matches the main chapters:
->
-> | Block | Content |
-> |---|---|
-> | Identity & problem | Project title; Group 8; "Building meters show the total, not which load sets the costly peak"; stakeholder: UTP Property Management |
-> | Alignment | Energy Security · SDG 7 (Target 7.3 energy efficiency); secondary SDG 13 via avoided tCO₂e |
-> | Dataset | CLEMD (UPNM, Kuala Lumpur), 1-s data → 41,680 one-minute records, 16 Sep–25 Oct 2023; input = main meter; targets = A/C panel, lighting boards |
-> | ML workflow | Clean & resample → 98 main-meter features → baseline, Ridge, RF, XGBoost, LightGBM → time-series CV → freeze → one-time test on sealed week 6 → SHAP, k-means, scenarios |
-> | Key results | A/C MAE 1.24 kW (avg. load 6.5 kW), 45% better than timetable baseline; peak A/C share 44.0% estimated vs 45.4% measured (bar chart: Figure 24) |
-> | Recommendation & limitation | Demand-triggered 20% A/C trim → ≈ 5.8 kW, RM 6.2–6.7k/yr per building (**estimate**); don't pre-cool at the solar peak (+5.2 kW); limitation: one VRF building, one season |
+![Project infographic](figures/infographic.png)
+
+*(One page, placed immediately after the executive summary and before the table of contents. In the Word file, put it on its own section page with no header or footer. Apply the poster fixes in `REPORT_CHANGES.md` Section G before exporting.)*
 
 ---
 
 ## Table of Contents
 
-> [TODO: when exporting to PDF, generate a table of contents with page numbers (e.g. `pandoc --toc`) and add lists of figures and tables.]
+*(In Word: References → Table of Contents, built from the Heading 1/Heading 2 styles. Then Insert Table of Figures twice: once for "Figure" captions (List of Figures) and once for "Table" captions (List of Tables). Update all fields before exporting to PDF.)*
 
 - Executive Summary
 - Project Infographic
 - Chapter 1 Introduction and Problem Definition
-- Chapter 2 Data Understanding and Exploratory Analysis
+- Chapter 2 Data Understanding and Exploratory Data Analysis
 - Chapter 3 Data Preprocessing
 - Chapter 4 Feature Engineering and Selection
 - Chapter 5 Machine Learning Methodology
@@ -85,51 +76,55 @@ The frozen LightGBM model estimated A/C power with a mean absolute error (MAE) o
 
 ### 1.1 Background and context
 
-Most of a university's electricity is used in its buildings, and in Malaysia's hot, humid climate cooling is the largest single use. An energy audit of an institutional building at Universiti Malaya found that air-conditioning used 34% of its electricity and lighting 18% [7]. Government guidance for typical Malaysian office buildings puts air-conditioning and mechanical ventilation at about 49% [8], and audits of air-conditioned offices found air conditioners using 57%, with lighting at 19% [9]. Exact shares vary between buildings, but A/C is consistently the largest load and lighting usually the second.
+Due to Malaysia's hot and humid climate, buildings are the primary consumers of electricity, with air-conditioning (A/C) representing the largest load. As an empirical benchmark, an energy audit of an institutional building at Universiti Malaya found that air-conditioning used 34% of its electricity and lighting 18% [7]. An audit of air-conditioned offices found air conditioners using 57%, with lighting at 19% [9], and a government guideline puts air-conditioning and mechanical ventilation in typical office buildings at about 49% [8]. Although the shares vary between buildings, A/C is consistently the largest load, usually followed by lighting.
 
-Cooling matters even more at the peak than across the day. Large Malaysian electricity customers pay a maximum-demand charge set by their highest 15-minute window each month [10]. Under the tariff schedule that took effect on 1 July 2025 [11], this charge is split into capacity and network charges. Both are still billed per kW of maximum demand, and together they come to about RM 89.27 per kW per month for medium-voltage customers on the standard tariff, or RM 97.06 per kW on the time-of-use tariff [3], [4]. TNB has said the reform is meant to encourage "load smoothing" [12].
+Cooling matters even more at the peak than across the day. Every month, large Malaysian electricity consumers pay a maximum-demand charge set by their highest 15-minute window [10]. Under the tariff schedule that took effect on 1 July 2025 [11], this charge is divided into capacity and network charges. Both are still charged per kW of maximum demand, and together they come to about RM 89.27 per kW per month for medium-voltage users on the standard tariff, or RM 97.06 per kW on the time-of-use tariff [3], [4]. According to TNB, the reform is intended to promote "load smoothing" [12].
 
-UTP has already acted on both energy cost and peak demand. It changed how its District Cooling Plant (DCP) runs "to minimise the impact of Maximum Demand (MD) charges", which saves RM 1.0 million a year [13]. DCP optimisation, LED retrofits and rescheduled operations together cut its projected annual electricity bill from RM 22.80 million to RM 21.21 million [5]. A 7.4 MWp rooftop solar system meets more than a quarter of the campus demand [14], and a second phase brought rooftop capacity to 7.7 MW [15]. Every building now has an energy meter linked to the cloud-based Integrated Building Management System (i-BMS) [5], and UTP has committed to a net-zero carbon campus by 2050 [16]. Purchased electricity accounts for 20.27 of UTP's 20.33 million kgCO₂e of Scope 1 and 2 emissions a year [2], so almost every tonne of CO₂ the campus emits comes from the grid.
+UTP has already acted on both energy cost and peak demand. Optimising its District Cooling Plant (DCP) to reduce maximum-demand charges saves RM 1.0 million a year [13]. Other initiatives, including LED replacement and rescheduled operations, have cut its projected annual electricity bill from RM 22.80 million to RM 21.21 million [5]. A 7.4 MWp rooftop solar system meets more than a quarter of campus demand [14], and a second phase brought rooftop capacity to 7.7 MW [15]. All campus buildings are equipped with energy meters connected to the Integrated Building Management System (i-BMS) [5], and UTP has committed to a net-zero carbon campus by 2050 [16]. Purchased electricity accounts for 20.27 of UTP's 20.33 million kgCO₂e of Scope 1 and 2 emissions a year [2], so almost every tonne of CO₂ the campus emits comes from the grid.
 
-What UTP's meters cannot show is what makes up each building's load. Installing a sub-meter on every A/C and lighting circuit would solve this, but it is expensive and disruptive. Non-intrusive load monitoring (NILM), introduced by Hart [17], instead estimates individual loads from the signals at a single main meter. These signals include real and reactive power, power factor, harmonic distortion and how they change over time [18]. NILM is harder in commercial buildings than in homes, because large HVAC systems with variable-speed drives change their power draw continuously instead of switching cleanly on and off [19].
+Although UTP has installed energy meters in its buildings, these meters mainly measure overall electricity consumption. Installing separate meters on every A/C and lighting circuit would be costly and disruptive. Non-intrusive load monitoring (NILM), introduced by Hart, offers an alternative by estimating individual loads from the signals at a single main meter [17]. These signals include real and reactive power, power factor, harmonic distortion and how they change over time [18]. However, NILM is harder in commercial buildings than in homes, because large HVAC systems with variable-speed drives change their power draw continuously instead of switching cleanly on and off [19].
 
-The people affected are UTP Property Management, who pay for and manage the peak; the sustainability office, which must cut Scope 2 emissions; university management; building occupants, whose comfort depends on the A/C; and the registered energy managers that Malaysia's Energy Efficiency and Conservation Act 2024 (Act 861) now requires large energy users to appoint [20]. The study uses one university building in Kuala Lumpur, recorded from 16 September to 25 October 2023, as a stand-in for a UTP campus building. Section 1.4 sets out the scope.
+This research involves several important stakeholders. UTP Property Management is responsible for paying electricity expenses and managing maximum demand. The sustainability office focuses on reducing carbon emissions, and university management oversees campus energy-efficiency initiatives. Building occupants are affected indirectly, because their comfort depends on the A/C. The registered energy managers that Malaysia's Energy Efficiency and Conservation Act 2024 (Act 861) requires large energy users to appoint are also stakeholders, as they support compliance with the Act [20]. The study uses one university building in Kuala Lumpur, recorded from 16 September to 25 October 2023, as a stand-in for a UTP campus building. The scope of the study is detailed in Section 1.4.
 
 ### 1.2 Problem statement
 
-> **Campus electricity drives UTP's carbon footprint and energy bill, but its building meters cannot show which loads cause the costly demand peaks. As a result, peak-reduction and efficiency measures cannot be targeted or verified building by building.**
+Campus electricity drives UTP's carbon footprint and energy bill, but its building meters cannot show which loads cause the costly demand peaks. As a result, peak-reduction and efficiency measures cannot be targeted or verified building by building.
 
-**The knowledge gap.** When a demand peak appears, facilities staff cannot tell from the main meter whether it was caused by cooling (which could be trimmed briefly), by lighting (which could be switched off or dimmed), or by loads that cannot be changed. They also cannot tell how much A/C and lighting energy is used outside office hours. The consequence is that UTP pays demand charges set by peaks whose cause is unknown, and measures such as set-point changes or after-hours shut-off are applied blindly, with no way to check their effect.
+When a demand peak appears, facilities staff cannot tell from the main meter what caused it. Energy used after office hours is not identified by load either, so UTP bears the cost of demand charges set by peaks whose cause is unknown. Measures such as set-point changes or after-hours shut-off are applied blindly, with no way to check their effect.
 
-**Evidence from the data that A/C drives the peak.** Figure 1 compares A/C's share of the building's energy with its share during the building's highest-demand windows. Across all 15-minute windows in weeks 4–6, A/C uses 30.1% of the energy. In the top 5% of demand windows, its share rises to 42.5%, while the lighting and socket share falls from 14.4% to 8.8%. Every one of those peak windows fell on a weekday between 08:00 and 17:00.
+The data show that A/C drives the peak. Figure 1 compares A/C's share of the building's energy with its share during the building's peak-demand windows. A/C consumes 30.1% of the energy across all 15-minute periods in weeks 4–6. Its share increases to 42.5% in the top 5% of demand windows, whilst the lighting and socket share decreases from 14.4% to 8.8%. Every one of those peak windows occurred between 08:00 and 17:00 on a weekday.
 
-![Figure 1. A/C share of energy versus share of peak demand](figures/proposal/fig02_energy_vs_peak_share.png)
+![Figure 1](figures/proposal/fig02_energy_vs_peak_share.png)
 
-*Figure 1. Share of building energy versus share of the top-5% 15-minute demand windows, by circuit (CLEMD weeks 4–6, measured sub-meters).*
+*Figure 1. Share of building energy versus share of the top 5% 15-minute demand windows, by circuit (CLEMD weeks 4–6, measured sub-meters).*
 
-**Why machine learning is appropriate.** A simple rule cannot recover A/C from the total. During weekday office hours, a building total of 40–60 kW can correspond to anywhere from about 4 kW to 35 kW of A/C (Figure 9, Section 2.5). Separating these cases means combining power with harmonic, power-factor and time signals in a non-linear way. A supervised model can learn that combination where sub-metered ground truth exists, and then be applied where only the main meter exists. A fixed rule such as "A/C is 30% of the total" cannot. CLEMD's authors describe it as the first Malaysian public dataset of circuit-level electricity use. They suggest disaggregation as one of its uses but publish no ML results [6], and we found no published ML disaggregation results on it.
+The total electricity consumption of the building alone cannot accurately determine how much energy is used by air-conditioning. For example, when total demand is between 40 and 60 kW during office hours, A/C consumption can vary from approximately 4 kW to 35 kW (Figure 9, Section 2.5). Therefore, using a fixed percentage to estimate A/C consumption would produce inaccurate results. Combining several electrical properties, such as power consumption, harmonic distortion, power factor and temporal patterns, is a more dependable method. Labelled data from individual electrical circuits (sub-metered data) can be used by machine learning algorithms to learn these relationships, and the trained model can then estimate the consumption of specific equipment from the main meter's data alone. CLEMD is the first publicly accessible dataset in Malaysia that includes circuit-level electricity consumption [6]. Its authors identify disaggregation as a potential use, but no machine learning disaggregation results using this dataset have been published [6].
 
 ### 1.3 Aim and measurable objectives
 
-**Aim:** to develop and evaluate machine-learning models that estimate a building's A/C and lighting load from its main incoming meter, and to turn those estimates into peak-demand, solar-timing and emissions insights that UTP's facilities and sustainability teams can act on.
+The project aims to develop and evaluate machine-learning models that estimate a building's A/C and lighting load from its main incoming meter, and to turn those estimates into peak-demand, solar-timing and emissions insights that UTP's facilities and sustainability teams can act on.
 
 *Table 1. Objectives and where each is evidenced.*
 
-| # | Objective | Evidence of completion |
+| No. | Objective | Evidence of completion |
 |---|---|---|
 | O1 | Build a clean, time-aligned 1-minute modelling dataset from the CLEMD main supply and A/C, lighting and socket circuits, documenting every data-quality issue found. | Chapter 3; 41,680 records in `data/processed/clemd_1min.parquet`; Tables 5 and 8 |
 | O2 | Develop regression models that estimate A/C power (primary) and lighting-and-socket power (secondary) from main-meter features only, and show whether they beat simple baselines on a sealed test week, overall and in the highest-demand 15-minute windows. | Chapters 5–6; Tables 12–14; Figures 12–18 |
-| O3 | Explain which electrical and temporal signals the A/C model relies on, and check whether they make physical sense. | Section 6.8; Figures 19–22; Table 16 |
+| O3 | Explain which electrical and temporal signals the A/C model relies on, and check whether they make physical sense. | Sections 4.4 and 6.8; Table 9b; Figures 19–22; Table 16 |
 | O4 | Cluster daily load profiles into operating modes and measure A/C and lighting energy used outside office hours. | Section 6.8; Figure 23; Table 17 |
 | O5 | Turn the model's estimates into clearly labelled UTP scenarios (peak-demand kW and RM, A/C timing against rooftop solar, avoided tCO₂e) and recommendations. | Chapter 7; Tables 18–20; Figures 24–27 |
 
 ### 1.4 Sustainability alignment and scope
 
-**Primary alignment: Energy Security, SDG 7 (Affordable and Clean Energy), Target 7.3** (double the global rate of improvement in energy efficiency) [21]. The project works through three mechanisms. (1) It turns meters UTP already owns into a diagnostic tool that shows which load sets each peak, so peak-reduction measures can be aimed at the right equipment. (2) Lower peaks reduce demand charges and the stress the campus's afternoon peak puts on the grid, which makes campus energy more affordable and secure. (3) Matching A/C timing with on-site rooftop solar tests whether more clean, self-generated energy can be used.
+**A. Primary alignment: Energy Security, SDG 7 (Affordable and Clean Energy), Target 7.3** (double the global rate of improvement in energy efficiency) [21]. The project works through three mechanisms:
 
-**Secondary alignment: Regenerative Futures, SDG 13.** Every kWh saved avoids Scope 2 emissions at the grid emission factor [22], which supports UTP's 2050 net-zero commitment [16] and Malaysia's national target [23]. We treat this as secondary because the carbon effect for one building is small (Section 7.3). The main value lies in energy efficiency and demand.
+1. It turns meters UTP already owns into a diagnostic tool that shows which load sets each peak, so peak-reduction measures can be aimed at the right equipment.
+2. Lower peaks reduce demand charges and the stress the campus's afternoon peak puts on the grid, which makes campus energy more affordable and secure.
+3. Matching A/C timing with on-site rooftop solar tests whether more clean, self-generated energy can be used.
 
-**In scope:** supervised regression of A/C and lighting power at 1-minute resolution, k-means clustering of daily load profiles, and scenario analysis combining model estimates with published UTP, TNB, Energy Commission and NASA figures. **Out of scope:** real-time control, deployment on UTP's i-BMS, other seasons or buildings, and forecasting. The optional 15-minute-ahead forecasting extension and the 1-D CNN stretch goal from the proposal were not attempted (Section 1.5).
+**B. Secondary alignment: Regenerative Futures, SDG 13 (Climate Action).** Every kWh saved avoids Scope 2 emissions at the grid emission factor [22]. This supports UTP's 2050 net-zero commitment [16] and Malaysia's national target [23]. We treat this as secondary because the carbon effect for one building is small (Section 7.3); the main value is in energy efficiency and demand.
+
+**Scope.** This report covers the regression of A/C and lighting power at 1-minute resolution, k-means clustering of daily load profiles, and scenario analysis combining model estimates with published UTP, TNB, Energy Commission and NASA figures. It does not include real-time control or deployment on UTP's i-BMS. Seasonal change is not considered, because the data cover only September–October 2023. Other buildings are not included; the study is limited to one institutional building in Kuala Lumpur. The optional 15-minute-ahead forecasting extension and the 1-D CNN stretch goal from the proposal were not attempted.
 
 ### 1.5 Expected and achieved outcomes
 
@@ -137,30 +132,34 @@ The people affected are UTP Property Management, who pay for and manage the peak
 
 | Proposed outcome (proposal §1.3) | Status | Notes |
 |---|---|---|
-| Working A/C disaggregation model in reproducible code | **Completed** | LightGBM, frozen before testing; full pipeline reruns from raw data with one command (Appendix D) |
-| Peak-driver profile from model estimates | **Completed** | 44.0% estimated vs 45.4% measured A/C share of peak (Section 7.1) |
-| SHAP evidence of the electrical signature | **Completed** | Phase-2 power and 5th/7th/11th harmonics (Section 6.8) |
-| Load-profile clusters and after-hours estimate | **Completed** | k = 2 modes; a public holiday found from the main meter alone |
-| UTP scenarios (kW, RM, solar, tCO₂e) | **Completed, with one finding reversed** | Pre-cooling into the solar peak was proposed but turns out to *raise* the peak; we now recommend a demand-triggered trim instead |
-| Lighting model | **Completed, negative result** | Not reliable from the main meter with this data (Section 6.5) |
-| Forecasting extension, 1-D CNN, NASA temperature feature | **Not attempted** | All three were optional and were dropped first, as the proposal's contingency plan specified |
-| Benefits for UTP (RM saved, tCO₂e avoided) | **Hoped-for, not measured** | Need deployment on a UTP building; reported as scenarios only |
+| Working A/C disaggregation model in reproducible code | Completed | LightGBM, frozen before testing; full pipeline reruns from raw data with one command (Appendix D) |
+| Peak-driver profile from model estimates | Completed | 44.0% estimated vs 45.4% measured A/C share of peak (Section 7.1) |
+| SHAP evidence of the electrical signature | Completed | Phase-2 power and 5th/7th/11th harmonics (Section 6.8) |
+| Load-profile clusters and after-hours estimate | Completed | k = 2 modes; a public holiday found from the main meter alone |
+| UTP scenarios (kW, RM, solar, tCO₂e) | Completed, with one finding reversed | Pre-cooling into the solar peak was proposed but turns out to raise the peak; we now recommend a demand-triggered trim instead |
+| Lighting model | Completed, negative result | Not reliable from the main meter with this data (Section 6.5) |
+| Forecasting extension, 1-D CNN, NASA temperature feature | Not attempted | All three were optional and were dropped first, as the proposal's contingency plan specified |
+| Benefits for UTP (RM saved, tCO₂e avoided) | Hoped-for, not measured | Need deployment on a UTP building; reported as scenarios only |
 
-Changes since the proposal. Clustering now uses the main-meter profile only, rather than A/C and lighting profiles, so it works in buildings without sub-meters. Lighting training was extended to weeks 2–3, as the proposal planned. The work plan's internal target date of 15 November moved forward to the official deadline of 13 November.
+Since the proposal, some changes have been made. Clustering now uses the main-meter profile only, rather than the A/C and lighting profiles, so it works in buildings without sub-meters. Lighting training was extended to weeks 2–3, as the proposal planned. The work plan's internal target date of 15 November moved forward to the official deadline of 13 November.
 
 Figure 2 summarises how the project connects Problem → Data → Features → Machine Learning → Evaluation → Interpretation → Sustainability.
 
-![Figure 2. Project workflow](figures/proposal/fig01_workflow.png)
+![Figure 2](figures/proposal/fig01_workflow.png)
 
 *Figure 2. Project workflow, from problem to sustainability scenarios, in the same order as the code.*
 
 ---
 
-## Chapter 2 Data Understanding and Exploratory Analysis
+## Chapter 2 Data Understanding and Exploratory Data Analysis
 
 ### 2.1 Dataset provenance and suitability
 
-CLEMD was recorded in the low-voltage switch room of the Faculty of Medicine and Defence Health building at Universiti Pertahanan Nasional Malaysia (UPNM), Kuala Lumpur. Power-quality loggers sampled each circuit at 200 kHz, and the published files summarise them as one row per second [6]. The data is suitable for this project for three reasons: it comes from a real Malaysian institutional building; it records the main incoming supply (our model input) at the same time as the outgoing circuits, including a dedicated A/C panel (our targets), which gives measured ground truth that very few public non-residential datasets provide; and its A/C and lighting energy shares (30.1% and 14.4%) are close to those of the Universiti Malaya institutional building (34% and 18%) [7].
+CLEMD was recorded in the low-voltage switch room of the Faculty of Medicine and Defence Health building at Universiti Pertahanan Nasional Malaysia (UPNM), Kuala Lumpur. Each circuit was sampled at 200 kHz by power-quality loggers, which are summarised as one row per second in the published files [6]. Three factors make the data appropriate for this project:
+
+- it comes from an actual Malaysian institutional building;
+- it records the main incoming supply (model input) at the same time as the outgoing circuits, including a dedicated A/C panel (targets), providing measured ground truth that is rarely found in public non-residential datasets;
+- its A/C and lighting energy shares (30.1% and 14.4%) are comparable to those of the Universiti Malaya institutional building (34% and 18%) [7].
 
 *Table 3. Dataset provenance.*
 
@@ -173,7 +172,7 @@ CLEMD was recorded in the low-voltage switch room of the Faculty of Medicine and
 | Task and outcome | Supervised regression: A/C real power (kW), primary; lighting-and-socket real power (kW), secondary. Unsupervised clustering of daily profiles (no target) |
 | Use constraints | CC BY 4.0 (free use with citation); building-level electrical data only, no personal data |
 
-Each weekly folder contains one CSV per metered circuit. **Aggregate** is the building's main incoming supply and the source of every model input. **CP AC** is the A/C control panel feeding six 10 hp variable-refrigerant-flow (VRF) rooftop units, and is the primary target. **DB TG**, **DB T1** and **DB ML 1** are distribution boards serving mainly lighting plus sockets; their sum is the secondary target. **DB ML 2**, **EMSB 1** (emergency main switchboard) and **SSB MF** (a sub-switchboard) are used only for context. Some circuits in the building (FP 1, PUMP CP, DB RA) were never metered [6], so the main supply always reads more than the sum of the sub-meters.
+Each weekly folder contains one CSV per metered circuit. **Aggregate** is the building's main incoming supply and the source of every model input. **CP AC** is the A/C control panel feeding six 10 hp variable-refrigerant-flow (VRF) rooftop units and is the primary target. **DB TG**, **DB T1** and **DB ML 1** are distribution boards serving mainly lighting plus sockets; their sum is the secondary target. **DB ML 2**, **EMSB 1** (emergency main switchboard) and **SSB MF** (a sub-switchboard) are used only for context. Some circuits in the building (FP 1, PUMP CP, DB RA) were never metered [6], so the main supply always reads more than the sum of the sub-meters.
 
 We also used hourly irradiance for the UTP campus (4.385° N, 100.979° E, October 2023) from NASA POWER [24] for the solar-timing scenario. *These data were obtained from the NASA Langley Research Center (LaRC) POWER Project funded through the NASA Earth Science/Applied Science Program.*
 
@@ -194,7 +193,7 @@ All model inputs come from the Aggregate (main-meter) file. Table 4 lists the ke
 | `Reactive Power1–3` | Reactive power per phase (VAR); separates motor and inverter loads from resistive ones | Continuous | Input |
 | `PF1–3` | Power factor per phase (0–1) | Continuous | Input |
 | `THD1–3`, `THDN` | Total harmonic distortion of current (%) | Continuous | Input |
-| `Current{1,2,3,N}H{1,3,…,15}` | Odd current harmonics, **% of the fundamental** (H1 is fixed at 100) | Continuous | Input (32 columns) |
+| `Current{1,2,3,N}H{1,3,…,15}` | Odd current harmonics, % of the fundamental (H1 is fixed at 100) | Continuous | Input (32 columns) |
 | **`ac_kw`** | CP AC Real Power 1+2+3, 1-minute mean (kW) | Continuous | **Primary target** |
 | **`light_kw`** | DB TG + DB T1 + DB ML 1 real power, 1-minute mean (kW) | Continuous | **Secondary target** |
 | `week` | CLEMD weekly folder number (2–6) | Integer | Splitting only, never a model input |
@@ -203,17 +202,17 @@ For clustering there is **no supervised target**. The input is each day's 24-hou
 
 ### 2.3 Target definition and data availability
 
-**Target definition.** Both targets are the real power of the sub-metered circuits, averaged over the same minute as the inputs: `ac_kw` is the sum of CP AC's three phases divided by 1,000, and `light_kw` is the sum of the three lighting boards. The task is *nowcasting*, not forecasting: the model estimates the A/C power in minute *t* from main-meter readings up to and including minute *t*, all of which a meter can supply in real time.
+The study focuses on estimating the actual power consumption of the air-conditioning and lighting systems using data from individual sub-meters. A/C consumption is calculated by adding the power readings from its three phases and dividing the total by 1,000 to obtain kW. Similarly, lighting consumption is calculated by adding the readings from the three lighting boards. Both values are averaged over the same one-minute period as the main-meter readings. This study uses a *nowcasting* approach rather than forecasting: the model estimates the A/C consumption in the current minute using the main-meter data available up to that time.
 
-**Leakage exclusions.** No sub-meter signal, nothing recorded after minute *t*, and no identifier (such as `week`) is used as an input. The total building power does *contain* the A/C power, but this is not leakage: the main meter is exactly what UTP would have when using the model, and the task is to separate that total into its parts.
+To ensure that the model produces reliable results, only information available from the main meter is used as input. Sub-meter readings, future data and identifiers such as week numbers are excluded from the input variables. Although the total building power includes A/C consumption, this does not create data leakage, as the main meter represents exactly the data available when applying the model in a real building. The purpose is to separate the total electricity consumption into individual components, particularly A/C and lighting usage.
 
-**Availability.** Not every circuit was recorded in every week (Figure 3). Week 1 has no Aggregate file, so it cannot be used. Weeks 2 and 3 have no CP AC file, so A/C ground truth exists only in **weeks 4–6 (4–25 October 2023)**. Lighting boards exist in weeks 2–6. Each weekly folder covers about six days, and the day on which one folder ends and the next begins (27 September and 4, 11 and 18 October) is not recorded.
+However, the availability of data differs across the recorded weeks, as shown in Figure 3. Week 1 is excluded because it does not contain an Aggregate file, while Weeks 2 and 3 do not have CP AC readings. Therefore, A/C consumption data is only available for Weeks 4 to 6, covering 4 to 25 October 2023. Lighting consumption data is available from Weeks 2 to 6. Each weekly folder contains approximately six days of data, with missing records on 27 September, 4 October, 11 October and 18 October.
 
-![Figure 3. CLEMD file availability](figures/proposal/fig03_data_availability.png)
+![Figure 3](figures/proposal/fig03_data_availability.png)
 
 *Figure 3. CLEMD file availability by week and circuit. The outlined block is the A/C modelling set; "dup." marks the duplicated file described in Section 2.4.*
 
-**Mismatch with the intended application.** The CLEMD building is cooled by rooftop VRF units whose compressors sit on the building's own supply. Much of UTP is served by a district cooling plant [13], where a building meter sees air-handling fans and pumps rather than compressors. The trained model therefore cannot be copied to UTP; what transfers is the method (Section 8.1).
+**Mismatch with the intended application.** The CLEMD building is cooled by rooftop VRF units whose compressors sit on the building's own supply. Much of UTP is instead served by a district cooling plant [13], where a building meter sees fans and pumps rather than compressors. The trained model therefore cannot be copied to UTP; only the method transfers (Section 8.1).
 
 ### 2.4 Data quality profile
 
@@ -228,7 +227,7 @@ We measured every issue on the raw files before choosing a treatment.
 | Duplicate file | Week 1 `DB ML 2.csv` is byte-for-byte identical to `SSB MF.csv` | Excluded (week 1 is not used anyway) |
 | Misnamed file | Week 4 main supply is spelt `Aggregtae.csv` | Mapped explicitly by the loader |
 | Inconsistent date formats | Some files use M/D/Y and others D/M/Y, sometimes within the same folder; automatic parsing would silently shift files by a month | For each file, the loader picks the format that maps the first row to that folder's known start date |
-| Invalid values (outage) | 5 Oct 2023, 14:49–17:03: every circuit reads ≈ 0 V and 0 kW for **135 minutes** | Removed as a supply outage, not zero demand (rule: phase-1 voltage < 100 V) |
+| Invalid values (outage) | 5 Oct 2023, 14:49–17:03: every circuit reads ≈ 0 V and 0 kW for 135 minutes | Removed as a supply outage, not zero demand (rule: phase-1 voltage < 100 V) |
 | Time gaps | One unrecorded day between each pair of weekly folders, plus the outage | Lag and rolling features are never computed across a gap (Section 4.5) |
 | Harmonic units | All `Current*H1` columns equal 100.0 in every row: harmonics are already reported as % of fundamental, not amperes as our proposal assumed | Documented. Ratio features therefore duplicate the raw harmonics (Section 4.2) |
 | Unmetered loads | ≈ 55% of building energy comes from circuits outside both targets, some never metered | Kept. A real main meter sees the same mix |
@@ -240,41 +239,47 @@ The paper is inconsistent about how many circuits were measured [6], so we relie
 
 The exploratory analysis below uses weeks 4–6, the weeks with A/C ground truth. Over those weeks the building drew an average of 20.3 kW, of which A/C averaged 6.1 kW. The highest 15-minute demand was 83.9 kW (31.7 kW of it A/C), and the highest single minute was 94.6 kW.
 
-![Figure 4. Target distributions](figures/report/fig_target_distributions.png)
+![Figure 4](figures/report/fig_target_distributions.png)
 
 *Figure 4. Distribution of the two targets over their training weeks (1-minute means): A/C, weeks 4–5 (16,985 minutes); lighting and sockets, weeks 2–5 (32,725 minutes).*
 
-Figure 4 shows that the two targets behave very differently. A/C is **strongly right-skewed** (skewness 1.88): 28.4% of training minutes are below 1 kW, mostly at weekends when the units are off, and a long tail runs up to 44 kW on weekday afternoons. Its median (1.6 kW) is far below its mean (5.9 kW). Lighting and sockets are also right-skewed (skewness 1.72) but over a narrow range, and they are **multi-modal**: a large peak near 2 kW (the always-on floor of sockets, servers and security lighting), and smaller peaks near 4 kW and 6 kW, which correspond to different working-hours lighting levels. **Why it matters:** with a skewed target, the average error is dominated by the few busy hours, so we report peak-window MAE separately and do not rely on R², which looks high mainly because of the large gap between near-zero nights and busy afternoons. The lighting target's narrow range means even a small absolute error is a large relative one.
+Figure 4 shows that both targets are right-skewed (skewness 1.88 for A/C and 1.72 for lighting and sockets), but they follow different consumption patterns.
 
-![Figure 5. Building, A/C and lighting load over six days](figures/proposal/fig04_week6_timeseries.png)
+Around 28.4% of A/C training minutes are below 1 kW, mainly at weekends when the A/C units are not operating, while A/C can rise as high as 44 kW on weekday afternoons. The large gap between the median (1.6 kW) and the mean (5.9 kW) shows that a few periods have much higher consumption.
+
+The lighting consumption range, on the other hand, is much narrower than that of A/C, and it has several peaks (a multi-modal distribution). The first peak, around 2 kW, is the basic electricity use of sockets, servers and security lighting. The second peak, around 4 kW, reflects higher use during working hours, and the third, around 6 kW, reflects increased lighting during busier periods. The pattern therefore reveals different levels of electricity use through the working day.
+
+**Why it matters:** because A/C consumption varies so widely, a few high-demand periods can dominate the average error. The study therefore uses peak-window MAE to assess errors separately during peak-demand periods. Because of the large gap between low-consumption (night) and high-consumption (day) hours, R² looks high almost automatically and is not used as a main performance metric. The lighting target's narrow range means even a small absolute error is a large relative one.
+
+![Figure 5](figures/proposal/fig04_week6_timeseries.png)
 
 *Figure 5. Building, A/C and lighting-and-socket load, 19–24 October 2023 (15-minute means, measured sub-meters).*
 
-Figure 5 shows that building demand rises sharply on weekday mornings and falls in the late afternoon, and that A/C (blue) accounts for most of that swing. Lighting and sockets (orange) form a smaller, steadier load. The A/C peak on Tuesday 24 October was much lower than on the Monday before, so day-to-day variation is real and a model must capture it rather than repeat an average day.
+Figure 5 shows that building demand rises sharply on weekday mornings and falls in the late afternoon, and that A/C (blue line) accounts for most of that swing. Lighting and sockets (orange line) form a smaller, steadier load. The A/C peak on Tuesday 24 October was much lower than on the Monday before, so day-to-day variation is real and a model must capture it rather than repeat an average day.
 
-![Figure 6. Average daily load profile](figures/proposal/fig05_daily_profile.png)
+![Figure 6](figures/proposal/fig05_daily_profile.png)
 
 *Figure 6. Average daily load profile by circuit, weekdays and weekends (weeks 4–6).*
 
-On weekdays (Figure 6), A/C ramps up from about 08:00, peaks around 14:00 and falls away after 17:00. At weekends the building runs at a nearly flat baseline of about 10 kW, most of it unmetered or "other" load. Overnight (00:00–06:00) the building still draws 10.6 kW on average, of which A/C is 1.3 kW. **Why it matters:** time of day explains a lot, so a time-of-day average is the natural baseline a model must beat.
+On weekdays, A/C ramps up from about 08:00, peaks around 14:00 and falls away after 17:00. At weekends the building runs at a nearly flat baseline of about 10 kW, most of it unmetered or "other" load. Overnight (00:00–06:00) the building still draws 10.6 kW on average, of which A/C is 1.3 kW. Time of day explains a lot, so a time-of-day average is the natural baseline a model must beat.
 
-![Figure 7. Hourly A/C load for each day](figures/proposal/fig06_ac_heatmap.png)
+![Figure 7](figures/proposal/fig06_ac_heatmap.png)
 
 *Figure 7. Hourly mean A/C load (kW) for each day, weeks 4–6. The white block on 5 October is the supply outage.*
 
-Figure 7 shows that some weekdays (Friday 6 October, Tuesday 10 October and Tuesday 24 October) are much lighter than others, which points to timetable and occupancy effects. **Why it matters:** there are distinct kinds of day, and these are what the clustering step is designed to find.
+Figure 7 shows that some weekdays (Friday 6 October, Tuesday 10 October and Tuesday 24 October) are much lighter than others, which points to timetable and occupancy effects. There are distinct kinds of day, and these are what the clustering step is designed to find.
 
-![Figure 8. Correlation of main-meter signals with A/C power](figures/proposal/fig07_feature_correlation.png)
+![Figure 8](figures/proposal/fig07_feature_correlation.png)
 
 *Figure 8. Pearson correlation of selected main-meter signals with measured A/C power (1-minute data, weeks 4–6).*
 
-Total real power is the strongest single signal (r = 0.94). The 5th and 7th harmonics and THD on phase 1 follow closely (r = 0.85–0.86), as expected if the inverter-driven VRF compressors inject those harmonics. Power factor on phases 1 and 3 falls as A/C rises (r ≈ −0.65), but phase 2 behaves differently (r = 0.08), so the A/C load is not spread evenly across phases. **Why it matters:** harmonics carry A/C-specific information beyond total power, and the many strongly correlated inputs need regularisation (Ridge) or tree models. Correlation is not causation: these are associations in one building.
+Total real power is the strongest single signal (r = 0.94). The 5th and 7th harmonics and THD on phase 1 follow closely (r = 0.85–0.86), as expected if the inverter-driven VRF compressors inject those harmonics. Power factor on phases 1 and 3 falls as A/C rises (r ≈ −0.65), but phase 2 behaves differently (r = 0.08), so the A/C load is not spread evenly across phases. Harmonics carry A/C-specific information beyond total power, and the many strongly correlated inputs need regularisation (Ridge) or tree models. Correlation is not causation: these are associations in one building.
 
-![Figure 9. Main-meter total versus A/C load](figures/proposal/fig08_agg_vs_ac.png)
+![Figure 9](figures/proposal/fig08_agg_vs_ac.png)
 
 *Figure 9. Total building power versus A/C power, 15-minute windows; office-hours windows highlighted.*
 
-Outside office hours (grey), A/C and total load move together closely. During weekday office hours (blue), a total of 40–60 kW can hide anywhere from about 4 kW to 35 kW of A/C. **Why it matters:** this ambiguous band is exactly where peaks happen, and Chapter 6 shows it is where the model's error is largest.
+Outside office hours (grey), A/C and total load move together closely. During weekday office hours (blue), a total of 40–60 kW can hide anywhere from about 4 kW to 35 kW of A/C. This ambiguous band is exactly where peaks happen, and Chapter 6 shows it is where the model's error is largest.
 
 ### 2.6 Insights that shape the methodology
 
@@ -286,12 +291,12 @@ Outside office hours (grey), A/C and total load move together closely. During we
 | A/C is a larger share of the peak (42.5%) than of energy (30.1%) (Figure 1) | Peak-window MAE added as a key metric |
 | Strong daily and weekly rhythm (Figures 6 and 7) | Calendar features; time-of-day average as Baseline 1 |
 | The total is ambiguous in office hours (Figure 9) | Non-linear models plus harmonic and power-quality features, not total power alone |
-| Many highly correlated electrical signals (Figure 8) | Ridge (L2) for the linear model; SHAP and permutation importance interpreted by *feature group* |
+| Many highly correlated electrical signals (Figure 8) | Ridge (L2) for the linear model; SHAP and permutation importance interpreted by feature group |
 | Data gaps between weeks and at the outage | Lags and rolling windows computed within contiguous segments only |
 | Only ≈ 29 peak windows in a test week | Day-block bootstrap confidence intervals |
 | Distinct kinds of day (Figure 7) | k-means on normalised daily profiles |
 
-**Note on the test week.** The descriptive figures in our proposal (Figures 1 and 5–9) were drawn from weeks 4–6, so they include week 6's *measured* loads. No model, feature or hyperparameter was ever fitted, tuned or selected on week 6. The feature-redundancy check (Section 4.2) and all cross-validation used weeks 2–5 only, and the model choice was frozen in writing before any model saw week 6 (Section 5.3). However, our general view of the data did include a look at the test week, and we state this openly.
+The descriptive figures in our proposal (Figures 1 and 5–9) include the measured loads from week 6, because they were drawn from weeks 4–6. No model, feature or hyperparameter was ever fitted, tuned or selected on week 6. Only weeks 2–5 were used for the feature-redundancy check, the feature ablation and all cross-validation, and the model choice was written down before any model saw week 6. Nonetheless, we explicitly acknowledge that a look at the test week was part of our overall view of the data.
 
 ---
 
@@ -299,22 +304,28 @@ Outside office hours (grey), A/C and total load move together closely. During we
 
 ### 3.1 Preparation sequence
 
-All steps are scripted in `prepare_data.py` and `features.py`. The raw CSVs are read once and saved to Parquet, so every later step starts from the same file.
+**Data preparation and feature engineering workflow.** All data preparation and feature engineering procedures are implemented in `prepare_data.py` and `features.py`. The raw CSV files are processed once and converted into Parquet format, so every later stage starts from the same data source.
 
-1. **Read** each weekly folder's Aggregate file (all 59 columns) and the CP AC, DB TG, DB T1 and DB ML 1 files (date, time and real power only), resolving the misnamed file and each file's date format.
-2. **Drop** trailing blank rows; convert all values to numbers.
-3. **Resample** 1 second → 1 minute: the mean of every main-meter signal, plus the within-minute standard deviation, minimum and maximum of total real power.
-4. **Join** main meter and sub-meters on the minute, keeping only minutes where the main meter and all three lighting boards are present.
-5. **Remove** the outage (phase-1 voltage < 100 V).
-6. **Derive** `light_kw` = DB TG + DB T1 + DB ML 1.
-7. **Build features** (Chapter 4) within contiguous segments, then drop rows whose 60-minute lag window is incomplete.
-8. **Partition** by CLEMD week (Section 5.3).
+The workflow consists of the following steps:
 
-*Figure 2 (Section 1.5) shows the full workflow.* Observation counts at each step:
+1. **Data loading.** The Aggregate file, containing all 59 columns, is loaded from each weekly folder. In addition, the CP AC, DB TG, DB T1 and DB ML 1 files are loaded using only the date, time and real power columns. At this stage, file-naming inconsistencies and differences in date formats are resolved.
+2. **Data cleaning.** Trailing blank rows are removed, and the remaining values are converted into numbers.
+3. **Temporal resampling.** The one-second measurements are resampled into one-minute intervals. The mean is calculated for each main-meter signal, and the standard deviation, minimum and maximum are also calculated for total real power to capture variation within each minute.
+4. **Data integration.** The main-meter and sub-meter data are merged on their minute timestamps. Only minutes with valid readings from the main meter and all three lighting boards are kept.
+5. **Outage removal.** Electrical outages are identified with a phase-1 voltage threshold of less than 100 V and excluded, so that abnormal readings during power interruptions do not affect the analysis.
+6. **Target derivation.** `light_kw` is calculated by summing the real power of DB TG, DB T1 and DB ML 1, giving the combined consumption of the three lighting boards.
+7. **Feature engineering.** The features described in Chapter 4 are generated within contiguous data segments, so no feature reaches across a gap. Rows with incomplete 60-minute lag windows are then removed.
+8. **Data partitioning.** The model-ready data are partitioned by CLEMD week, as described in Section 5.3.
 
-> 42 raw CSV files (1 s) → weeks 2–6 loaded (week 1 excluded: no main meter) → **41,815** joined minutes → outage removed (−135) → **41,680** clean minutes (69 columns) → features built, 365 minutes with incomplete lag windows dropped → **41,315** model-ready minutes → A/C train 16,985 (weeks 4–5) · lighting train 32,725 (weeks 2–5) · test 8,590 (week 6)
+Figure 2 in Section 1.5 illustrates the complete workflow, and Figure 10 shows the record counts at each step.
 
-Each run of `prepare_data.py` and `features.py` ends with `assert` checks (dates fall in September–October 2023, timestamps are increasing with no duplicates, A/C is present only where CP AC exists, and lags never cross a gap), so the dataset can be regenerated and checked from raw data.
+**Observation counts throughout the processing pipeline.** The initial dataset consists of 42 raw CSV files containing one-second measurements. Weeks 2–6 are selected for processing, while Week 1 is excluded because it has no main-meter data. After data integration, 41,815 minute-level observations are obtained. After removing the 135 outage minutes, the dataset contains 41,680 clean observations across 69 columns. Feature engineering then removes 365 observations with incomplete 60-minute lag windows, leaving a final model-ready dataset of **41,315 observations**. These are allocated as follows:
+
+- A/C model: 16,985 training observations (Weeks 4–5).
+- Lighting model: 32,725 training observations (Weeks 2–5).
+- Testing dataset: 8,590 observations (Week 6).
+
+At the end of each run, both `prepare_data.py` and `features.py` perform a series of `assert` checks: all timestamps fall within September–October 2023, timestamps are strictly increasing with no duplicates, A/C values are present only where CP AC data exists, and lag features never cross a gap. These checks make the whole preparation process reproducible, traceable and verifiable from the raw data.
 
 ### 3.2 Cleaning and missing values
 
@@ -322,28 +333,28 @@ Each run of `prepare_data.py` and `features.py` ends with `assert` checks (dates
 
 | Step | Rule and rationale | Effect on dataset |
 |---|---|---|
-| Blank rows | Drop rows with no date: they carry no data | ≈ 33,000 rows per affected raw file |
+| Blank rows | Drop rows with no date, since they carry no data | ≈ 33,000 rows per affected raw file |
 | Date parsing | Choose M/D/Y or D/M/Y per file so row 1 equals the folder's known start date. Automatic parsing would silently misplace files | All files land in 21 Sep–25 Oct 2023 (checked by `assert`) |
 | Units | Sum three phases and divide by 1,000 to give kW, kVAR and kVA | Totals for building, A/C and lighting |
-| Missing circuits | No imputation: a missing A/C file means *no ground truth*, and inventing a target would teach the model its own guesses | Weeks 2–3 have `ac_kw` empty (15,862 minutes); used only for lighting, clustering and out-of-sample scenario estimates |
-| Missing minutes inside weeks | None in the A/C weeks after joining; 5 minutes had a single 1-s sample, so no within-minute std | Those 5 rows are dropped with the incomplete-lag rows |
+| Missing circuits | No imputation, because a missing A/C file means no ground truth, and inventing a target would teach the model its own guesses | Weeks 2–3 contain 15,862 minutes with missing `ac_kw` values. These weeks are used only for lighting, clustering and out-of-sample scenario estimates |
+| Missing minutes inside weeks | None in the A/C weeks after joining. However, 5 minutes had a single 1-s sample, so no within-minute standard deviation | Those 5 rows are dropped with the incomplete-lag rows |
 | Gap days and outage | Left as gaps, not filled. Interpolating 135 minutes or a whole day would create fake load shapes | Features never span a gap (Section 4.5) |
 
 **Risk of losing meaningful observations.** The only rows removed are the outage, blank rows and 365 minutes at segment starts whose lag history is incomplete (0.9% of clean minutes). No high-demand minute was removed.
 
 ### 3.3 Outliers and unusual cases
 
-We checked extreme values against what the building could physically do rather than applying a statistical cut-off. The outage is an *invalid* reading (0 V on every circuit at once) and was removed. Short demand spikes up to 94.6 kW for the building and 44.1 kW for A/C occur on weekday afternoons and coincide with A/C ramps, so they are **real peaks**. In a peak-demand study they are the most important observations, so they were kept unchanged. No capping or transformation was applied to the inputs or targets. Averaging from 1 second to 1 minute reduces sensor noise and small clock misalignment between the separate loggers.
+We checked extreme values against what the building could physically do rather than applying a statistical cut-off. The outage is an invalid reading (0 V on every circuit at once) and was removed. Short demand spikes up to 94.6 kW for the building and 44.1 kW for A/C occur on weekday afternoons and coincide with A/C ramps, so they are real peaks. In a peak-demand study, they are the most important observations, so they were kept unchanged. No capping or transformation was applied to the inputs or targets. Averaging from 1 second to 1 minute reduces sensor noise and small clock misalignment between the separate loggers.
 
 ### 3.4 Encoding, scaling and imbalance
 
-- **Encoding.** There are no text categories. Hour of day is encoded cyclically (sin and cos), so 23:00 and 00:00 are close. Day of week is an integer 0–6, which tree models can split on directly. Weekend and office-hours flags are binary. Unknown categories cannot occur.
-- **Scaling.** Only Ridge needs scaling, because its penalty depends on feature scale. It uses a `StandardScaler` inside a scikit-learn pipeline, so the scaler is **fitted on each training fold only** and applied to the validation or test data. Tree models are scale-invariant and use raw values.
-- **Imbalance.** This is regression, so there are no classes. The decision-relevant peak windows are rare by definition (top 5%). We did not resample, because that would change the time series. We report a separate peak-window metric with bootstrap intervals instead.
+- **Encoding.** The dataset contains no categorical text variables, so no categorical encoding is required. The hour of day is represented with cyclical sine and cosine transformations, so 23:00 and 00:00 are treated as close. The day of the week is an integer from 0 to 6, which tree-based models can split on directly. Weekend and office-hours indicators are binary variables. Since there are no text categories, unknown-category handling is not required.
+- **Scaling.** Feature scaling is applied only to the Ridge regression model, because its regularisation penalty is sensitive to feature magnitudes. A `StandardScaler` inside a scikit-learn pipeline standardises the inputs. The scaler is fitted only on the training data within each cross-validation fold and then applied to the corresponding validation or test data, which prevents information leaking from the validation or test sets. Tree-based models do not need scaling, because their splits do not depend on feature magnitude, so they use the original values.
+- **Class imbalance.** Since the task is regression, class imbalance does not apply. However, peak-demand periods are a small share of the observations, defined as the top 5% of demand. To preserve the time series, no resampling is applied. Instead, performance during peak-demand periods is evaluated separately with a dedicated peak-window metric, with bootstrap confidence intervals to show the uncertainty.
 
 ### 3.5 Final prepared dataset
 
-![Figure 10. Data preparation sequence](figures/report/fig_prep_flow.png)
+![Figure 10](figures/report/fig_prep_flow.png)
 
 *Figure 10. Data preparation sequence, from raw CLEMD files to model-ready partitions, with record counts at each step (generated from the code, so the counts are those of the submitted pipeline).*
 
@@ -366,31 +377,31 @@ We checked extreme values against what the building could physically do rather t
 
 ### 4.1 Feature design rationale
 
-Every feature comes from the main meter or the clock, never from a sub-meter, so that the model can run on a building that only has a main meter. The 98 features fall into five groups (Table 9; full list in Appendix A).
+All features are derived only from main-meter measurements or time-related variables, with no sub-meter data used as input. This means the model can be used in buildings that have only a main meter, without installing extra sub-meters. The 98 features are organised into five groups, as summarised in Table 9. The complete list of features is provided in Appendix A.
 
 *Table 9. Feature groups.*
 
 | Group (count) | Feature / construction | Reason for inclusion |
 |---|---|---|
-| **Power (15)** | Original: real, reactive and apparent power per phase (1-min mean). Derived: total kW, kVAR, kVA; within-minute std, min and max of total kW | The A/C load is part of the total; per-phase values matter because A/C is not spread evenly across phases (Figure 8). Within-minute variability captures compressor cycling |
-| **Power quality (16)** | Original: voltage, current (per phase and neutral), frequency, PF per phase, THD per phase and neutral | Inductive and inverter loads lower PF and raise THD; voltage dips with heavy load |
-| **Harmonics (53)** | Original: 32 odd current harmonics (H1–H15 × 3 phases + neutral). Derived: 21 ratios Hn/H1 for n = 3–15, per phase | Inverter-driven VRF compressors draw distorted current. Six-pulse rectifiers produce characteristic 5th, 7th, 11th and 13th harmonics [26] |
-| **Temporal (9)** | Derived: total kW lagged 1, 5, 15 and 60 min; rolling mean and std over 15 and 60 min; 1-minute change | Recent history separates a building that is ramping up from one holding steady; sudden steps mark switching events |
-| **Calendar (5)** | Derived: sin and cos of hour, day of week, weekend flag, office-hours flag (weekday 08:00–17:00) | Occupancy and timetable proxies |
+| Power (15) | Real, reactive and apparent power for each phase. Derived features include total kW, kVAR and kVA, and the standard deviation, minimum and maximum of total kW within each minute | Captures overall consumption and differences in load distribution across phases. Within-minute statistics capture short-term demand variation, such as compressor cycling |
+| Power quality (16) | Voltage and current for each phase and the neutral line, frequency, power factor (PF) and total harmonic distortion (THD) | Captures changes in electrical conditions that may indicate different types of operating load, including A/C equipment |
+| Harmonics (53) | 32 original odd-order current harmonics (H1–H15) across three phases and the neutral line. 21 derived harmonic ratios (Hn/H1, n = 3–15) for each phase | Captures harmonic patterns of non-linear loads, particularly inverter-driven A/C systems and their characteristic harmonics [26] |
+| Temporal (9) | Total kW lagged by 1, 5, 15 and 60 minutes; rolling mean and standard deviation over 15 and 60 minutes; one-minute change in total kW | Captures recent consumption patterns, demand trends and sudden changes associated with equipment switching |
+| Calendar (5) | Hour of day encoded with sine and cosine, day of week, weekend indicator and office-hours indicator (weekdays 08:00–17:00) | Captures recurring daily and weekly patterns associated with building occupancy and operating schedules |
 
-**How the key derived features are calculated.** `p_lag15` is total real power 15 minutes earlier. `p_roll60_mean` is the mean total power over the last 60 minutes, including the current one. `ratio_3H5` is phase-3 5th-harmonic current divided by the phase-3 fundamental. `office_hours` is 1 on weekdays from 08:00 to 16:59.
+**Calculation of key derived features.** `p_lag15` is total real power measured 15 minutes earlier. `p_roll60_mean` is the average total real power over a 60-minute window, including the current minute. `ratio_3H5` is the phase-3 fifth-harmonic current divided by its fundamental current. `office_hours` is 1 on weekdays between 08:00 and 16:59, and 0 otherwise.
 
-The NASA temperature feature, listed as optional in the proposal, was not used. Hourly temperature is shared by every minute in an hour and mostly duplicates time of day over a three-week window.
+**NASA temperature feature.** Although listed as an optional feature in the proposal, NASA temperature data was not used in the final model. Hourly temperature is constant across all minutes in the same hour and largely overlaps with time-of-day information over the three-week period, so it would add little new information.
 
 ### 4.2 Feature selection
 
-**All 98 features were kept; no automatic selection was applied.** We justify this rather than invent a selection stage. The reasons are:
+All 98 features were kept and no automatic selection was applied. We justify this rather than invent a selection stage. The reasons are:
 
-1. **Redundancy was measured, on development data only.** `features.py` computes absolute correlations among all features on weeks 2–5 (never the test week) and lists **130 pairs with |r| > 0.98** (`results/redundant_feature_pairs.csv`). Examples include phase current and apparent power (r = 0.9999) and total kW and kVA (r = 0.9997).
+1. **Redundancy was measured on development data only.** `features.py` computes absolute correlations among all features on weeks 2–5 (never the test week) and lists 130 pairs with |r| > 0.98 (`results/redundant_feature_pairs.csv`). Examples include phase current and apparent power (r = 0.9999) and total kW and kVA (r = 0.9997).
 2. **The models chosen tolerate redundancy.** Ridge's L2 penalty shares weight among correlated inputs instead of letting it explode [27]. Trees simply pick one of several equivalent splits. Dropping features by hand risks removing the one variant that matters for a specific phase.
 3. **Selecting by test performance is forbidden**, and selecting within CV folds over 98 features would have used up the small, fixed tuning budget agreed in the proposal.
 
-**A finding we report honestly.** The redundancy check showed that each ratio feature correlates perfectly (r = 1.00) with its raw harmonic. The reason is that CLEMD already reports harmonics as a percentage of the fundamental: every `Current*H1` value is exactly 100. So the 21 ratio features are exact copies of the raw harmonics divided by 100, and the four H1 columns are constant. The model effectively has **73 distinct informative inputs**. This does not affect accuracy (trees and Ridge are unaffected by exact copies), but it does split SHAP credit between twins such as `agg_Current3H5` and `ratio_3H5`. That is one reason we interpret importance by feature group (Section 6.8). The feature set was frozen before this was noticed, and we did not change it afterwards. Removing the duplicates is listed as future work.
+**A finding we report honestly.** The redundancy check showed that each ratio feature correlates perfectly (r = 1.00) with its raw harmonic. The reason is that CLEMD already reports harmonics as a percentage of the fundamental: every `Current*H1` value is exactly 100. So the 21 ratio features are exact copies of the raw harmonics divided by 100, and the four H1 columns are constant. The model effectively has 73 distinct informative inputs. This does not affect accuracy (trees and Ridge are unaffected by exact copies), but it does split SHAP credit between twins such as `agg_Current3H5` and `ratio_3H5`. That is one reason we interpret importance by feature group (Section 6.8). The feature set was frozen before this was noticed, and we did not change it afterwards. The ablation in Section 4.4 confirms that removing the duplicates changes cross-validated error by only 2.4%, within the fold-to-fold spread.
 
 ### 4.3 Dimensionality reduction
 
@@ -398,21 +409,37 @@ The NASA temperature feature, listed as optional in the proposal, was not used. 
 
 ### 4.4 Evidence of usefulness
 
-We did not run a formal feature-ablation experiment. Three pieces of evidence still show that the engineered features add value:
+We compared feature sets directly under the **same validation protocol** used for model selection (`ablation.py`): the frozen LightGBM settings, the same four `TimeSeriesSplit` folds, A/C training weeks 4–5 only. Only the input columns change. The test week was not used, and the frozen model was not changed; this is evidence about the features, not a new model choice.
 
-- **Calendar features on their own are not enough.** The time-of-day baseline uses only hour and weekend information and has an A/C test MAE of 2.26 kW, against 1.24 kW for the full feature set (Table 12).
-- **Grouped permutation importance (Table 16).** On the test week, shuffling the harmonic group raises the frozen model's MAE by 2.11 kW, and shuffling the temporal group raises it by 0.42 kW. Both groups therefore carry information that the power group does not.
-- **The model does not follow the timetable.** Calendar features contribute the least (permutation +0.19 kW), which is why the model handles light weekdays that the timetable baseline gets wrong.
+*Table 9b. Feature-group ablation, A/C, cross-validation on training weeks (mean of 4 folds).*
 
-A proper ablation run under the same CV protocol is listed as future work.
+| Feature set | Features | CV MAE kW (± fold SD) | Change vs all features | CV peak-window MAE kW |
+|---|---|---|---|---|
+| **All features (frozen)** | 98 | **0.99 ± 0.22** | — | 2.59 |
+| Without harmonics | 45 | 1.20 ± 0.28 | **+21%** | 2.30 |
+| Without power quality | 82 | 0.99 ± 0.19 | +0.3% | 2.82 |
+| Without temporal | 89 | 0.98 ± 0.25 | −1.2% | 2.85 |
+| Without calendar | 93 | 1.05 ± 0.22 | +6.5% | 4.35 |
+| Duplicates removed (ratios and constant H1) | 73 | 1.01 ± 0.19 | +2.4% | 3.15 |
+| Power meter, no harmonics or power quality | 29 | 1.69 ± 0.30 | +71% | 4.11 |
+| kW-only meter (total kW, temporal, calendar) | 18 | 2.01 ± 0.45 | +104% | 4.93 |
+| Calendar only | 5 | 3.05 ± 0.87 | +209% | 6.55 |
+
+What this shows:
+
+- **Harmonics carry the most unique information.** Removing them raises typical error by 21%, which agrees with the permutation result in Table 16. Their peak-window error is slightly lower without them (2.30 vs 2.59 kW), but peak-window MAE rests on only a few windows per fold and varies widely (Section 6.3), so we do not read much into that difference.
+- **Power-quality and temporal features add little on their own** (changes within ±1.3%, far inside the fold SD). Their information largely overlaps with power and harmonics. We kept them because the freeze rule fixed the feature set before testing, and they do not hurt.
+- **Calendar features help mainly at the peak.** Typical error rises only 6.5% without them, but peak-window error rises from 2.59 to 4.35 kW. The frozen model uses calendar features little on average (Table 16), yet they help it place A/C correctly in the busiest windows.
+- **Removing the duplicate features makes no meaningful difference** (+2.4%, within the fold SD), which confirms Section 4.2: the copies did not harm accuracy, but they are not needed.
+- **The meter matters.** A meter that logs only total kW roughly doubles the error (2.01 kW), and a standard power meter without harmonics gives 1.69 kW. Both still beat the timetable baseline (CV MAE 2.99 kW, Appendix B) by 33% and 43% respectively. This is direct evidence for the adoption question in Section 7.4.
 
 ### 4.5 Leakage and interpretation checks
 
 - **No target information:** no sub-meter column is used as an input, and `week` is used only to split the data.
-- **No future information:** lags and rolling windows look only backwards (`shift` and trailing `rolling`), and are computed inside **contiguous segments**, so a lag never reaches across a missing day or the outage. An `assert` checks that the first minute after every gap has no lag-1 value.
+- **No future information:** lags and rolling windows look only backwards (`shift` and trailing `rolling`), and are computed inside contiguous segments, so a lag never reaches across a missing day or the outage. An `assert` checks that the first minute after every gap has no lag-1 value.
 - **No fold leakage in CV:** `TimeSeriesSplit(gap=60)` leaves 60 minutes between each training and validation fold, which is the length of the longest lag.
-- **Redundancy check excludes the test week**, and peak windows are defined from *building* demand (an input), not from the target.
-- **Interpretation limit:** a feature that predicts A/C well, such as the 5th harmonic, is a *signature* of A/C running, not a lever. Lowering harmonics would not lower cooling. Stakeholders act on the A/C itself.
+- **Redundancy check and ablation exclude the test week**, and peak windows are defined from building demand (an input), not from the target.
+- **Interpretation limit:** a feature that predicts A/C well, such as the 5th harmonic, is a signature of A/C running, not a lever. Lowering harmonics would not lower cooling. Stakeholders act on the A/C itself.
 
 ---
 
@@ -420,92 +447,134 @@ A proper ablation run under the same CV protocol is listed as future work.
 
 ### 5.1 Task formulation and pipeline
 
-**Task.** Supervised regression. Input: the 98 main-meter features for minute *t*. Output: estimated A/C real power (kW) in minute *t*, and separately lighting-and-socket power. A secondary unsupervised task groups whole days by the shape of their main-meter load profile.
+The task is supervised regression. For a given minute *t*, the model takes the 98 features recorded from the building's main meter and estimates the active power (in kW) of the air-conditioning (A/C). A second regression model estimates the combined lighting and socket power from the same input features. In addition, an unsupervised clustering task groups whole days according to the shape of the main meter's daily load profile.
 
-**Why ML and not a simple rule.** A fixed-fraction rule ("A/C = 30% of the total") fails in exactly the office-hours windows that set the peak (Figure 9). The time-of-day baseline, which is the best timetable rule, is beaten by 45% (Table 12).
+A simple decision rule is not enough to break down these loads. A fixed-share rule, such as assuming that A/C is 30% of the total, fails exactly in the office-hours windows that set the demand charge (Figure 9). A time-of-day timetable follows the daily pattern but cannot adjust to changes in occupancy from one day to the next. The machine learning model cuts the average error (MAE) by 45% compared with the time-of-day baseline (Table 12).
 
-The pipeline (Figure 2, Section 1.5) runs as nine scripts, in this order: `prepare_data` (O1) → `features` (O1) → `train`: baselines, tuning and **model freeze** (O2) → `evaluate`: one-time test, CIs, robustness and error analysis (O2) → `explain`: SHAP and permutation importance (O3) → `cluster`: operating modes and after-hours energy (O4) → `scenarios`: kW, RM, solar and tCO₂e (O5) → `make_figures` → `build_dashboard`, which produces the presentation.
+The end-to-end process is implemented in ten scripts, which run in this order:
+
+1. `prepare_data`: cleans raw sub-meter and main-meter recordings and aligns timestamps (O1).
+2. `features`: computes the 98 electrical, harmonic, temporal and calendar features for each minute and checks redundancy (O1).
+3. `train`: fits the baselines, runs cross-validated hyperparameter tuning and freezes the winning models (O2).
+4. `ablation`: retrains the frozen A/C settings on reduced feature sets under the same CV folds (Section 4.4) (O3).
+5. `evaluate`: evaluates the frozen models once on the held-out test week, computes confidence intervals, and performs robustness and error analyses (O2).
+6. `explain`: generates global and local feature attributions using SHAP and permutation importance (O3).
+7. `cluster`: groups daily load profiles into building operating modes and quantifies after-hours energy (O4).
+8. `scenarios`: simulates peak-demand reduction (kW), tariff savings (RM), solar timing and carbon reductions (tCO₂e) (O5).
+9. `make_figures` and `report_figures`: export all report figures.
+10. `build_dashboard`: compiles the interactive presentation dashboard.
 
 ### 5.2 Baseline and selected algorithms
 
-*Table 10. Models compared.*
+Candidate algorithms were compared against a reference baseline for every task, to confirm that machine learning offers benefits over straightforward schedules (Table 10).
 
-| Model | How it works | Why it fits | Role |
-|---|---|---|---|
-| **Time-of-day average** | Predicts the mean training target for the same hour and day type (weekday or weekend) | Uses no electrical data. If we cannot beat it, the main meter adds nothing beyond the timetable | Baseline 1 |
-| **Ridge regression** [27] | Linear model with an L2 penalty on standardised features | Simple, fully interpretable, and handles correlated inputs. Total power alone correlates at r = 0.94 with A/C | Baseline 2, and the default if trees do not clearly win |
-| **Random Forest** [28] | Averages 200 decision trees, each fitted to a bootstrap sample with random feature subsets | Learns interactions (e.g. *high power + strong 5th harmonic + office hours = A/C on*), robust to outliers and correlation | Candidate |
-| **XGBoost** [29] | Gradient boosting: 400 shallow trees added in sequence, each correcting the errors of the previous ones | Usually the strongest family for tabular data; exact TreeSHAP | Candidate |
-| **LightGBM** [30] | Histogram-based gradient boosting that grows leaf-wise | Fast and accurate on tabular data; exact TreeSHAP | Candidate (**frozen choice for A/C**) |
-| **k-means** [31] | Partitions days into *k* groups minimising within-group distance; *k* chosen by silhouette [32] | No labels exist for "type of day" | Unsupervised operating modes |
+*Table 10. Baselines and selected machine learning approaches.*
 
-The 1-D CNN stretch goal was not attempted. With about three weeks of A/C data from one building, deep NILM models, which usually need months of data [33], would be hard to train well and much harder to explain to a facilities team.
+| Task | Reference baseline | ML approaches |
+|---|---|---|
+| Regression (A/C and lighting-and-socket power) | Time-of-day average: predicts the mean training target for the matching hour and day type (weekday/weekend), without electrical inputs | Ridge regression: linear, L2 penalty (frozen for lighting); Random Forest: 200 bagged decision trees; XGBoost: 400 sequential shallow trees; LightGBM: 400 leaf-wise boosted trees (frozen for A/C) |
+| Clustering (daily load-profile operating modes) | Calendar grouping: weekday vs weekend | k-means clustering with *k* chosen by silhouette score |
+
+**Reasons for the reference baselines and chosen ML approaches:**
+
+1. **Time-of-day average:** a timetable-only reference point. If a model cannot beat this baseline, the main meter's electrical signals add nothing beyond the timetable.
+2. **Ridge regression [27]:** a straightforward, easy-to-interpret model that handles correlated variables well; total power alone correlates with A/C at r = 0.94. It is the default model unless a tree model clearly wins.
+3. **Random Forest [28], XGBoost [29], LightGBM [30]:** able to model non-linear interactions among electrical signals (for example, high total power + strong 5th harmonic + office hours = A/C on), while remaining robust to outliers. XGBoost and LightGBM also support exact TreeSHAP explanations.
+4. **k-means [31]:** identifies operating states without needing "day type" labels. The calendar grouping is the reference: Section 6.8 shows the clusters differ from it on two weekdays, one of them a public holiday.
+5. **Method not included (1-D CNN):** excluded because deep NILM methods usually need months of training data [33]. With about three weeks of A/C data from one building, a deep model would be likely to overfit and would be much harder to explain to facilities managers.
 
 ### 5.3 Evaluation design
 
-![Figure 11. Chronological train/test split](figures/proposal/fig09_split.png)
+![Figure 11](figures/proposal/fig09_split.png)
 
-*Figure 11. Chronological split of the CLEMD data. A/C trains on weeks 4–5 and lighting on weeks 2–5; both are tested once on week 6.*
+*Figure 11. Chronological split of the CLEMD data. A/C trains on weeks 4–5 and lighting on weeks 2–5. Both are tested once on week 6.*
 
-- **Split (Figure 11).** Strictly chronological. **A/C:** train on weeks 4–5 (16,985 minutes, 66%) and test on week 6 (8,590 minutes, 34%). **Lighting:** train on weeks 2–5 (32,725 minutes, 79%) and test on week 6. A random split would leak information, because neighbouring minutes are nearly identical [25].
+- **Split (Figure 11).** Strictly chronological. A/C: train on weeks 4–5 (16,985 minutes, 66%), test on week 6 (8,590 minutes, 34%). Lighting: train on weeks 2–5 (32,725 minutes, 79%), test on week 6. A random split would leak information, because neighbouring minutes are nearly identical [25].
 - **Cross-validation.** `TimeSeriesSplit(n_splits=4, gap=60)` within the training weeks: four expanding windows, each validating on the next block of time after a 60-minute gap. Every model and configuration uses the same folds.
-- **Freeze rule, fixed before tuning.** Pick the best configuration of each model by mean CV MAE. Choose the tree model with the lowest CV MAE **only if it is at least 5% below Ridge**; otherwise choose Ridge. This follows the brief's preference for simple models.
-- **Freeze and sealed test.** `features.load()` drops week 6 by default, so no tuning code can see it. The choice was written to `results/freeze.json` on 6 November 2026 at 21:11 and committed (`9e5fc5e`) **before week 6 was ever loaded**. Week 6 was then evaluated once, and nothing was changed after seeing the results. Rerunning `train.py` never overwrites the freeze. It writes `freeze_rerun.json` and checks that the same choice is reproduced (rerun on 10 November: reproduced).
+- **Freeze rule, fixed before tuning.** Pick the best configuration of each model by mean CV MAE. Choose the tree model with the lowest CV MAE only if it is at least 5% below Ridge; otherwise choose Ridge. This follows the brief's preference for simple models.
+- **Freeze and sealed test.** `features.load()` drops week 6 by default, so no tuning code can see it. The choice was written to `results/freeze.json` on 6 November 2026 and committed before week 6 was ever loaded. Week 6 was then evaluated once, and nothing was changed after seeing the results. Rerunning `train.py` never overwrites the freeze: it writes `freeze_rerun.json` and checks that the same choice is reproduced (rerun on 10 November: reproduced).
 - **Robustness.** Separately, each model is trained on week 4 and tested on week 5, to see how it holds up across weeks.
-- **Seeds.** `random_state=0` for all models and k-means, and `numpy.random.default_rng(0)` for the bootstrap and permutation importance.
+- **Seeds.** `random_state=0` for all models and k-means; `numpy.random.default_rng(0)` for the bootstrap and permutation importance.
 
 ### 5.4 Training and hyperparameter selection
 
-The search spaces were small and agreed in advance, so that tuning could not quietly overfit the validation folds. We used grid search with mean MAE over the four CV folds as the selection metric; the full grid is in Appendix B. That makes 17 configurations × 4 folds × 2 targets = 136 fits.
+Models were trained with scikit-learn, XGBoost and LightGBM, using a compact hyperparameter grid fixed before tuning (the complete grid is in Appendix B). Grid search was performed on the four time-series CV folds, with mean CV MAE as the selection metric, giving 17 configurations × 4 folds × 2 targets = 136 fits. The number of trees was kept fixed, and no early stopping was used. Final configurations are shown in Table 11.
 
-*Table 11. Final settings (validation-selected values in bold; everything else is a fixed default we chose).*
+*Table 11. Final settings. Values in the "Selected" columns were chosen by cross-validation; "Fixed settings" are defaults we set.*
 
 | Model | Fixed settings | Searched | Selected (A/C) | Selected (lighting) |
 |---|---|---|---|---|
-| Time of day | n/a | n/a | n/a | n/a |
-| Ridge | StandardScaler | α ∈ {0.1, 1, 10, 100} | **α = 100** | **α = 100** (frozen) |
-| Random Forest | 200 trees, max_features 0.33 | max_depth ∈ {None, 12}; min_samples_leaf ∈ {1, 5} | **None, 1** | **None, 5** |
-| XGBoost | 400 trees, subsample 0.8, colsample 0.8 | max_depth ∈ {4, 6}; learning_rate ∈ {0.03, 0.1} | **4, 0.03** | **4, 0.03** |
-| LightGBM | 400 trees, subsample 0.8, colsample 0.8 | num_leaves ∈ {15, 63}; learning_rate ∈ {0.03, 0.1} | **63, 0.1** (frozen) | **63, 0.1** |
+| Time of day | N/A | N/A | N/A | N/A |
+| Ridge | StandardScaler | α ∈ {0.1, 1, 10, 100} | α = 100 | **α = 100 (frozen)** |
+| Random Forest | 200 trees, max_features 0.33 | max_depth ∈ {None, 12}; min_samples_leaf ∈ {1, 5} | None, 1 | None, 5 |
+| XGBoost | 400 trees, subsample 0.8, colsample 0.8 | max_depth ∈ {4, 6}; learning_rate ∈ {0.03, 0.1} | 4, 0.03 | 4, 0.03 |
+| LightGBM | 400 trees, subsample 0.8, colsample 0.8 | num_leaves ∈ {15, 63}; learning_rate ∈ {0.03, 0.1} | **63, 0.1 (frozen)** | 63, 0.1 |
 
-**Freeze outcome.** For A/C, LightGBM's CV MAE (0.987 kW) was 57% below Ridge's (2.275 kW), so the rule chose **LightGBM**. For lighting, the best tree model (Random Forest, 0.363 kW) was *not* 5% better than Ridge (0.360 kW), so the rule chose **Ridge**. No early stopping was used; the number of trees is fixed.
+**Freeze outcome.** For A/C, LightGBM's CV MAE (0.987 kW) was 57% below Ridge's (2.275 kW), so the rule chose LightGBM. For lighting, the best tree model (Random Forest, 0.363 kW) was not 5% better than Ridge (0.360 kW), so the rule chose Ridge.
 
 ### 5.5 Implementation details
 
-- **Language and packages:** Python 3.11.17; pandas 3.1.1 [34], NumPy 2.4.6, PyArrow 26.0.1, scikit-learn 1.9.1 [35], XGBoost 3.2.0 [29], LightGBM 4.7.0 [30], SHAP 0.51.0 [36], Matplotlib 3.11.2 [37]. All versions are pinned in `requirements.txt`.
-- **Environment:** Linux (WSL2) on a standard laptop CPU, with no GPU. The full pipeline from raw CSVs takes about 12 minutes, mostly CV. LightGBM trains in about 2 seconds and predicts a week in well under a second, so retraining it every night on a building management server would be cheap.
-- **Model reconstruction:** no model files are stored. `evaluate.py` rebuilds the frozen model and its fitted scaler (if any) from `freeze.json` and refits on the training weeks, which is deterministic with the fixed seeds.
-- **Self-checks:** every script ends with `assert` checks, including that SHAP values add up to the prediction, that shaving never raises the peak, and that the cluster day counts add up.
+*Table 11b. Implementation details.*
+
+| Requirement | Used for | Details |
+|---|---|---|
+| Language and package versions | Language | Python 3.11.17 |
+| | Data handling | pandas 3.1.1 [34], NumPy 2.4.6, PyArrow 26.0.1 |
+| | Modelling | scikit-learn 1.9.1 [35], XGBoost 3.2.0 [29], LightGBM 4.7.0 [30] |
+| | Explainability and plotting | SHAP 0.51.0 [36], Matplotlib 3.11.2 [37] |
+| Execution environment and hardware | Operating system | Linux (WSL2) |
+| | Hardware | Standard laptop CPU, no GPU. A GPU is not needed, so hardware does not limit reproducibility |
+| Model and preprocessing reconstruction | Reconstruction | `evaluate.py` rebuilds the frozen model, and its fitted scaler if any, from `freeze.json` and refits on the training weeks |
+| | Reproducibility | Deterministic with the fixed seeds (`random_state=0` and `numpy.random.default_rng(0)`); all versions pinned in `requirements.txt` |
+| Runtime and resource use | Full pipeline | About 12 minutes from raw CSVs, mostly CV |
+| | LightGBM training | About 2 seconds |
+| | LightGBM prediction | Well under a second for one week of data |
+| | Deployment feasibility | Nightly retraining on a building management server would be cheap |
+| Validation | Self-checks | Every script ends with `assert` checks: SHAP values add up to the prediction, shaving never raises the peak, cluster day counts add up, and the ablation's full feature set reproduces the frozen CV MAE |
 
 ---
 
 ## Chapter 6 Evaluation Measures, Results and Discussion
 
-### 6.1 Measures that fit the decision
+### Part A: Evaluation measures and results
 
-**Primary selection metric: MAE (kW)**, the average size of the error in physical units. It is easy for facilities staff to read ("on average the estimate is off by 1.2 kW") and it is the metric the freeze rule used.
+### 6.1 Choose measures that fit the decision
 
-Complementary measures, each answering a stakeholder question (*ŷ* = estimate, *y* = measured, *n* = minutes, *P* = building power):
+**Primary metric: MAE (kW).** It is in the target's units, so facilities staff can read it directly as the average error in kW per minute. It is also the metric used to select models in CV and to apply the 5% freeze rule. The other measures are complementary evidence.
 
-- **RMSE** = √(Σ(ŷ − y)²/n): penalises large misses more heavily.
-- **R²** = 1 − Σ(ŷ − y)²/Σ(y − ȳ)²: reported but given little weight, because A/C is part of the total, so even a trivial model scores a high R².
-- **Peak-window MAE**: MAE on 15-minute means, restricted to the windows where *building* demand is in the top 5% of the test week (≥ 61.9 kW, 29 windows). These are the windows that set the demand charge, so this is **the most decision-relevant measure**.
-- **Energy-share error (percentage points)** = 100 × (Σŷ − Σy)/ΣP: whether the model gets A/C's share of building energy right. This feeds the kWh and tCO₂e estimates.
-- **Normalised disaggregation error** NDE = √(Σ(ŷ − y)²/Σy²): a standard NILM metric [18], for comparison with the literature.
+*Table 11c. Measures by task.*
+
+| Task | Suitable evidence | Interpretation to include |
+|---|---|---|
+| Regression (A/C and lighting-and-socket power) | MAE (primary), peak-window MAE, RMSE, energy-share error, NDE, R² | MAE is the average error in kW. Peak-window MAE is the error in the windows that set the demand charge. RMSE penalises large errors. Each is compared with the time-of-day baseline |
+| Clustering (daily load-profile operating modes) | Silhouette score, cluster sizes and cluster profiles | Silhouette shows how well separated the groups are. Cluster sizes show whether any group is too small to be useful. Profiles give each group a domain meaning (e.g. working day vs non-working day) |
+
+Equations used:
+
+- MAE = (1/*n*) Σ |*yᵢ* − *ŷᵢ*|
+- RMSE = √[(1/*n*) Σ (*yᵢ* − *ŷᵢ*)²]
+- R² = 1 − Σ (*yᵢ* − *ŷᵢ*)² / Σ (*yᵢ* − *ȳ*)²
+
+where *y* is the measured A/C power, *ŷ* the estimate, *ȳ* the mean of *y*, *n* the number of minutes and *P* the building's main-meter power.
+
+- **Peak-window MAE**: MAE on 15-minute means, restricted to the windows where *building* demand is in the top 5% of the evaluated period (≥ 61.9 kW in the test week, 29 windows). These windows set the TNB maximum-demand charge, so this is **the most decision-relevant measure**.
+- **Energy-share error (percentage points)** = 100 × (Σ*ŷ* − Σ*y*) / Σ*P*: whether the model gets A/C's share of building energy right. It feeds the kWh and tCO₂e scenarios in Chapter 7.
+- **Normalised disaggregation error** NDE = √[Σ (*ŷ* − *y*)² / Σ *y*²]: a standard NILM metric [18], included for comparison with the literature.
+- **R²** is reported but given little weight: A/C is part of the building total, so even a simple model scores a high R².
 - **Silhouette score** for clustering [32].
 
 ### 6.2 Quantitative comparison
 
-All values below are on the **held-out test week (week 6)**. Every model was retrained at its best CV configuration on the same training weeks and scored with the same definitions.
+All values below are on the held-out test week (week 6). Every model was retrained at its best CV configuration on the same training weeks and scored with the same definitions.
 
 *Table 12. A/C (primary target, test-week average 6.5 kW), held-out test week. 95% CIs from a day-block bootstrap.*
 
 | Model | MAE kW [95% CI] | RMSE kW | R² | Peak-window MAE kW [95% CI] | Energy-share error (pp) | NDE |
 |---|---|---|---|---|---|---|
 | Time-of-day average | 2.26 [1.29, 3.25] | 4.28 | 0.80 | 6.54 [3.41, 7.92] | −2.6 | 0.37 |
-| Ridge | 1.56 [1.19, 1.91] | **2.35** | **0.94** | 1.95 [0.93, 2.15] | +2.3 | **0.20** |
+| Ridge | 1.56 [1.19, 1.91] | 2.35 | 0.94 | 1.95 [0.93, 2.15] | +2.3 | 0.20 |
 | Random Forest | 1.25 [0.61, 1.88] | 2.47 | 0.93 | 2.11 [1.72, 4.72] | −1.1 | 0.21 |
-| XGBoost | 1.33 [0.61, 2.01] | 2.55 | 0.93 | 1.92 [1.26, 5.21] | **−0.3** | 0.22 |
+| XGBoost | 1.33 [0.61, 2.01] | 2.55 | 0.93 | 1.92 [1.26, 5.21] | −0.3 | 0.22 |
 | **LightGBM (frozen)** | **1.24 [0.56, 1.87]** | 2.57 | 0.93 | **1.52 [1.11, 5.13]** | −0.9 | 0.22 |
 
 *Table 13. Lighting and sockets (secondary target, test-week average 3.1 kW), held-out test week.*
@@ -518,11 +587,11 @@ All values below are on the **held-out test week (week 6)**. Every model was ret
 | XGBoost | 0.45 | 0.74 | 0.79 | 1.29 | −2.1 |
 | LightGBM | 0.43 | 0.75 | 0.78 | 1.50 | −1.9 |
 
-![Figure 12. Model comparison on the test week](figures/report/fig_model_comparison.png)
+![Figure 12](figures/report/fig_model_comparison.png)
 
-*Figure 12. Test-week MAE for every model, with 95% day-block bootstrap intervals: A/C over all minutes (left), A/C in the 29 peak windows (centre), lighting and sockets (right). The frozen model for each target is in blue.*
+*Figure 12. Test-week MAE for every model with 95% day-block bootstrap intervals: A/C over all minutes (left), A/C in the 29 peak windows (centre), lighting and sockets (right). The frozen model for each target is in blue.*
 
-Figure 12 puts Tables 12 and 13 side by side. For A/C, all four learned models clearly beat the timetable baseline, and the three tree models sit together at about 1.2–1.3 kW. The peak-window panel shows why the peak result needs care: LightGBM has the lowest point estimate (1.52 kW), but its interval is wide (1.11–5.13 kW) because one or two badly estimated afternoons can dominate 29 windows. For lighting, the frozen Ridge model (blue) is the worst on typical error. Section 6.5 explains why.
+Figure 12 puts Tables 12 and 13 side by side. For A/C, all four learned models clearly beat the timetable baseline, and the three tree models sit together at about 1.2–1.3 kW. The peak-window panel shows why the peak result needs care: LightGBM has the lowest point estimate (1.52 kW), but its interval is wide (1.11–5.13 kW), because one or two badly estimated afternoons can dominate 29 windows. For lighting, the frozen Ridge model (blue) is the worst on typical error; Section 6.5 explains why. Table 14 shows the robustness check.
 
 *Table 14. Robustness check: A/C, train week 4 → test week 5 (validation, not the sealed test).*
 
@@ -532,59 +601,61 @@ Figure 12 puts Tables 12 and 13 side by side. For A/C, all four learned models c
 | Ridge | 2.81 | 3.66 | 0.87 | 4.08 | −4.5 |
 | Random Forest | 1.16 | 2.42 | 0.94 | 1.62 | −1.6 |
 | XGBoost | **1.16** | **2.33** | **0.95** | 1.49 | −1.6 |
-| LightGBM | 1.18 | 2.46 | 0.94 | **1.04** | **−1.5** |
+| LightGBM (frozen) | 1.18 | 2.46 | 0.94 | **1.04** | **−1.5** |
 
 ### 6.3 Uncertainty and consistency
 
-- **Bootstrap.** CIs in Tables 12–13 come from 2,000 resamples of whole **days** (seven calendar dates, six of them full days). Resampling days rather than minutes keeps the within-day correlation, in the spirit of the block bootstrap [38]. The intervals are wide because there are only six full test days, and **the CIs of LightGBM, Random Forest, XGBoost and Ridge overlap**.
-- **Across CV folds** (Appendix B, Table B2), LightGBM's A/C MAE ranged from 0.75 to 1.19 kW (SD 0.22), while Ridge's ranged from 1.37 to 3.01 kW (SD 0.85). Tree models were consistently better than Ridge on typical error in every fold, but **peak-window MAE varied a lot between folds** for all models (LightGBM 0.98–4.81 kW), because each fold has only a handful of peak windows.
-- **Across weeks** (Table 14), tree models hold up when trained on a single week, with MAE 1.16–1.18 kW. Ridge degrades to 2.81 kW.
+- **Bootstrap.** The CIs in Tables 12–13 come from 2,000 resamples of whole days (seven calendar dates, six of them full days). Resampling days rather than minutes keeps the within-day correlation, in the spirit of the block bootstrap [38]. Because there are only six full test days, the intervals are wide, and the CIs of LightGBM, Random Forest, XGBoost and Ridge overlap.
+- **Cross-validation spread (4 folds).** Across the four expanding CV folds (Appendix B, Table B2), LightGBM's A/C MAE ranged from 0.75 to 1.19 kW (SD 0.22), while Ridge's ranged from 1.37 to 3.01 kW (SD 0.85). Tree models were consistently better than Ridge on typical error in every fold, but peak-window MAE varied a lot between folds for all models (LightGBM 0.98–4.81 kW), because each fold has only a few peak windows.
+- **Across weeks.** Trained on one week alone (Table 14), tree models hold steady at an MAE of 1.16–1.18 kW, while Ridge degrades to 2.81 kW.
 
-![Figure 13. Consistency across folds and weeks](figures/report/fig_consistency.png)
+![Figure 13](figures/report/fig_consistency.png)
 
 *Figure 13. Consistency of the A/C models. Left: MAE in each of the four expanding-window CV folds (dots) and their mean (tick), at each model's best configuration. Right: MAE when trained on week 4 and tested on week 5.*
 
-Figure 13 shows that the gap between tree models and the two baselines is consistent rather than an accident of one split. Every tree-model fold (0.73–1.26 kW) is below every Ridge fold (1.37–3.01 kW) and every baseline fold (2.33–3.67 kW). The ranking *among* the tree models changes from fold to fold. Ridge also has by far the widest spread, and it more than doubles its error when trained on a single week (right). This matters for UTP, because a new building would start with only a short sub-metering period.
-
-We therefore do **not** claim that LightGBM is significantly better than the other tree models, or than Ridge on peak windows. The honest claim is that tree models are consistently better than Ridge on typical error across folds, weeks and the test week; that LightGBM has the best point estimates on MAE and peak MAE; and that Ridge is competitive on large errors.
+Because the bootstrap intervals overlap and the ranking among tree models changes from fold to fold, we do not claim that LightGBM is statistically better than the other tree ensembles, or than Ridge on peak errors. Figure 13 confirms that tree models consistently beat Ridge and the timetable baseline on typical error across folds, weeks and the test week, with LightGBM giving the best overall point estimates. This matters for UTP, because a new building would start with only a short sub-metering period.
 
 ### 6.4 Final selection
 
-**A/C: LightGBM**, chosen by the pre-registered rule and confirmed on the test week, where it had the lowest MAE and peak-window MAE. Random Forest and XGBoost are practically equivalent, and LightGBM is the fastest to train of the three. Ridge would be the simpler choice, but it misses typical minutes by 26% more and degrades badly when trained on less data (Table 14), which matters when a new building has only a short sub-metering period. **Lighting: Ridge**, chosen by the rule. It was the best model on peak windows but the worst on typical error in the test week (Section 6.5). We keep the frozen choice, but we do not recommend using any lighting model operationally.
+For the A/C target, we chose LightGBM as the final model. It met the pre-registered freeze rule and achieved the lowest test MAE (1.24 kW) and peak-window MAE (1.52 kW). Random Forest and XGBoost are practically equivalent. Ridge would be the simpler choice, but it misses typical minutes by 26% more and degrades badly when trained on less data (Table 14), which matters when a new building has only a short sub-metering period. Compared with the similarly accurate tree ensembles, LightGBM trains fastest (about 2 seconds on a CPU) and supports exact TreeSHAP explanations, making it transparent and practical for onboarding new UTP buildings with short sub-metering campaigns.
+
+For lighting and sockets, Ridge was chosen by the freeze rule. It was the best lighting model on peak windows but the worst on typical error in the test week, so we keep the frozen choice but do not recommend any lighting model for operational use.
+
+### Part B: Discussion and interpretation
 
 ### 6.5 Explain the principal findings
 
-**O2: Does the main meter carry enough information to estimate A/C? Yes.** The frozen model cuts typical error by **45%** against the timetable baseline (1.24 vs 2.26 kW) and by **21%** against Ridge. In peak windows it cuts error by **77%** against the baseline (1.52 vs 6.54 kW). It gets A/C's share of building energy right to within 1 percentage point. It beats the baseline because it reads A/C from electrical signals rather than from the clock: it handles light weekdays such as 24 October, which the timetable treats as normal weekdays.
+**O2: Main-meter data is sufficient for A/C estimation.** The frozen model reduced typical error by 45% against the timetable baseline (1.24 vs 2.26 kW) and by 21% against Ridge. During peak windows the reduction reached 77% (1.52 vs 6.54 kW), and A/C's share of building energy was estimated to within one percentage point. Unlike the timetable, the model captures day-to-day variation in A/C use, including lighter weekdays such as 24 October.
 
-Ridge has a lower RMSE (2.35 vs 2.57 kW) and tighter CIs, so it makes fewer *very large* misses. The tree models are better on typical minutes but occasionally miss sharp A/C switching events by several kW. Both behaviours are visible in Figure 16.
+Ridge has a lower RMSE (2.35 vs 2.57 kW) and tighter confidence intervals, so it makes fewer very large misses. The tree models are better on typical minutes but occasionally miss sharp A/C switching events by several kW. Both behaviours are visible in Figure 16.
 
-**Lighting is a negative result, and we report it as one.** Ridge won cross-validation (MAE 0.360) but was the *worst* model on typical test-week error (0.64 kW) and under-estimated lighting by 3.0 points of building energy. The reason is drift. The lighting level rose from about 2.4–2.6 kW in the September weeks used for training to 3.1 kW in the October test week, and a linear model extrapolates poorly when that happens. More fundamentally, lighting and sockets are a small, flat load (around 15% of energy) that changes the main-meter signals very little. **Lighting disaggregation from the main meter alone is not reliable with this data.** Recommendations that depend on lighting therefore use the *measured* lighting boards, and are marked as such.
+**Lighting is a negative result, and we report it as one.** Ridge won cross-validation (MAE 0.360) but was the worst model on typical test-week error (0.64 kW) and under-estimated lighting by 3.0 points of building energy. The reason is drift. The lighting level rose from about 2.4–2.6 kW in the September weeks used for training to 3.1 kW in the October test week, and a linear model extrapolates poorly when that happens. Moreover, lighting and sockets are a small, flat load (around 15% of energy) that changes the main-meter signals very little. Lighting disaggregation from the main meter alone is therefore not reliable with this data, and recommendations involving lighting rely on measured lighting-board data instead.
 
-![Figure 14. Lighting estimate versus measured](figures/report/fig_lighting_test.png)
+![Figure 14](figures/report/fig_lighting_test.png)
 
 *Figure 14. Lighting-and-socket load estimated from the main meter (frozen Ridge, dashed) versus measured (orange), test week, 15-minute means.*
 
-Figure 14 shows the failure directly. The estimate follows the weekday on/off pattern, which is why it does well on peak windows, but it runs consistently below the measured load: a week mean of 2.47 kW against 3.07 kW measured. It is also noisy, because it reacts to swings in the main meter that are really A/C. This is the signature of a model fitted to a lower September level that cannot isolate a small load inside a large, changing total.
+Figure 14 shows the limitation directly. The estimate follows the weekday on/off pattern, which is why it does well on peak windows, but it runs consistently below the measured load: a week mean of 2.47 kW against 3.07 kW measured. It is also noisy, because it reacts to swings in the main meter that are really A/C. This highlights the difficulty of isolating a small load within the combined building demand.
 
 ### 6.6 Visual evidence
 
-![Figure 15. Estimated versus measured A/C over the test week](figures/results/test_week_timeseries.png)
+![Figure 15](figures/results/test_week_timeseries.png)
 
 *Figure 15. A/C estimated from the main meter (dashed) versus measured by the sub-meter (blue), with the building total (grey), test week 19–24 October 2023, 15-minute means.*
 
 Figure 15 shows that the estimate follows the daily A/C cycle, including the light Tuesday on 24 October. The largest gaps are on Friday 20 October, when A/C is under-estimated by about 5 kW for most of the afternoon, and around midday on 24 October, when measured A/C briefly drops to about 3 kW but the estimate stays near 15 kW. Night-time and weekend A/C is tracked closely.
 
-![Figure 16. Estimated versus measured A/C scatter](figures/results/test_pred_vs_actual.png)
+![Figure 16](figures/results/test_pred_vs_actual.png)
 
 *Figure 16. Estimated versus measured A/C, 15-minute windows of the test week. Orange points are the top-5% building-demand windows; the dotted line is perfect agreement.*
 
 Points cluster around the diagonal, with no strong systematic bias, and most peak windows (orange) sit within a few kW of it. The largest misses are in the middle range and go both ways: some windows with 3–7 kW of measured A/C are estimated at 14–16 kW, and some at 19–27 kW are under-estimated by 5–12 kW. These are the ambiguous mid-load cases discussed below.
 
-![Figure 17. Residual analysis](figures/report/fig_residuals.png)
+![Figure 17](figures/report/fig_residuals.png)
 
 *Figure 17. Residual analysis of the frozen A/C model on the test week. Left: residual (estimated − measured) against building load, 15-minute windows. Centre: MAE by building-load band with the number of minutes. Right: distribution of 1-minute residuals.*
 
-The residuals (Figure 17) are centred close to zero: mean -0.17 kW, median -0.01 kW. 70.9% of minutes are within ±1 kW and 92.5% within ±5 kW, so there is **no large systematic over- or under-prediction** across the week. Outside office hours the residuals are almost zero. In weekday office hours they fan out in both directions, with a mean of -1.24 kW, so office-hours A/C is slightly under-estimated on average. At 45–65 kW of building load, 84% of office-hours windows are under-estimated, typically by 2–8 kW. The model is conservative on the busiest afternoons, so savings estimates built on it tend to understate peak A/C rather than overstate it. A small cluster at about 36–38 kW is *over*-estimated by about 10 kW; these are the midday windows on 24 October when the measured A/C briefly dropped (Figure 15). The fan is widest at 30–60 kW of building load and narrows again above 60 kW, which matches the load-band breakdown in Table 15. The distribution has a sharp central peak and long tails on both sides: most minutes are estimated very well, and a small number of switching and mid-load minutes produce the large errors that drive RMSE.
+The residuals (Figure 17) are centred close to zero: mean −0.17 kW, median −0.01 kW. 70.9% of minutes are within ±1 kW and 92.5% within ±5 kW, so there is no large systematic over- or under-prediction across the week. Outside office hours the residuals are almost zero. In weekday office hours they fan out in both directions, with a mean of −1.24 kW, so office-hours A/C is slightly under-estimated on average. At 45–65 kW of building load, 84% of office-hours windows are under-estimated, typically by 2–8 kW. The model is conservative on the busiest afternoons, so savings estimates built on it tend to understate peak A/C rather than overstate it. A small cluster at about 36–38 kW is over-estimated by about 10 kW; these are the midday windows on 24 October when the measured A/C briefly dropped (Figure 15). The fan is widest at 30–60 kW of building load and narrows again above 60 kW, which matches the load-band breakdown in Table 15. The distribution has a sharp central peak and long tails on both sides: most minutes are estimated very well, and a small number of switching and mid-load minutes produce the large errors that drive RMSE.
 
 ### 6.7 Error and subgroup analysis
 
@@ -605,21 +676,21 @@ The residuals (Figure 17) are centred close to zero: mean -0.17 kW, median -0.01
 | Minutes with a > 5 kW step change | 3.50 | 227 |
 | All other minutes | 1.17 | 8,363 |
 
-![Figure 18. Test-week error by hour](figures/results/test_error_by_hour.png)
+![Figure 18](figures/results/test_error_by_hour.png)
 
 *Figure 18. Mean absolute error of the frozen A/C model by hour of day, weekdays versus weekends, test week.*
 
-**Where and why it fails.**
+**Where and why it fails:**
 
-1. **Weekday mornings and middays (08:00–14:00).** On weekdays alone, the error rises from 3.4 kW at 08:00 to 5.0 kW at 13:00 (Figure 18). This is when A/C ramps up and its level is least predictable from the timetable.
-2. **The 30–60 kW load band.** This is the same ambiguous band shown in Figure 9, where the same total can hide very different amounts of A/C. Above 60 kW the error falls again (2.40 kW), because at those loads A/C is clearly on.
-3. **Sudden steps.** In minutes where the building load jumps by more than 5 kW, the error is three times higher (3.50 vs 1.17 kW, n = 227). This is consistent with compressors switching on and off, and with small clock offsets between the separate loggers: a change can appear one minute earlier in the main meter than in the sub-meter.
+1. **Weekday mornings and middays (08:00–14:00).** On weekdays alone, the error rises from 3.4 kW at 08:00 to 5.0 kW at 13:00 (Figure 18). This is when A/C ramps up and is least predictable from the timetable.
+2. **The 30–60 kW load band.** This is the ambiguous band in Figure 9, where the same building total can hide very different amounts of A/C. Above 60 kW the error falls again (2.40 kW), because at those loads A/C is clearly on.
+3. **Sudden steps.** In minutes where the building load changes by more than 5 kW, the error is three times higher (3.50 vs 1.17 kW, n = 227). This is consistent with compressors switching on and off, and with small clock offsets between the separate loggers: a change can appear one minute earlier in the main meter than in the sub-meter.
 
-**Operational consequences.** For peak management, an over-estimate at the peak would make facilities expect more savings from an A/C trim than they would get. An under-estimate would make them overlook A/C as the cause. The model's estimated A/C share of peak load (44.0%) is close to the measured share (45.4%), so neither error dominates at the windows that matter. For after-hours savings, the model over-estimates night-time A/C by 10–27% (Section 6.8), so after-hours savings estimates are somewhat optimistic. Weekend errors (0.15 kW) are negligible. Subgroups with only a few hundred minutes, such as the step changes, rest on four or five days of data, so their exact values should not be over-read.
+**Operational consequences.** If the model over-estimates A/C at the peak, facilities would expect more savings from an A/C trim than they would get. If it under-estimates, they could overlook A/C as the cause. The model's estimated A/C share of peak load (44.0%) is close to the measured value (45.4%), so neither error dominates in the windows that matter. After-hours savings estimates are somewhat optimistic, because the model over-estimates night-time A/C by 10–27% (Section 6.8). The weekend error (0.15 kW) is negligible. Subgroups with only a few hundred minutes, such as the step changes (n = 227), rest on four or five days of data, so their exact values should not be over-read.
 
 ### 6.8 Explainability and decision usefulness
 
-**O3: What does the A/C model rely on?** We computed exact TreeSHAP values [36], [39] for every test minute. Because many features are exact or near copies of each other, we also summed SHAP within feature groups and ran **grouped** permutation importance, which shuffles a whole group together, five repeats each.
+**O3: What does the A/C model rely on?** We computed exact TreeSHAP values [36], [39] for every test minute. Because many features are exact or near copies of each other, we also summed SHAP within feature groups and ran grouped permutation importance, which shuffles a whole group together, five repeats each.
 
 *Table 16. A/C model importance by feature group (test week).*
 
@@ -631,33 +702,33 @@ The residuals (Figure 17) are centred close to zero: mean -0.17 kW, median -0.01
 | Calendar | 0.44 | 0.19 ± 0.01 |
 | Temporal | 0.26 | 0.42 ± 0.01 |
 
-![Figure 19. Top 15 features by mean absolute SHAP](figures/results/shap_global_top15.png)
+![Figure 19](figures/results/shap_global_top15.png)
 
 *Figure 19. The 15 features with the largest mean |SHAP| for the frozen A/C model, test week.*
 
-![Figure 20. SHAP beeswarm](figures/results/shap_beeswarm.png)
+![Figure 20](figures/results/shap_beeswarm.png)
 
 *Figure 20. SHAP value of each test minute for the top 12 features. Colour shows the feature value (red = high).*
 
-![Figure 21. Importance by feature group](figures/results/importance_by_group.png)
+![Figure 21](figures/results/importance_by_group.png)
 
-*Figure 21. Importance by feature group: summed SHAP (left) and grouped permutation importance (right).*
+*Figure 21. Feature-group importance: summed SHAP (left) and grouped permutation importance (right).*
 
 - **Phase-2 real power is by far the strongest feature** (mean |SHAP| 3.98 kW). Phase 2 carries the least non-A/C load (5.6 kW mean, against 8.5 kW and 6.3 kW on phases 1 and 3), so its swings are mostly A/C. It also has the highest correlation with A/C (r = 0.946).
-- **Next come the 5th, 7th and 11th current harmonics and THD.** These are the characteristic harmonics of six-pulse rectifiers (orders 6k ± 1) [26], which drive the inverters of VRF compressors. The model is therefore using a physically meaningful A/C signature rather than just "the building is busy". In Figure 20, high 5th-harmonic and THD values (red) push the A/C estimate up. The phase-2 11th harmonic works the other way: *low* values raise the estimate. Because CLEMD reports harmonics as a percentage of the fundamental, a large A/C current raises the fundamental and can lower the relative share of other loads' harmonics. The relationship is therefore not simply "more harmonics = more A/C", and we treat the harmonic group as a signature rather than over-interpret any single order.
-- **Calendar features matter little**, so the model does not just follow the timetable. SHAP and permutation importance agree on the top two groups. They disagree slightly on the order of temporal and calendar features, and both of those groups are small.
+- **Next come the 5th, 7th and 11th current harmonics and THD.** These are the characteristic harmonics of six-pulse rectifiers (orders 6k ± 1) [26], which drive the inverters of VRF compressors. The model is therefore using a physically meaningful A/C signature rather than just "the building is busy". In Figure 20, high 5th-harmonic and THD values (red) push the A/C estimate up. The phase-2 11th harmonic works the other way: low values raise the estimate. Because CLEMD reports harmonics as a percentage of the fundamental, a large A/C current raises the fundamental and can lower the relative share of other loads' harmonics. The relationship is therefore not simply "more harmonics = more A/C", and we treat the harmonic group as a signature rather than over-interpret any single order. The ablation agrees: retraining without harmonics raises CV error by 21% (Table 9b).
+- **Calendar features matter little on average**, so the model does not just follow the timetable. Retraining without them does, however, worsen peak-window error (Table 9b), so they help place A/C in the busiest windows. SHAP and permutation importance agree on the top two groups. They disagree slightly on the order of temporal and calendar features, and both of those groups are small.
 
-![Figure 22. Local SHAP explanation of the week's peak](figures/results/shap_local_peak.png)
+![Figure 22](figures/results/shap_local_peak.png)
 
 *Figure 22. Why the model estimates 28.9 kW of A/C during the week's highest 15-minute window (Thursday 19 October, 16:00; building 71.4 kW; measured A/C 30.4 kW; model baseline 5.9 kW).*
 
 **A facilities manager's question: "Why does the model think A/C caused this peak?"** Figure 22 answers it for the week's highest window. Phase-2 power adds +12.4 kW above the 5.9 kW baseline. The 5th-harmonic features and THD add about +3.9 kW together, partly offset by the phase-2 7th harmonic (−0.6 kW). The estimate is 28.9 kW against 30.4 kW measured.
 
-**Limits of the explanation.** SHAP explains what the *model* learned, not what physically causes the load [36]. Credit is split between exact copies (for example `agg_Current3H5` and `ratio_3H5`), which is why we read importance by group. These are associations in one building's data.
+**Limits of the explanation.** SHAP explains what the model learned, not what physically causes the load [36]. Credit is split between exact copies (for example `agg_Current3H5` and `ratio_3H5`), which is why we read importance by group. These are associations in one building's data.
 
 **O4: Operating modes and after-hours use.** k-means was run on normalised 24-hour main-meter profiles for the 28 complete days in weeks 2–6. No target was used, so the method works in any building with a main meter.
 
-![Figure 23. Daily operating modes](figures/results/cluster_profiles.png)
+![Figure 23](figures/results/cluster_profiles.png)
 
 *Figure 23. Daily operating modes found by k-means (k = 2): mean hourly profile per mode with individual days (left), and the mode of each day (right).*
 
@@ -668,43 +739,53 @@ The residuals (Figure 17) are centred close to zero: mean -0.17 kW, median -0.01
 | 0: working day | 16 | 16 | 561 | 26.4 / 32.6 | 33.4 |
 | 1: non-working day | 12 | 2 | 268 | 31.7 / 40.2 | 46.1 |
 
-- Silhouette picks **two modes**: working days and non-working days. The two weekdays in the non-working mode are Friday 22 September and **Thursday 28 September 2023, which was the Maulidur Rasul public holiday** [40]. The main meter alone therefore identifies non-working days, with no calendar input.
+- Silhouette picks two modes: working days and non-working days. The two weekdays in the non-working mode are Friday 22 September and Thursday 28 September 2023, which was the Maulidur Rasul public holiday [40]. The main meter alone therefore identifies non-working days, with no calendar input, and this is where the clusters differ from the simple weekday/weekend reference grouping.
 - With k = 3, a third "light day" mode (375 kWh/day) contains Friday 22 September, Monday 25 September and Friday 29 September, the days around that holiday. This matches the light days we expected in the proposal.
-- **Non-working days still use about 32 kWh of A/C and 46 kWh of lighting and sockets a day**, and overnight A/C averages about 1.3 kW. This is the after-hours target in Section 7.3. Measured A/C exists only for weeks 4–6; the estimated column uses the model's out-of-sample estimates, which **run 10–27% high** (week 6: 30.6 estimated vs 27.7 measured kWh/day), so savings built on them are somewhat optimistic.
+- Non-working days still use about 32 kWh of A/C and 46 kWh of lighting and sockets a day, and overnight A/C averages about 1.3 kW. This is the after-hours target in Section 7.3. Measured A/C exists only for weeks 4–6; the estimated column uses the model's out-of-sample estimates, which run 10–27% high (week 6: 30.6 estimated vs 27.7 measured kWh/day), so savings built on them are somewhat optimistic.
 
-**Decision usefulness.** The model output is directly usable in two ways: an A/C share for every 15-minute window, which can be checked against the peak, and a daily after-hours A/C total, which can be compared between modes. Section 7 turns these into actions.
+**Decision usefulness.** The model output is directly usable in two ways: an A/C share for every 15-minute window, which can be checked against the peak, and a daily after-hours A/C total, which can be compared between modes. Chapter 7 turns these into actions.
 
 ### 6.9 Relationship to prior work
 
-CLEMD's authors published no ML results [6], and we found no other disaggregation results on CLEMD, so no direct comparison is possible. The closest Malaysian work, also from UPNM, used a rule-based change-point method to support maximum-demand control [41]. It detects switching events but does not estimate continuous A/C power, and VRF loads with variable-speed compressors break event-based assumptions [19]. Another Malaysian study estimated the CO₂ savings that NILM feedback could produce [42]. In a commercial-building study, Random Forest gave the best cooling-load disaggregation, with a test R² of 96.5% [43]. Our test R² is 0.93, but that study used a different building, period, resolution and split, and is a master's project rather than peer-reviewed work, so **we do not claim to be better or worse**. Our results are consistent with its finding that tree ensembles suit this task. Deep NILM networks perform well on residential appliance data with months of training data [33]; with about three weeks of data from one building, tree models were the more appropriate and more explainable choice.
+CLEMD's authors reported no ML results [6], and no other CLEMD-based disaggregation studies were identified for direct comparison. The closest Malaysian study used rule-based change-point detection for maximum-demand control [41], which identifies switching events but does not estimate continuous A/C power. This approach is also less suitable for VRF systems with variable-speed compressors [19]. Another Malaysian study explored potential CO₂ savings from NILM feedback [42]. A commercial-building study reported an R² of 96.5% using Random Forest for cooling-load disaggregation [43], compared with 0.93 in this study. However, differences in building type, data period, resolution and evaluation method prevent a direct comparison, and that study is a master's project rather than peer-reviewed work, so we do not claim to be better or worse. Both studies support the suitability of tree-based models for this task. Although deep NILM networks perform well with months of residential data [33], tree models offered a more practical and explainable choice for the limited three-week dataset used in this study.
 
 ---
 
 ## Chapter 7 Sustainability Insights and Recommendations
 
-> **All UTP figures in this chapter are SCENARIOS for one CLEMD-sized building, built from the model's main-meter A/C estimates on weeks it never trained on (weeks 2, 3 and 6; 20 days). They are not measurements of UTP.** Where week 6's sub-meter exists, each estimate is checked against it.
+> Every UTP figure in this chapter is an estimate (a scenario) for one building the size of the CLEMD building. None of them was measured at UTP. The estimates use the model's A/C predictions for 20 days it never saw during training (weeks 2, 3 and 6). For week 6, where the A/C sub-meter exists, we checked each estimate against the real reading.
 
 ### 7.1 Link findings to the Grand Challenge
 
-**Energy Security, SDG 7 (Target 7.3).** The pathway from model output to sustainability outcome is:
+The project is aligned with the Energy Security Grand Challenge and SDG 7, Target 7.3 (improve energy efficiency). The model supports a decision in five steps:
 
-> **Main-meter data (already on UTP's i-BMS) → model estimates A/C kW every minute → facilities see that A/C sets the peak, and when → demand-triggered A/C trim and after-hours schedules → lower maximum demand (kW, RM) and fewer kWh → lower Scope 2 emissions (SDG 13).**
+1. Every UTP building already feeds main-meter data to the i-BMS.
+2. The model uses this data to estimate A/C power minute by minute.
+3. Facilities staff can then see that A/C causes the peak, and at what time.
+4. They can trim A/C output briefly when demand is high, and switch off unneeded A/C after hours.
+5. This reduces the building's maximum demand (kW and RM) and energy use (kWh), which also reduces Scope 2 emissions (SDG 13).
 
-**The key evidence: the main meter alone shows who sets the peak.** In the test week's top-5% demand windows, the model put A/C at **44.0%** of building load, against **45.4%** measured. It put lighting at 8.3%, against 9.6% measured (Figure 24). All of these windows fell on weekdays between 08:00 and 17:00. So, without any sub-meter, facilities can be told that **A/C sets the peak, on weekday working hours**.
+**The main meter alone can show what produces the peak.** We looked at the busiest 5% of 15-minute intervals in the test week. The model estimated that A/C supplied 44.0% of the building's load in those periods, while the sub-meter showed 45.4%. The model estimated lighting at 8.3%, and the sub-meter recorded 9.6% (Figure 24). All these peak periods fell on weekdays between 08:00 and 17:00. So, without adding any meters, UTP would be able to tell that A/C is the source of the peak during weekday working hours.
 
-![Figure 24. Who sets the peak](figures/results/scenario_peak_drivers.png)
+![Figure 24](figures/results/scenario_peak_drivers.png)
 
 *Figure 24. Share of building load in the test week's top-5% demand windows: measured by sub-meters versus estimated from the main meter only.*
 
-**Solar timing: the proposal's idea does not hold.** UTP's rooftop PV generates from about 08:00 to 18:00. 77% of the estimated A/C energy (87% of measured A/C energy in weeks 4–6) already falls in those hours, so A/C is already a daytime load that overlaps solar well (Figure 25). Solar output at 14:00–16:00 is still 89% of its 11:00–13:00 level, so the afternoon A/C peak does *not* happen while solar is "falling away", as our proposal assumed.
+**Solar timing.** Our proposal assumed that the A/C peak comes in the late afternoon, when solar output is dropping. The data show otherwise. UTP's rooftop solar panels produce power from about 08:00 to 18:00. About 77% of the estimated A/C energy (87% of the measured A/C energy in weeks 4–6) is already used in those hours, so A/C already matches the solar hours well (Figure 25). Even at 14:00–16:00, solar output is still 89% of its 11:00–13:00 level.
 
-![Figure 25. Weekday A/C demand versus modelled UTP rooftop solar](figures/proposal/fig10_ac_vs_solar.png)
+![Figure 25](figures/proposal/fig10_ac_vs_solar.png)
 
 *Figure 25. Weekday A/C demand (CLEMD, measured) versus modelled UTP rooftop PV output (7.4 MWp × NASA POWER irradiance), each as a percentage of its own daily maximum.*
 
-We tested pre-cooling directly: moving 20% of 14:00–16:00 A/C energy into an earlier window, keeping total energy the same. **Moving it into the solar peak (11:00–13:00) *raises* the period's maximum demand by 5.2 kW** (5.4 kW using measured A/C), because this building is already near its peak at midday, and its daily peaks fall anywhere between 11:00 and 16:59. The best window, 08:00–10:00, when solar is only at 35% of its peak, gives no reduction in the period's maximum (Figure 26). On the peak day, Thursday 19 October, shifting lowers the 14:00–15:45 windows by up to about 7 kW, but the day's maximum (71.4 kW) falls at 16:00, just after the shifted window, so it is unchanged. The building's peak is spread across the afternoon, not confined to one fixed slot. **We therefore withdraw the pre-cooling recommendation** made in the proposal.
+Pre-cooling means running the A/C harder earlier in the day so that it can do less in the afternoon. We tested pre-cooling directly by moving 20% of the 14:00–16:00 A/C energy into an earlier window, with total energy kept the same:
 
-![Figure 26. Pre-cooling scenario](figures/results/scenario_precooling.png)
+- Moving it to the solar peak (11:00–13:00) made the period's highest demand 5.2 kW higher (5.4 kW using measured A/C). The building is already busy at midday, and its daily peaks can happen at any time from 11:00 to 16:59.
+- Moving it to 08:00–10:00, the best option, when solar is at only 35% of its peak, did not lower the highest demand at all (Figure 26).
+- On the busiest day, Thursday 19 October, the shift lowered demand at 14:00–15:45 by up to about 7 kW. However, that day's highest demand (71.4 kW) came at 16:00, just after the shifted window, so it did not change.
+
+Because the peak can happen at any point in the afternoon, moving A/C use out of one fixed time slot does not lower it. We therefore withdrew the pre-cooling recommendation from our proposal.
+
+![Figure 26](figures/results/scenario_precooling.png)
 
 *Figure 26. Pre-cooling scenario on the period's peak weekday (Thursday 19 October 2023): building demand as recorded versus with 20% of 14:00–16:00 A/C moved to 08:00–10:00. The shaded area is mean irradiance at UTP (right axis).*
 
@@ -714,25 +795,25 @@ We tested pre-cooling directly: moving 20% of 14:00–16:00 A/C energy into an e
 
 | # | Evidence or insight | Stakeholder and action | Expected benefit and condition | When |
 |---|---|---|---|---|
-| 1 | The main meter recovers A/C's peak share (44.0% vs 45.4%); all peaks fall on weekdays 08:00–17:00 (Section 7.1) | **UTP Property Management:** program the BMS or VRF controllers to trim A/C output (a set-point raise of about 1 °C, or a capacity limit of about 20%) *only* when building demand exceeds a threshold near its 95th percentile (53 kW here) | ≈ 5.8 kW lower maximum demand, **RM 6,200–6,700 a year per building** (estimate, Table 19). *Condition:* occupant comfort trial; threshold set per building | Now: needs only the main meter and controller settings |
-| 2 | Pre-cooling into the solar peak raises the maximum by 5.2 kW (Figure 26) | **Property Management and the sustainability office:** do **not** adopt fixed-time pre-cooling; keep A/C timing and focus on limiting the peak | Avoids a scenario penalty of about RM 470–510 a month per building | Now |
-| 3 | Non-working days still use ≈ 32 kWh of A/C and ≈ 46 kWh of lighting and sockets a day; overnight A/C ≈ 1.3 kW (Table 17) | **Property Management:** audit after-hours and weekend A/C and lighting schedules; switch off A/C zones on non-working days, using the main-meter day-type clusters to flag abnormal days | ≈ 7.7–9.2 MWh and **5.7–6.8 tCO₂e a year per building** (estimate, Table 20). *Condition:* some night load (servers, refrigerators) is essential | Now: clustering needs no sub-meter |
-| 4 | The method works on CLEMD, but UTP uses district cooling and lighting estimates are unreliable (Sections 6.5, 8.1) | **Sustainability office and the registered energy manager:** pilot on one UTP building's i-BMS feed with **2–4 weeks of temporary sub-metering** of its AHU and lighting circuits, then retrain and validate | Turns the scenarios into measured savings; needed before recommendations 1 and 3 are rolled out campus-wide | Next semester; needs budget and approval |
-| 5 | Tree models hold up across weeks, but lighting drifted between September and October (Table 14, Section 6.5) | **Energy manager:** retrain monthly and track MAE against any available sub-meter | Keeps estimates reliable as semester use changes | After the pilot |
+| 1 | The main meter correctly reflects A/C's share of the peak (44.0% estimated vs 45.4% measured). All peaks occur on weekdays between 08:00 and 17:00 (Section 7.1) | **UTP Property Management:** only when building demand rises to about its 95th percentile (53 kW here), raise the set-point by about 1 °C or limit capacity by about 20%, using the BMS or VRF controllers | Lower peak demand by about 5.8 kW, or RM 6,200–6,700 per year per building (estimate, Table 19). *Condition:* test occupant comfort first; set the threshold for each building | Now: needs only the main meter and controller settings |
+| 2 | Pre-cooling at the solar peak raises the maximum demand by 5.2 kW (Figure 26) | **Property Management and the sustainability office:** do not use fixed-time pre-cooling. Keep the current A/C timing and focus on limiting the peak | Avoids an extra cost of about RM 470–510 a month per building (scenario) | Now |
+| 3 | On non-working days the building still uses about 32 kWh of A/C and 46 kWh of lighting and sockets a day, and A/C runs at about 1.3 kW overnight (Table 17) | **Property Management:** check A/C and lighting schedules for after-hours and weekends, turn off A/C zones on non-working days, and use the main-meter day types (clusters) to flag unusual days | About 7.7–9.2 MWh and 5.7–6.8 tCO₂e a year per building (estimate, Table 20). *Condition:* some night loads, such as servers and refrigerators, must stay on | Now: clustering needs no sub-meter |
+| 4 | The method works on CLEMD, but much of UTP uses district cooling, lighting estimates are not reliable (Sections 6.5, 8.1), and the adoption plan is not yet reviewed with UTP (Section 7.4) | **Sustainability office and the registered energy manager:** review the plan with UTP stakeholders, then run a pilot on one UTP building's i-BMS data with 2–4 weeks of temporary sub-meters on its AHU and lighting circuits; retrain and check the model | Turns these estimates into measured savings before Recommendations 1 and 3 are implemented campus-wide | Next semester; needs budget and approval |
+| 5 | The tree models remain accurate from week to week, but the lighting load changed between September and October (Table 14, Section 6.5) | **Energy manager:** retrain the model every month and track its error (MAE) against any available sub-meter | Keeps the estimates reliable as building use changes during the semester | After the pilot |
 
-Recommendations 1–3 can start now, because they only need the main meter and controller changes. Recommendation 4 is the step that allows the benefits to be claimed for UTP.
+Recommendations 1–3 can start now, because they only need the main meter and changes to controller settings. Recommendation 4 must be done before UTP can claim any of these savings as its own.
 
 ### 7.3 Quantify impact responsibly
 
-We separate three kinds of number:
+We report three kinds of number separately:
 
 - **Measured** in CLEMD: A/C's share of the peak, after-hours energy on the sub-metered weeks, and model errors.
 - **Estimated** scenarios for one CLEMD-sized building: Tables 19 and 20.
-- **Possible** future UTP benefits: these require the pilot.
+- **Possible** future UTP benefits, which require the pilot.
 
-We never convert an improvement in accuracy into a claimed energy saving.
+We do not treat a more accurate model as proof of energy savings.
 
-**Peak shaving.** Scenario: whenever 15-minute building demand is at or above its 95th percentile (53.1 kW over the 20 unseen days), A/C is trimmed by *x*%. The new maximum is then **recomputed** (a lower peak can be overtaken by another window). Baseline: the highest 15-minute demand over those days, 71.4 kW. Demand charge: RM 89.27–97.06 per kW per month (TNB medium-voltage, standard or time-of-use) [3], [4].
+**Peak shaving (lowering the peak).** In this scenario, A/C is cut by *x*% whenever the building's 15-minute demand is at or above its 95th percentile (53.1 kW over the 20 unseen days). We then recompute the new maximum demand, because if the highest period is reduced, another period may become the highest. The starting point is the highest 15-minute demand over those 20 days, 71.4 kW. The demand charge is RM 89.27–97.06 per kW per month (TNB medium voltage, standard or time-of-use tariff) [3], [4].
 
 *Table 19. Peak-shaving scenarios (one building; estimate).*
 
@@ -742,9 +823,9 @@ We never convert an improvement in accuracy into a claimed energy saving.
 | 20% | 5.8 | 5.8 / 6.1 | 516–561 | 6,200–6,700 |
 | 30% | 8.7 | 8.7 / 8.1 | 774–841 | 9,300–10,100 |
 
-The model-based cut matches the cut computed from the real sub-meter to within 0.6 kW. In this data the highest window stays the highest after shaving, so the recomputed cut equals the simple upper bound. The proposal's indicative figure (6.3 kW for a 20% trim) used the measured peak of 83.9 kW in weeks 4–6. The figure here uses model estimates on unseen weeks only.
+The cut calculated from the model's estimates is within 0.6 kW of the cut calculated from the real sub-meter. In this data the highest period stays the highest even after the trim, so the recalculated cut equals the simple maximum possible cut. Our proposal estimated 6.3 kW for a 20% trim, but that figure used the measured peak of 83.9 kW from weeks 4–6. The figures here use model estimates on unseen weeks only.
 
-**After-hours savings and carbon.** Scenario: cut after-hours A/C (model estimate) by 50% and after-hours lighting and sockets (measured boards) by 30%. Annualised as 365 × the daily average, and converted with Peninsular Malaysia's 2024 grid emission factor of **0.740 tCO₂e/MWh** (Energy Commission, provisional) [22]. The result is compared with UTP's 20,270 tCO₂e of purchased-electricity emissions [2].
+**After-hours savings and carbon.** This scenario reduces after-hours A/C (model estimate) by 50% and after-hours lighting and sockets (measured) by 30%. The daily average is multiplied by 365 to give a yearly figure. To convert to carbon, Peninsular Malaysia's 2024 grid emission factor of 0.740 tCO₂e/MWh (Energy Commission, provisional) [22] was used, and the result is compared with UTP's 20,270 tCO₂e of emissions from purchased electricity [2].
 
 *Table 20. After-hours savings scenarios (one building; estimate); sensitivity to the office-hours definition.*
 
@@ -754,32 +835,40 @@ The model-based cut matches the cut computed from the real sub-meter to within 0
 | 08–18 | 27.9 | 31.3 | 8,528 | 6.3 | 0.031% |
 | 07–19 | 25.0 | 28.4 | 7,675 | 5.7 | 0.028% |
 
-![Figure 27. Scenario results](figures/report/fig_scenarios.png)
+![Figure 27](figures/report/fig_scenarios.png)
 
 *Figure 27. Scenario results for one CLEMD-sized building (estimates, not measurements). Left: test-week maximum-demand cut from the demand-triggered A/C trim, computed from the model's estimate and checked against the measured A/C. Right: annual savings from the after-hours scenario under three office-hours definitions.*
 
-**Interpretation.** For one building the carbon effect is small, about 6 tCO₂e a year. Its value is that it needs **no new hardware** and can be repeated across every metered building. The peak-shaving value (about RM 6,000 a year per building at a 20% trim) is the stronger financial case, and it is comparable in kind to the RM 1.0 million a year UTP already saves by managing DCP maximum demand [13].
+**Interpretation.** For one building the carbon saving is small, about 6 tCO₂e a year. However, it needs no new equipment, and the same analysis can be repeated for every building that has a meter. The peak-shaving saving, about RM 6,000 a year per building with a 20% trim, gives the stronger financial reason to act. It is the same type of measure as UTP's current management of the DCP's maximum demand, which already saves RM 1.0 million a year [13].
 
 **Assumptions** (all in `scenarios.py`):
 
-- TNB rates come from secondary sources [3], [4] and should be checked against TNB's official schedule [11].
-- The emission factor is provisional and will fall as renewables grow [22].
-- Annualising 20 days of September–October data ignores semester breaks and seasons.
-- The 50% and 30% after-hours cuts are assumed, not tested.
-- After-hours A/C estimates run 10–27% high (Section 6.8).
-- The PV performance ratio is assumed to be 0.75–0.80, giving a 4.2–4.5 MW mean peak; this affects only the solar magnitudes, not the timing conclusions.
-- The demand charge applies at the *campus* meter. Cutting one building's peak lowers UTP's bill only if that building contributes at the time of the campus peak.
+- The TNB rates are taken from secondary sources [3], [4] and should be verified against TNB's official tariff schedule [11].
+- The emission factor is provisional and will decrease as more renewable energy is added [22].
+- The annual figures are based on 20 days in September–October, so they do not include semester breaks or other seasons.
+- The 50% and 30% after-hours cuts are assumptions and have not been tested.
+- The model's after-hours A/C estimates are 10–27% too high (Section 6.8).
+- We assumed a solar performance ratio of 75% to 80%, giving an average peak of 4.2 to 4.5 MW. This changes only the amount of solar power, not the timing results.
+- TNB bills according to the peak demand at the campus meter. Cutting one building's peak lowers UTP's bill only if that building is drawing a lot of power when the whole campus peaks.
 
 ### 7.4 Adoption and monitoring
 
-- **What the stakeholder needs.** A 1-minute main-meter feed that includes power per phase, PF, THD and current harmonics. **[Check with UTP facilities]** whether the i-BMS meters record harmonics. If they record only kW and kWh, the model loses its second most important feature group, and accuracy would need to be re-tested.
-- **Decision rule.** The demand trigger (near the 95th percentile of the building's 15-minute demand) and the trim size, both set per building.
-- **Personnel.** Facilities operators run the trim. The registered energy manager under Act 861 [20] reviews monthly reports.
-- **Review.** Monthly comparison of estimated against measured peak, and retraining (Recommendation 5).
-- **Comfort and equity.** Trims are small (10–30%) and short. Any UTP trial should collect occupant feedback, because overheated occupants will override the system. Spaces with vulnerable users or sensitive equipment should be excluded.
-- **Privacy.** Building-level electricity data can reveal when spaces are occupied [44]. Reports should stay at building or floor level and be aggregated over time, never by individual room or person.
-- **False alarms.** A trim triggered at a non-peak moment costs a little comfort but no money, which is an acceptable error direction. Missing the true peak costs a month's demand charge, so the threshold should err low.
-- **Monitoring realised benefits.** Track each month's maximum demand and after-hours kWh against the same month in the previous year, and report savings as *measured* only once the pilot provides them.
+The adoption plan below was built from the CLEMD results and from published UTP information only. Because of the project's time frame, it has not yet been reviewed with UTP Property Management, the sustainability office or the registered energy manager. It is therefore a **proposed** plan to be validated with these stakeholders (Section 8.3), not an agreed procedure.
+
+*Table 21. Proposed requirements for adopting and monitoring the demand-triggered A/C trim at UTP (to be validated with UTP stakeholders).*
+
+| Aspect | Requirement |
+|---|---|
+| **Data the model needs** | A 1-minute main-meter feed with real power per phase, power factor, THD and current harmonics, the same signals used in this study. Public UTP sources confirm that every building has a meter linked to the i-BMS [5], but they do not say which signals are logged. Whether harmonics are recorded is therefore an open question to confirm with UTP facilities at the start of the pilot. Our ablation (Table 9b) shows what is at stake: with total kW only, cross-validated error roughly doubles (2.01 vs 0.99 kW), and with per-phase power but no harmonics it is 1.69 kW. Both are still 33–43% better than the timetable baseline, so the method remains useful on a simpler meter, but less accurate, and it would need re-testing on UTP's actual signals. |
+| **Decision rule** | Each building would have its own demand trigger, set near the 95th percentile of its 15-minute demand (53 kW for the CLEMD building), and its own trim size. Both values are proposals from this study and should be agreed with Property Management before use. |
+| **People involved** | Facilities operators would carry out the trim, and the registered energy manager required under Act 861 [20] would review the monthly reports. These roles are inferred from Act 861 and UTP's published energy work, not confirmed with UTP. |
+| **Review** | Every month, compare the estimated peak with the measured peak and retrain the model (Recommendation 5). |
+| **Comfort and fairness** | The trims are small (10–30%) and short. Any UTP trial should collect occupant feedback, because people who feel too warm will override the system. Spaces with vulnerable users or sensitive equipment should be left out. |
+| **Privacy** | Building-level electricity data can reveal when spaces are occupied [44]. Reports should stay at building or floor level and be averaged over time, never shown by room or by person. |
+| **False alarms** | A trim triggered outside the real peak costs a little comfort but no money. Missing the real peak costs a month of demand charges, so the threshold should be set on the low side. |
+| **Tracking real savings** | Compare each month's maximum demand and after-hours kWh with the same month in the previous year. Report savings as *measured* only once the pilot provides real data. |
+
+**Next step: stakeholder validation.** Before any part of this plan is used, it should be presented to UTP Property Management, the sustainability office and the registered energy manager to confirm (1) which signals the i-BMS meters record, (2) whether the proposed trigger and trim sizes are acceptable for occupant comfort, and (3) who would operate and review the system. This is the first step of the pilot in Recommendation 4 and is listed as future work in Section 8.3.
 
 ---
 
@@ -787,41 +876,46 @@ The model-based cut matches the cut computed from the real sub-meter to within 0
 
 ### 8.1 Data and methodological limitations
 
-*Table 21. Limitations, their effect and our response.*
+*Table 22. Limitations, their effect and our response.*
 
 | Limitation | Effect on conclusions | Practical response |
 |---|---|---|
-| **One building, about three weeks of A/C ground truth, one season (Sep–Oct 2023)** | Results do not generalise to other buildings, semester breaks or hotter months. Six test days give wide CIs | No seasonal claims; CIs reported; Recommendation 4 (pilot) |
-| **VRF-cooled building vs UTP's district cooling** | The trained model cannot be copied to UTP; the electrical signature differs (fans and pumps, not compressors) | Transfer the *method*; retrain on a UTP building with temporary sub-metering |
-| **Lighting not reliably estimable** | Lighting-based savings rely on *measured* boards, not the model | Recommendations 3 and 5 rest on measured lighting; lighting model not recommended for operational use |
-| **Unmetered loads (≈ 55% of energy)** | Limit achievable accuracy | Realistic, since any main meter sees the same mix |
-| **Test week was viewed descriptively before the freeze (Section 2.6)** | Small risk that our general view of the data was shaped by it | No tuning or selection used it; freeze record committed before the test run |
-| **Duplicated and constant harmonic features (Section 4.2)** | Splits SHAP credit; no effect on accuracy | Group-level interpretation; remove duplicates in future work |
-| **Small tuning grid; no feature ablation** | Models may be slightly under-tuned; the value of each feature group is shown by permutation, not by retraining | Stated; future work |
-| **After-hours A/C over-estimated by 10–27%** | After-hours savings (Table 20) are optimistic | Stated beside each estimate |
-| **Scenario inputs** (secondary-source TNB rates, provisional emission factor, assumed PV ratio, annualisation, office-hours definition) | RM and tCO₂e are indicative only | Ranges and sensitivity shown; all labelled as estimates |
-| **Possible logger clock offsets** | Errors at step changes (3.5 kW) | 1-minute averaging; flagged in the error analysis |
+| One building, about three weeks of A/C ground truth, one season (Sep–Oct 2023) | Results do not generalise to other buildings, semester breaks or hotter months. Six test days give wide CIs | No seasonal claims; CIs reported; Recommendation 4 (pilot) |
+| VRF-cooled building vs UTP's district cooling | The trained model cannot be copied to UTP, because the electrical signature differs (fans and pumps instead of compressors) | Transfer the method; retrain on a UTP building with temporary sub-metering |
+| Lighting not reliably estimable | Lighting-based savings rely on measured boards, not on the model | Recommendations 3 and 5 rest on measured lighting; the lighting model is not recommended for operational use |
+| Unmetered loads (≈ 55% of energy) | Limit the accuracy that can be reached | Realistic, since any main meter sees the same mix |
+| Test week was viewed descriptively before the freeze (Section 2.6) | Small risk that our general view of the data was shaped by it | No tuning, selection or ablation used it; the freeze record was committed before the test run |
+| Duplicated and constant harmonic features (Section 4.2) | Splits SHAP credit; no effect on accuracy | Group-level interpretation; the ablation shows removing them costs no measurable accuracy (Table 9b) |
+| Small tuning grid; ablation on CV only | Models may be slightly under-tuned; the ablation (Table 9b) uses training-week CV, not the sealed test week | Stated; a later sealed week would confirm the ablation |
+| After-hours A/C over-estimated by 10–27% | After-hours savings (Table 20) are optimistic | Stated beside each estimate |
+| Scenario inputs (secondary-source TNB rates, provisional emission factor, assumed PV ratio, annualisation, office-hours definition) | RM and tCO₂e figures are indicative only | Ranges and sensitivity shown; all labelled as estimates |
+| Adoption plan not yet reviewed with UTP stakeholders (Section 7.4) | Meter signals, trigger level, trim size and operating roles are assumptions; Recommendations 1 and 3 cannot yet be confirmed as workable at UTP | Stakeholder review before the pilot (Section 8.3, item 2) |
+| Possible logger clock offsets | Errors at step changes (3.5 kW) | 1-minute averaging; flagged in the error analysis |
 
 ### 8.2 Conclusion
 
-This project asked whether a building's main meter, which UTP already has in every building, can show which loads drive its costly demand peaks. Using CLEMD's 1-second data from a Malaysian university building, with its circuit sub-meters as ground truth, the answer for air-conditioning is **yes**.
+This project asked one question: can the main meter that every UTP building already has show which loads cause the expensive demand peaks? We tested this on CLEMD's 1-second data from a Malaysian university building, using its sub-meters to check the answers. For air-conditioning, the answer is yes.
 
-- **O1 (achieved).** We built a clean 1-minute dataset of 41,680 records from 42 raw files, resolving ten documented quality issues (Table 5), with a pipeline that regenerates every number from raw data.
-- **O2 (achieved for A/C; negative result for lighting).** On a sealed test week, the frozen LightGBM model estimated A/C with an MAE of 1.24 kW, 45% better than a timetable baseline and 21% better than Ridge, and 1.52 kW in peak windows. The advantage over Ridge is consistent but not statistically decisive with six test days. Lighting could not be estimated reliably from the main meter.
-- **O3 (achieved).** The model relies on phase-2 power and on the 5th, 7th and 11th harmonics characteristic of inverter compressors, which is a physically sensible A/C signature, not the timetable.
-- **O4 (achieved).** Clustering the main-meter profiles found working and non-working days, and correctly placed a public holiday among the non-working days. Non-working days still use about 32 kWh of A/C a day.
-- **O5 (achieved, with one proposed idea reversed).** From the main meter alone, the model shows that A/C supplies about 44% of peak load. A demand-triggered 20% A/C trim would cut this building's maximum demand by about 5.8 kW (RM 6,200–6,700 a year, estimate). After-hours cuts would save about 6–7 tCO₂e a year per building. Pre-cooling into the solar peak would *raise* the peak and should not be adopted.
+*Table 23. Achievement of the project objectives.*
 
-The project's contribution to Energy Security is to turn existing meters into a way of finding which load sets the peak, together with a tested rule for limiting it. Its key insight is that the **timing** of the A/C trim matters more than shifting load into solar hours. These savings remain **estimates** until the method is validated on a UTP building.
+| Objective | Status | Evidence |
+|---|---|---|
+| Objective 1: Build a clean 1-minute dataset | Achieved | We built a clean dataset of 41,680 one-minute records from 42 raw files and fixed ten recorded data-quality problems (Table 5). The code can rebuild every number from the raw data. |
+| Objective 2: Estimate A/C and lighting from the main meter | Achieved for A/C; not achieved for lighting | On the sealed test week, the final LightGBM model estimated A/C power with an average error (MAE) of 1.24 kW. This is 45% better than the timetable baseline and 21% better than Ridge. In peak periods the error was 1.52 kW. LightGBM beat Ridge consistently, but with only six test days we cannot say the difference is statistically significant. The model could not estimate lighting reliably from the main meter. |
+| Objective 3: Explain what the model relies on | Achieved | The model mainly uses phase-2 power and the 5th, 7th and 11th harmonics, which inverter A/C compressors produce. This makes physical sense for A/C, and the ablation confirms that harmonics carry information the other features do not (Table 9b). |
+| Objective 4: Find daily operating modes and after-hours use | Achieved | Grouping the daily main-meter patterns separated working days from non-working days and correctly placed a public holiday with the non-working days. Even on non-working days the building uses about 32 kWh of A/C a day. |
+| Objective 5: Turn estimates into UTP scenarios and recommendations | Achieved, with one proposal idea dropped | Using only the main meter, the model shows that A/C makes up about 44% of the peak. Reducing A/C by 20% only when demand is high would cut this building's maximum demand by about 5.8 kW (RM 6,200–6,700 a year, estimate). Cutting after-hours use would save about 6–7 tCO₂e a year per building. Pre-cooling at the solar peak would raise the peak, so it should not be used. |
+
+For Energy Security, this project shows that UTP's existing meters can identify which load causes the peak, and it gives a tested rule for lowering that peak. The most useful finding is that reducing A/C at moments of high demand lowers the peak, while moving A/C use into solar hours does not. All savings remain estimates until the method is reviewed with UTP stakeholders and tested on a UTP building.
 
 ### 8.3 Prioritised future work
 
-1. **Pilot on one UTP building** (resolves the transfer and district-cooling limitations): use its i-BMS main meter and 2–4 weeks of temporary sub-metering, then retrain and test on a sealed later week using the same protocol.
-2. **Confirm the meter capability** (resolves the adoption risk): check whether UTP's meters log harmonics, and if not, re-test the model on power and PF features only.
-3. **Longer period** (resolves the single-season limitation): cover a full semester including breaks, to measure drift and set the retraining frequency.
-4. **Clean features and run an ablation** (resolves the duplicate-feature and usefulness gaps): remove the constant H1 and duplicated ratio columns and compare feature groups under the same CV.
-5. **Comfort-checked trim trial** (resolves the assumed trim response): measure the real kW reduction and occupant response to a 10–20% demand-triggered trim.
-6. **Only then** consider more complex models, such as 15-minute-ahead forecasting or sequence models, once more data exists.
+1. **Pilot on one UTP building** (solves the problem that UTP uses a different cooling system). Use the building's i-BMS main meter and add temporary sub-meters for 2–4 weeks. Then retrain the model and test it on a later sealed week, following the same steps.
+2. **Validate the adoption plan with UTP stakeholders** (resolves the unverified assumptions in Section 7.4). Present the findings to UTP Property Management, the sustainability office and the registered energy manager to confirm which signals the i-BMS meters record, whether the proposed trigger and trim sizes are acceptable, and who would run and review the system. If the meters do not record harmonics, re-test the model using only power and power-factor inputs.
+3. **Collect data over a longer period** (solves the one-season problem). A full semester, including breaks, would show how much the load changes over time and how often the model needs retraining.
+4. **Retrain on the reduced feature set** (follows from Table 9b). Drop the constant H1 and duplicated ratio columns (no measurable loss), confirm on a later sealed week, and use the kW-only and no-harmonics results to choose the minimum meter specification for UTP buildings.
+5. **Test the trim with real occupants** (checks the assumed effect of the trim). Measure how many kW a 10–20% trim really saves and whether people stay comfortable.
+6. **Only then try more complex models**, such as forecasting 15 minutes ahead or sequence models, once more data is available.
 
 ---
 
@@ -970,7 +1064,7 @@ Redundant pairs (|r| > 0.98, weeks 2–5): `results/redundant_feature_pairs.csv`
 | XGBoost | 0.84 | 1.26 | 0.81 | 1.23 | 0.24 |
 | LightGBM | 0.85 | 1.19 | 0.75 | 1.16 | 0.22 |
 
-Full per-fold results for all 136 fits: `results/cv_results.csv`. Freeze record: `results/freeze.json`.
+Full per-fold results for all 136 fits: `results/cv_results.csv`. Freeze record: `results/freeze.json`. Feature-group ablation (Table 9b), all folds: `results/ablation_cv.csv`.
 
 ## Appendix C Additional Results
 
@@ -982,7 +1076,7 @@ Full per-fold results for all 136 fits: `results/cv_results.csv`. Freeze record:
 
 ## Appendix D Implementation Instructions
 
-**Repository:** `ML-ASSIGNMENT/`. This report is `FINAL_REPORT.md` at its root, and all figure links are relative to it. **[TODO: add the repository link or zip file name used for submission.]**
+**Repository:** `ML-ASSIGNMENT/`. This report is `FINAL_REPORT.md` at its root, and all figure links are relative to it. The code is submitted with this report as a zip of the `ML-ASSIGNMENT/` folder (without `.venv/` and `data/`, which are recreated by steps 1–2).
 
 1. **Environment.** Python 3.11 (tested on 3.11.17, Linux/WSL2).
    ```bash
@@ -990,7 +1084,7 @@ Full per-fold results for all 136 fits: `results/cv_results.csv`. Freeze record:
    # or: python -m venv .venv && .venv/bin/pip install -r requirements.txt
    ```
 2. **Data** (≈ 7 GB, not in git). Download the six CLEMD weekly folders from https://doi.org/10.6084/m9.figshare.c.6946581 into `data/clemd/<weekly folder>/*.csv`, and the NASA POWER hourly file for UTP (4.385 N, 100.979 E, October 2023, UTC) to `data/external/nasa_power_utp_oct2023_utc.csv`.
-3. **Run everything** (about 12 minutes): `./run_all.sh` (or `PY=python ./run_all.sh`). The steps must run in order: `prepare_data → features → train → evaluate → explain → cluster → scenarios → make_figures → build_dashboard`.
+3. **Run everything** (about 12 minutes): `./run_all.sh` (or `PY=python ./run_all.sh`). The steps must run in order: `prepare_data → features → train → ablation → evaluate → explain → cluster → scenarios → make_figures → build_dashboard`.
 4. **Expected outputs.** `results/*.csv|json` (all numbers in this report), `figures/proposal/`, `figures/results/` and `figures/report/` (every report figure is mapped to its file in Table D1), and `dashboard/index.html` (the presentation).
 5. **Checks.** Every script ends with `assert` self-checks; a run with no traceback means the outputs are consistent. All randomness is seeded (`random_state=0`, `default_rng(0)`). Rerunning `train.py` keeps the committed `freeze.json` and asserts that the rerun reproduces the frozen choice.
 6. **Rule.** Week 6 is the sealed test week: `features.load()` excludes it unless `include_test=True`, which only `evaluate.py`, `explain.py` and `cluster.py` use, after the freeze.
