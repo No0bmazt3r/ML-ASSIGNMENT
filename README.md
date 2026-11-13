@@ -28,7 +28,7 @@ Then turned into peak-demand, cost and carbon decisions for Universiti Teknologi
 ![SHAP](https://img.shields.io/badge/SHAP-0.51-ff0d57?style=flat-square)
 ![Matplotlib](https://img.shields.io/badge/Matplotlib-3.11-11557c?style=flat-square)
 
-[Results](RESULTS.md) · [Final report](FINAL_REPORT.md) · [Quick start](#quick-start) · [Pipeline](#pipeline) · [Team](#team)
+[Results](#headline-results) · [Quick start](#quick-start) · [Pipeline](#pipeline) · [Team](#team)
 
 </div>
 
@@ -51,7 +51,7 @@ flowchart LR
     C --> SDG
 ```
 
-> All RM, kWh and tCO₂e figures are **scenarios for one CLEMD-sized building**, not UTP measurements. See [RESULTS.md §4](RESULTS.md#4-utp-scenarios-rq5--scenariospy-resultsscenariosjson).
+> All RM, kWh and tCO₂e figures are **scenarios for one CLEMD-sized building**, not UTP measurements. The numbers come from `results/scenarios.json`; the full method is in Chapter 7 of the final report.
 
 ## Headline results
 
@@ -217,7 +217,7 @@ It is generated from `dashboard/template.html` and the files above; rerun `build
 
 ## Limitations
 
-One building, about three weeks of A/C ground truth and one season, so confidence intervals are wide. The CLEMD building uses rooftop VRF units while much of UTP is on district cooling: the **method** transfers, this trained model does not. The adoption plan has not yet been reviewed with UTP stakeholders. Full list: [FINAL_REPORT.md §8.1](FINAL_REPORT.md#81-data-and-methodological-limitations).
+One building, about three weeks of A/C ground truth and one season, so confidence intervals are wide. The CLEMD building uses rooftop VRF units while much of UTP is on district cooling: the **method** transfers, this trained model does not. The adoption plan has not yet been reviewed with UTP stakeholders. Full list: Section 8.1 of the final report.
 
 ## License
 
