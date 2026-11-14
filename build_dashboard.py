@@ -129,14 +129,15 @@ def evaluate_story(stats):
     }
 
 
-# team page: name, student ID, role and photo file in public/
+# team page: name, student ID, role, photo file in public/, zoom (head size matched to Izzatul's) and main tools
+# tools with a file in public/logos/ show their logo, the rest show initials
 # phone numbers are read from public/phones.json if it exists (that file is not shared)
 TEAM = [
-    ("Izzatul Najwa Binti Che Zaki", "22007298", "Data acquisition, cleaning and quality log", "Izzatul.png"),
-    ("Nurul Izzati Binti Razali", "22007868", "Feature engineering and baselines", "Izzati.png"),
-    ("Daphne Binti Douglas", "22006239", "Tree models, tuning, freeze and test", "Daphne.png"),
-    ("Siti Nurmasyitah Binti Ab Aziz", "22007601", "Explainability, error analysis and clustering", "Masyitah (1).png"),
-    ("Sharvin A/L Kanesan", "22006930", "Scenarios, figures, integration and dashboard", "Sharvin (4).png"),
+    ("Izzatul Najwa Binti Che Zaki", "22007298", "Data acquisition, cleaning and quality log", "Izzatul.png", 1.0, ["pandas", "NumPy", "Parquet"]),
+    ("Nurul Izzati Binti Razali", "22007868", "Feature engineering and baselines", "Izzati.png", 1.35, ["pandas", "NumPy", "scikit-learn"]),
+    ("Daphne Binti Douglas", "22006239", "Tree models, tuning, freeze and test", "Daphne.png", 1.0, ["LightGBM", "XGBoost", "scikit-learn"]),
+    ("Siti Nurmasyitah Binti Ab Aziz", "22007601", "Explainability, error analysis and clustering", "Masyitah (1).png", 1.75, ["SHAP", "scikit-learn", "Matplotlib"]),
+    ("Sharvin A/L Kanesan", "22006930", "Scenarios, figures, integration and dashboard", "Sharvin (4).png", 1.7, ["Matplotlib", "Python", "HTML"]),
 ]
 
 
@@ -145,17 +146,31 @@ def team_story():
     phones_file = ROOT / "public" / "phones.json"
     phones = json.loads(phones_file.read_text()) if phones_file.exists() else {}
     out = []
-    for name, sid, role, photo in TEAM:
+    logo_files = {"pandas": "pandas.svg", "NumPy": "numpy.svg", "Parquet": "parquet.svg", "scikit-learn": "scikitlearn.svg",
+                  "Matplotlib": "matplotlib.svg", "Python": "python.svg", "HTML": "html5.svg",
+                  "LightGBM": "lightgbm.svg", "XGBoost": "xgboost.png", "SHAP": "shap.png"}
+    def logo(t):
+        f = ROOT / "public" / "logos" / logo_files.get(t, "-")
+        mime = "image/svg+xml" if f.suffix == ".svg" else "image/png"
+        return f"data:{mime};base64," + base64.b64encode(f.read_bytes()).decode() if f.is_file() else None
+    for name, sid, role, photo, zoom, tools in TEAM:
         phone = phones.get(name)
         src = None
         if photo and (ROOT / "public" / photo).exists():
             im = Image.open(ROOT / "public" / photo).convert("RGBA")
-            im = im.crop(im.getchannel("A").getbbox())
+            # same framing for everyone: square crop scaled by zoom, top of head 11% from the top, head centred
+            a = np.array(im.getchannel("A")) > 128
+            top = int(a.any(1).argmax())
+            cx = np.where(a[top:top + 150].any(0))[0].mean()
+            size = im.height / zoom
+            y0 = min(top - 0.11 * size, im.height - size)  # body must reach the card bottom
+            im = im.crop((int(cx - size / 2), int(y0), int(cx + size / 2), int(y0 + size)))
             im.thumbnail((600, 600))
             buf = io.BytesIO(); im.save(buf, "WEBP", quality=86, method=6)
             src = "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode()
         initials = "".join(w[0] for w in name.split()[:2]).upper()
         out.append({"name": name, "id": sid, "role": role, "photo": src, "initials": initials,
+                    "tools": [{"name": t, "logo": logo(t)} for t in tools],
                     "phone": phone, "tel": "+" + "".join(c for c in phone if c.isdigit()) if phone else None})
     return out
 

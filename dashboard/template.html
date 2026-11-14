@@ -192,11 +192,22 @@ code { font: 14px/1.3 var(--mono); background: var(--wash); padding: 1px 6px; bo
 .member .back dd { margin: 0; font-weight: 600; font-size: clamp(14px, 1.8vh, 16px); line-height: 1.35; }
 .member .back a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
 .member .back .hint, .member .front .hint { font-size: 12px; opacity: .7; }
-.member .ph { position: relative; width: 100%; height: 100%; min-height: 140px; border-radius: 14px; overflow: hidden; }
+.member .ph { position: relative; width: 100%; height: 100%; min-height: 140px; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; }
+.member .pic { position: relative; flex: 1; min-height: 0; }
+.member .tools { position: relative; z-index: 1; list-style: none; margin: 0 0 4px; padding: 18px 6px 0; display: flex; flex-wrap: wrap; justify-content: center; gap: clamp(10px, 1.2vw, 18px); }
+.member .tools li { display: flex; flex-direction: column; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--muted); animation: bob 3.2s ease-in-out infinite; animation-delay: calc(var(--i) * -1.1s); }
+.member .tools .ic { width: clamp(44px, 5.6vh, 56px); aspect-ratio: 1; display: grid; place-items: center; border-radius: 14px; background: var(--surface); box-shadow: 0 0 0 1px var(--surface2), 0 6px 16px -6px rgb(15 30 60 / .28); transition: transform .35s var(--spring), box-shadow .35s; }
+.member .tools .ic img { width: 62%; height: 62%; object-fit: contain; }
+.member .tools .ic img.wide { width: 84%; }
+.member .tools .ic b { font: 700 clamp(15px, 2vh, 19px)/1 var(--display); color: var(--ac); letter-spacing: -.02em; }
+.member .tools li:hover .ic { transform: translateY(-4px) scale(1.14) rotate(-4deg); box-shadow: 0 0 0 1px var(--ac-wash), 0 12px 24px -8px rgb(15 30 60 / .38); }
+.member:hover .tools li { animation-duration: 1.8s; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .member .tools li { animation: none; } .member .tools .ic { transition: none; } }
 .member .ph::before { content: ""; position: absolute; left: 50%; bottom: 0; width: min(96%, 44vh); aspect-ratio: 1; transform: translate(-50%, 18%); border-radius: 50%; background: var(--surface2); }
-.member img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; transform-origin: bottom center; transition: transform .35s var(--spring); }
-.member:hover img { transform: scale(1.03); }
-.member .ph.noimg { display: grid; place-items: center; }
+.member .pic img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; object-position: center bottom; transform-origin: bottom center; transition: transform .35s var(--spring); }
+.member:hover .pic img { transform: scale(1.03); }
+.member .ph.noimg .pic { display: grid; place-items: center; }
 .member .ph.noimg::before { display: none; }
 .member .mono { position: relative; width: min(70%, 22vh); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: var(--ac-wash); color: var(--ac); font: 700 clamp(36px, 6vh, 64px)/1 var(--display); }
 .member .front b { font-size: clamp(15px, 1.9vh, 18px); line-height: 1.25; min-height: 2.5em; display: flex; align-items: center; }
@@ -906,7 +917,7 @@ const STEPS = [
   { label: "Team", icon: "user", title: "Team", wide: true, team: true, render: () => `
     <div class="thead"><h2>Group 8</h2><p>Lecture Group 2 · Energy Security, SDG 7</p><p class="course">TEB3123 Machine Learning · September 2026</p></div>
     <div class="members">${D.team.map(m => `<div class="member" role="button" tabindex="0" aria-pressed="false" aria-label="${esc(m.name)}: show contact details"><div class="flip">
-      <div class="face front"><div class="ph${m.photo ? "" : " noimg"}">${m.photo ? `<img src="${m.photo}" alt="${esc(m.name)}">` : `<span class="mono" aria-hidden="true">${m.initials}</span>`}</div><b>${esc(m.name)}</b><span class="sid">${m.id}</span><span class="role">${esc(m.role)}</span><span class="hint">Click for details</span></div>
+      <div class="face front"><div class="ph${m.photo ? "" : " noimg"}"><ul class="tools" aria-label="Main tools">${m.tools.map((t, j) => `<li style="--i:${j}"><span class="ic">${t.logo ? `<img src="${t.logo}" alt=""${t.name === "XGBoost" ? ' class="wide"' : ""}>` : `<b>${esc(t.name.replace(/[^A-Z]/g, "").slice(0, 2) || t.name.slice(0, 2))}</b>`}</span>${esc(t.name)}</li>`).join("")}</ul><div class="pic">${m.photo ? `<img src="${m.photo}" alt="${esc(m.name)}">` : `<span class="mono" aria-hidden="true">${m.initials}</span>`}</div></div><b>${esc(m.name)}</b><span class="sid">${m.id}</span><span class="role">${esc(m.role)}</span><span class="hint">Click for details</span></div>
       <div class="face back"><span class="bn">${esc(m.name)}</span><dl><div><dt>Student ID</dt><dd>${m.id}</dd></div><div><dt>Course</dt><dd>TEB3123 Machine Learning<br>Group 8 · Lecture Group 2</dd></div><div><dt>Role</dt><dd>${esc(m.role)}</dd></div>${m.phone ? `<div><dt>Phone</dt><dd><a href="tel:${m.tel}">${esc(m.phone)}</a></dd></div>` : ""}</dl><span class="hint">Click to flip back</span></div>
     </div></div>`).join("")}</div>`,
   },
