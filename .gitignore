@@ -26,3 +26,6 @@ models/
 Thumbs.db
 *:Zone.Identifier
 results/freeze_rerun.json
+
+# private, read by build_dashboard.py if present
+public/phones.json

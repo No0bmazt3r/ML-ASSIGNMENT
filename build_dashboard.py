@@ -136,8 +136,8 @@ TEAM = [
     ("Izzatul Najwa Binti Che Zaki", "22007298", "Data acquisition, cleaning and quality log", "Izzatul.png", 1.0, ["pandas", "NumPy", "Parquet"]),
     ("Nurul Izzati Binti Razali", "22007868", "Feature engineering and baselines", "Izzati.png", 1.35, ["pandas", "NumPy", "scikit-learn"]),
     ("Daphne Binti Douglas", "22006239", "Tree models, tuning, freeze and test", "Daphne.png", 1.0, ["LightGBM", "XGBoost", "scikit-learn"]),
-    ("Siti Nurmasyitah Binti Ab Aziz", "22007601", "Explainability, error analysis and clustering", "Masyitah (1).png", 1.75, ["SHAP", "scikit-learn", "Matplotlib"]),
-    ("Sharvin A/L Kanesan", "22006930", "Scenarios, figures, integration and dashboard", "Sharvin (4).png", 1.7, ["Matplotlib", "Python", "HTML"]),
+    ("Siti Nurmasyitah Binti Ab Aziz", "22007601", "Explainability, error analysis and clustering", "Masyitah.png", 1.75, ["SHAP", "scikit-learn", "Matplotlib"]),
+    ("Sharvin A/L Kanesan", "22006930", "Scenarios, figures, integration and dashboard", "Sharvin.png", 1.7, ["Matplotlib", "Python", "HTML"]),
 ]
 
 

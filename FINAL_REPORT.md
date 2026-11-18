@@ -3,7 +3,7 @@
 
 **September 2026**
 
-> **About this file.** This is the complete, corrected version of the report. It follows the team's Word/PDF version (`ML Project Report Template.pdf`) section by section, with the same wording, chapter structure and figure/table numbers, and with every fix from `REPORT_CHANGES.md` already applied. Use it to see any section in full. (Delete this note in the submitted Word file.)
+> **About this file.** This is the complete, corrected version of the report. It follows the team's Word/PDF version (`ML Project Report Template.pdf`) section by section, with the same wording, chapter structure and figure/table numbers, and with every fix from `docs/REPORT_CHANGES.md` already applied. Use it to see any section in full. (Delete this note in the submitted Word file.)
 
 | | |
 |---|---|
@@ -45,7 +45,7 @@ The frozen LightGBM model estimated A/C power with a mean absolute error (MAE) o
 
 ![Project infographic](figures/infographic.png)
 
-*(One page, placed immediately after the executive summary and before the table of contents. In the Word file, put it on its own section page with no header or footer. Apply the poster fixes in `REPORT_CHANGES.md` Section G before exporting.)*
+*(One page, placed immediately after the executive summary and before the table of contents. In the Word file, put it on its own section page with no header or footer. Apply the poster fixes in `docs/REPORT_CHANGES.md` Section G before exporting.)*
 
 ---
 
