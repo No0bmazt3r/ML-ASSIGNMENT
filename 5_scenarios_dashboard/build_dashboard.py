@@ -1,9 +1,8 @@
-# step 10: build the presentation + dashboard page (dashboard/index.html)
-# it puts all the numbers from results/ into the template as one JSON blob
 import base64
 import io
 import json
 from datetime import datetime
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -11,11 +10,12 @@ from PIL import Image
 from sklearn.model_selection import TimeSeriesSplit
 
 from cluster import daily_profiles
-from features import DATA, RESULTS, ROOT, TARGETS, dataset, load
+from features import DATA, EXPLAIN_RESULTS, FEATURE_RESULTS, MODEL_RESULTS, SCENARIO_RESULTS, TARGETS, dataset, load
 from prepare_data import CLEMD, FILE_ALIASES, P, WEEKS, date_format
 from train import GAP, MIN_GAIN_OVER_RIDGE, N_SPLITS
 
-OUT = ROOT / "dashboard"
+HERE = Path(__file__).resolve().parent
+OUT = HERE / "dashboard"
 # circuits shown in the file grid and nicer model names for the page
 CIRCUITS = ["Aggregate", "CP AC", "DB TG", "DB T1", "DB ML 1", "DB ML 2", "EMSB 1", "SSB MF"]
 NAMES = {"time_of_day": "Time-of-day average", "ridge": "Ridge regression", "random_forest": "Random forest",
@@ -75,15 +75,15 @@ def method_story(freeze):
     X, _, _ = dataset("ac")
     folds = [{"train_end": int(tr[-1]) + 1, "val_start": int(va[0]), "val_end": int(va[-1]) + 1}
              for tr, va in TimeSeriesSplit(N_SPLITS, gap=GAP).split(X)]
-    groups = pd.read_csv(RESULTS / "feature_dictionary.csv")["group"].value_counts()
-    redundant = len(pd.read_csv(RESULTS / "redundant_feature_pairs.csv"))
+    groups = pd.read_csv(FEATURE_RESULTS / "feature_dictionary.csv")["group"].value_counts()
+    redundant = len(pd.read_csv(FEATURE_RESULTS / "redundant_feature_pairs.csv"))
     cv = {t: [{"model": m, "name": NAMES[m], "mae": r(v["mae"], 3), "peak_mae": r(v["peak_mae_15min"], 3)}
               for m, v in freeze["targets"][t]["cv_best_per_model"].items()] for t in TARGETS}
     return {
         "n_rows": len(X), "n_features": X.shape[1], "folds": folds, "n_splits": N_SPLITS, "gap_min": GAP,
         "feature_groups": {g: int(n) for g, n in groups.items()}, "redundant_pairs": redundant,
         "cv": cv, "min_gain": MIN_GAIN_OVER_RIDGE,
-        "ablation": pd.read_csv(RESULTS / "ablation_cv.csv")[["feature_set", "n_features", "mae", "mae_sd", "peak_mae"]]
+        "ablation": pd.read_csv(MODEL_RESULTS / "ablation_cv.csv")[["feature_set", "n_features", "mae", "mae_sd", "peak_mae"]]
                       .round(3).to_dict(orient="records"),
         "frozen": {t: {"model": freeze["targets"][t]["chosen_model"], "name": NAMES[freeze["targets"][t]["chosen_model"]],
                        "params": freeze["targets"][t]["params"]} for t in TARGETS},
@@ -93,21 +93,21 @@ def method_story(freeze):
 
 # numbers and series for the evaluation step
 def evaluate_story(stats):
-    tm = pd.read_csv(RESULTS / "test_metrics.csv")
+    tm = pd.read_csv(MODEL_RESULTS / "test_metrics.csv")
     metrics = {t: [{"model": row.model, "name": NAMES[row.model], "frozen": bool(row.frozen), "mae": r(row.mae),
                     "lo": r(row.mae_ci_lo), "hi": r(row.mae_ci_hi), "peak_mae": r(row.peak_mae_15min),
                     "peak_lo": r(row.peak_mae_ci_lo), "peak_hi": r(row.peak_mae_ci_hi), "r2": r(row.r2),
                     "rmse": r(row.rmse), "share_err": r(row.energy_share_err_pp, 1)}
                    for row in g.itertuples()] for t, g in tm.groupby("target")}
-    pred = pd.read_csv(RESULTS / "predictions.csv", index_col=0, parse_dates=True)
+    pred = pd.read_csv(MODEL_RESULTS / "predictions.csv", index_col=0, parse_dates=True)
     w6 = pred[pred["week"] == 6]
     q = w6[["agg_p_kw", "ac_kw", "ac_pred_kw"]].resample("15min").mean().dropna()
-    err = pd.read_csv(RESULTS / "error_breakdown_ac.csv")
-    rob = pd.read_csv(RESULTS / "robustness_w4_to_w5.csv")
-    shap = pd.read_csv(RESULTS / "shap_groups_ac.csv", index_col=0)["mean_abs_shap_kw"]
-    perm = pd.read_csv(RESULTS / "permutation_importance_groups.csv", index_col=0)["mae_increase_kw"]
-    top = pd.read_csv(RESULTS / "shap_global_ac.csv", index_col=0).head(6)
-    local = pd.read_csv(RESULTS / "shap_local_peak_ac.csv", index_col=0)
+    err = pd.read_csv(MODEL_RESULTS / "error_breakdown_ac.csv")
+    rob = pd.read_csv(MODEL_RESULTS / "robustness_w4_to_w5.csv")
+    shap = pd.read_csv(EXPLAIN_RESULTS / "shap_groups_ac.csv", index_col=0)["mean_abs_shap_kw"]
+    perm = pd.read_csv(EXPLAIN_RESULTS / "permutation_importance_groups.csv", index_col=0)["mae_increase_kw"]
+    top = pd.read_csv(EXPLAIN_RESULTS / "shap_global_ac.csv", index_col=0).head(6)
+    local = pd.read_csv(EXPLAIN_RESULTS / "shap_local_peak_ac.csv", index_col=0)
     by = lambda k: {str(v): r(m) for v, m in err.loc[err["by"] == k, ["value", "mae_kw"]].itertuples(index=False)}
     return {
         "metrics": metrics, "n_peak_windows": int(tm["n_peak_windows"].iloc[0]), "n_days": int(tm["n_days"].iloc[0]),
@@ -143,21 +143,21 @@ TEAM = [
 
 # shrink each photo and put it inside the page so it works offline
 def team_story():
-    phones_file = ROOT / "public" / "phones.json"
+    phones_file = HERE / "public" / "phones.json"
     phones = json.loads(phones_file.read_text()) if phones_file.exists() else {}
     out = []
     logo_files = {"pandas": "pandas.svg", "NumPy": "numpy.svg", "Parquet": "parquet.svg", "scikit-learn": "scikitlearn.svg",
                   "Matplotlib": "matplotlib.svg", "Python": "python.svg", "HTML": "html5.svg",
                   "LightGBM": "lightgbm.svg", "XGBoost": "xgboost.png", "SHAP": "shap.png"}
     def logo(t):
-        f = ROOT / "public" / "logos" / logo_files.get(t, "-")
+        f = HERE / "public" / "logos" / logo_files.get(t, "-")
         mime = "image/svg+xml" if f.suffix == ".svg" else "image/png"
         return f"data:{mime};base64," + base64.b64encode(f.read_bytes()).decode() if f.is_file() else None
     for name, sid, role, photo, zoom, tools in TEAM:
         phone = phones.get(name)
         src = None
-        if photo and (ROOT / "public" / photo).exists():
-            im = Image.open(ROOT / "public" / photo).convert("RGBA")
+        if photo and (HERE / "public" / photo).exists():
+            im = Image.open(HERE / "public" / photo).convert("RGBA")
             # same framing for everyone: square crop scaled by zoom, top of head 11% from the top, head centred
             a = np.array(im.getchannel("A")) > 128
             top = int(a.any(1).argmax())
@@ -178,9 +178,9 @@ def team_story():
 # daily profiles and cluster summary for the operating modes step
 def modes_story():
     prof = daily_profiles(load(include_test=True))
-    days = pd.read_csv(RESULTS / "cluster_days.csv", index_col=0)
-    summ = pd.read_csv(RESULTS / "cluster_summary.csv", index_col=0)
-    ks = pd.read_csv(RESULTS / "cluster_k_search.csv")
+    days = pd.read_csv(EXPLAIN_RESULTS / "cluster_days.csv", index_col=0)
+    summ = pd.read_csv(EXPLAIN_RESULTS / "cluster_summary.csv", index_col=0)
+    ks = pd.read_csv(EXPLAIN_RESULTS / "cluster_k_search.csv")
     labels = days["cluster"].reindex(prof.index.astype(str)).astype(int)
     return {
         "days": [{"date": d, "dow": pd.Timestamp(d).strftime("%a"), "cluster": int(c), "kw": [r(v, 1) for v in prof.loc[pd.Timestamp(d).date()]]}
@@ -190,14 +190,15 @@ def modes_story():
     }
 
 
+# put the numbers from every results folder into the template as one JSON blob
 # collect everything, fill the template and run a few checks
 def main():
-    freeze = json.loads((RESULTS / "freeze.json").read_text())
-    stats = json.loads((ROOT / "figures" / "proposal" / "stats.json").read_text())
+    freeze = json.loads((MODEL_RESULTS / "freeze.json").read_text())
+    stats = json.loads((HERE / "figures" / "proposal" / "stats.json").read_text())
     data = {
         "built": f"{datetime.now():%d %b %Y}",
         "data": data_story(), "method": method_story(freeze), "evaluate": evaluate_story(stats),
-        "modes": modes_story(), "team": team_story(), "scenarios": json.loads((RESULTS / "scenarios.json").read_text()),
+        "modes": modes_story(), "team": team_story(), "scenarios": json.loads((SCENARIO_RESULTS / "scenarios.json").read_text()),
     }
     blob = json.dumps(data, separators=(",", ":"), default=str).replace("</", "<\\/")
     html = (OUT / "template.html").read_text().replace("/*__DATA__*/null", blob)

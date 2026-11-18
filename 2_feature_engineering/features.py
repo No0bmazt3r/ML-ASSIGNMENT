@@ -1,12 +1,15 @@
-# step 2: turn the main meter data into model features (no sub-meter data is used as input)
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "processed" / "clemd_1min.parquet"
-RESULTS = ROOT / "results"
+# each part of the project saves its results inside its own folder
+FEATURE_RESULTS = ROOT / "2_feature_engineering" / "results"
+MODEL_RESULTS = ROOT / "3_tree_models" / "results"
+EXPLAIN_RESULTS = ROOT / "4_explainability_clustering" / "results"
+SCENARIO_RESULTS = ROOT / "5_scenarios_dashboard" / "results"
 # week 6 is our sealed test week, we do not touch it until the model is frozen
 TEST_WEEK = 6
 WORK_START, WORK_END = 8, 17
@@ -82,11 +85,11 @@ def dataset(target: str, include_test: bool = False):
 def main():
     df = load()
     X, groups = build(df)
-    RESULTS.mkdir(exist_ok=True)
-    pd.Series(groups, name="group").rename_axis("feature").to_csv(RESULTS / "feature_dictionary.csv")
+    FEATURE_RESULTS.mkdir(exist_ok=True)
+    pd.Series(groups, name="group").rename_axis("feature").to_csv(FEATURE_RESULTS / "feature_dictionary.csv")
     corr = X.dropna().corr().abs()
     pairs = corr.where(np.triu(np.ones(corr.shape, bool), 1)).stack()
-    pairs[pairs > 0.98].sort_values(ascending=False).rename("abs_r").to_csv(RESULTS / "redundant_feature_pairs.csv")
+    pairs[pairs > 0.98].sort_values(ascending=False).rename("abs_r").to_csv(FEATURE_RESULTS / "redundant_feature_pairs.csv")
     print(pd.Series(groups).value_counts().to_string(), f"\ntotal {len(groups)} features,",
           f"{(pairs > 0.98).sum()} pairs with |r| > 0.98")
     # check that the first minute after a gap has no lag value

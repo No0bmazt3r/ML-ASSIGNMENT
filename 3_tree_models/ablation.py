@@ -1,11 +1,10 @@
-# step 3b: retrain the frozen A/C model with some feature groups removed to see what each group adds
 import json
 
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import TimeSeriesSplit
 
-from features import RESULTS, build, dataset, load
+from features import MODEL_RESULTS, build, dataset, load
 from train import GAP, MODELS, N_SPLITS, scores
 
 
@@ -28,7 +27,7 @@ def feature_sets(cols: list[str], groups: dict[str, str]) -> dict[str, list[str]
 def main():
     X, y, meta = dataset("ac")
     _, groups = build(load())
-    params = json.loads((RESULTS / "freeze.json").read_text())["targets"]["ac"]["params"]
+    params = json.loads((MODEL_RESULTS / "freeze.json").read_text())["targets"]["ac"]["params"]
     make = MODELS["lightgbm"][0]
     folds = list(TimeSeriesSplit(N_SPLITS, gap=GAP).split(X))
     rows = []
@@ -46,10 +45,10 @@ def main():
         peak_mae=("peak_mae_15min", "mean"), energy_share_err_pp=("energy_share_err_pp", "mean")).reset_index()
     full = summary.loc[0, "mae"]
     summary["mae_change_vs_full_pct"] = 100 * (summary["mae"] / full - 1)
-    summary.round(4).to_csv(RESULTS / "ablation_cv.csv", index=False)
+    summary.round(4).to_csv(MODEL_RESULTS / "ablation_cv.csv", index=False)
     print(summary.round(3).to_string(index=False))
     # check: with all features we should get the same CV error as the frozen model
-    frozen = json.loads((RESULTS / "freeze.json").read_text())["targets"]["ac"]["cv_best_per_model"]["lightgbm"]["mae"]
+    frozen = json.loads((MODEL_RESULTS / "freeze.json").read_text())["targets"]["ac"]["cv_best_per_model"]["lightgbm"]["mae"]
     assert np.isclose(full, frozen, atol=1e-3), (full, frozen)
 
 

@@ -6,10 +6,12 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 PY=${PY:-.venv/bin/python}
+# the scripts import from each other, so python needs to see every folder
+export PYTHONPATH=1_data_acquisition:2_feature_engineering:3_tree_models:4_explainability_clustering:5_scenarios_dashboard
 STEPS=(prepare_data features train ablation evaluate explain cluster scenarios make_figures report_figures build_dashboard)
 
 open_ui() {
-  local page=dashboard/index.html
+  local page=5_scenarios_dashboard/dashboard/index.html
   echo "== opening $page"
   # explorer.exe on WSL returns 1 even when it works, so ignore that
   if command -v wslpath >/dev/null; then explorer.exe "$(wslpath -w "$page")" || true
@@ -20,7 +22,7 @@ open_ui() {
 
 [[ ${1:-} == ui ]] && { open_ui; exit; }
 for step in "${@:-${STEPS[@]}}"; do
-  [[ -f $step.py ]] || { echo "unknown step '$step'; steps: ${STEPS[*]}"; exit 1; }
-  echo "== $step"; $PY "$step.py"
+  file=$(ls [1-5]_*/"$step.py" 2>/dev/null) || { echo "unknown step '$step'; steps: ${STEPS[*]}"; exit 1; }
+  echo "== $step"; $PY "$file"
 done
-open_ui
+[[ -n ${NO_UI:-} ]] || open_ui

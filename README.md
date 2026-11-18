@@ -1,8 +1,8 @@
 <div align="center">
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="figures/readme/hero-dark.png">
-  <img src="figures/readme/hero-light.png" alt="Who sets the peak? The presentation walkthrough, opening on one week of building demand" width="900">
+  <source media="(prefers-color-scheme: dark)" srcset="5_scenarios_dashboard/figures/readme/hero-dark.png">
+  <img src="5_scenarios_dashboard/figures/readme/hero-light.png" alt="Who sets the peak? The presentation walkthrough, opening on one week of building demand" width="900">
 </picture>
 
 # Who sets the peak?
@@ -51,7 +51,7 @@ flowchart LR
     C --> SDG
 ```
 
-> All RM, kWh and tCO₂e figures are **scenarios for one CLEMD-sized building**, not UTP measurements. The numbers come from `results/scenarios.json`; the full method is in Chapter 7 of the final report.
+> All RM, kWh and tCO₂e figures are **scenarios for one CLEMD-sized building**, not UTP measurements. The numbers come from `5_scenarios_dashboard/results/scenarios.json`; the full method is in Chapter 7 of the final report.
 
 ## Headline results
 
@@ -92,20 +92,20 @@ LightGBM (frozen): **1.24 kW** on a 6.5 kW load, 45% below the timetable baselin
 
 | | Result | Evidence |
 |---|---|---|
-| 🎯 **A/C estimate** | MAE **1.24 kW** (95% CI 0.56–1.87), peak-window MAE **1.52 kW** | `results/test_metrics.csv` |
-| 🔍 **Why it works** | Phase-2 power and the 5th/7th/11th harmonics of inverter compressors | `results/shap_groups_ac.csv` |
-| 🧪 **Ablation** | Without harmonics: +21% error. kW-only meter: 2× error, still beats the timetable | `results/ablation_cv.csv` |
-| 📅 **Operating modes** | The main meter alone finds the Maulidur Rasul public holiday | `results/cluster_days.csv` |
-| ❌ **Pre-cooling** | Our proposal's idea **raises** the peak by 5.2 kW, so we dropped it | `results/scenarios.json` |
-| ⚠️ **Lighting** | Not reliably estimable from the main meter (reported as a negative result) | `results/test_metrics.csv` |
+| 🎯 **A/C estimate** | MAE **1.24 kW** (95% CI 0.56–1.87), peak-window MAE **1.52 kW** | `3_tree_models/results/test_metrics.csv` |
+| 🔍 **Why it works** | Phase-2 power and the 5th/7th/11th harmonics of inverter compressors | `4_explainability_clustering/results/shap_groups_ac.csv` |
+| 🧪 **Ablation** | Without harmonics: +21% error. kW-only meter: 2× error, still beats the timetable | `3_tree_models/results/ablation_cv.csv` |
+| 📅 **Operating modes** | The main meter alone finds the Maulidur Rasul public holiday | `4_explainability_clustering/results/cluster_days.csv` |
+| ❌ **Pre-cooling** | Our proposal's idea **raises** the peak by 5.2 kW, so we dropped it | `5_scenarios_dashboard/results/scenarios.json` |
+| ⚠️ **Lighting** | Not reliably estimable from the main meter (reported as a negative result) | `3_tree_models/results/test_metrics.csv` |
 
 <p align="center">
-  <img src="figures/results/test_week_timeseries.png" alt="Estimated versus measured A/C over the sealed test week" width="49%">
-  <img src="figures/report/fig_model_comparison.png" alt="Test-week MAE for every model with 95% bootstrap intervals" width="49%">
+  <img src="3_tree_models/figures/test_week_timeseries.png" alt="Estimated versus measured A/C over the sealed test week" width="49%">
+  <img src="5_scenarios_dashboard/figures/report/fig_model_comparison.png" alt="Test-week MAE for every model with 95% bootstrap intervals" width="49%">
 </p>
 <p align="center">
-  <img src="figures/results/importance_by_group.png" alt="SHAP and permutation importance by feature group" width="49%">
-  <img src="figures/report/fig_scenarios.png" alt="Peak-shaving and after-hours scenario results" width="49%">
+  <img src="4_explainability_clustering/figures/importance_by_group.png" alt="SHAP and permutation importance by feature group" width="49%">
+  <img src="5_scenarios_dashboard/figures/report/fig_scenarios.png" alt="Peak-shaving and after-hours scenario results" width="49%">
 </p>
 
 ## Quick start
@@ -151,24 +151,38 @@ flowchart TD
     EV --> CL["6 · cluster.py<br/>k-means operating modes"]
     EV --> SC["7 · scenarios.py<br/>kW · RM · solar · tCO₂e"]
     EX & CL & SC & AB --> FG["8–9 · make_figures.py · report_figures.py"]
-    FG --> DB["10 · build_dashboard.py<br/>dashboard/index.html"]
+    FG --> DB["10 · build_dashboard.py<br/>5_scenarios_dashboard/dashboard/index.html"]
 ```
+
+Each team member's code sits in its own folder, with the results and figures it makes next to it:
+
+```
+1_data_acquisition/          prepare_data.py                                    (Izzatul)
+2_feature_engineering/       features.py + results/                             (Izzati)
+3_tree_models/               train.py, ablation.py, evaluate.py + results/, figures/   (Daphne)
+4_explainability_clustering/ explain.py, cluster.py + results/, figures/        (Masyitah)
+5_scenarios_dashboard/       scenarios.py, make_figures.py, report_figures.py,
+                             build_dashboard.py + results/, figures/, dashboard/, public/   (Sharvin)
+data/                        CLEMD data (not in git)
+```
+
+`run_all.sh` puts all five folders on `PYTHONPATH`, since the scripts import from each other. To run one script on its own: `PYTHONPATH=1_data_acquisition:2_feature_engineering:3_tree_models:4_explainability_clustering:5_scenarios_dashboard .venv/bin/python 3_tree_models/train.py`, or just `./run_all.sh train`.
 
 | Step | Script | Output |
 |---|---|---|
-| 1. Clean + resample 1 s → 1 min (weeks 2–6) | `prepare_data.py` | `data/processed/clemd_1min.parquet` |
-| 2. Feature dictionary + redundancy check | `features.py` | `results/feature_dictionary.csv`, `results/redundant_feature_pairs.csv` |
-| 3. Baselines + RF/XGBoost/LightGBM, time-series CV, **model freeze** | `train.py` | `results/cv_results.csv`, `results/freeze.json` |
-| 3b. Feature-group ablation (dev weeks only, frozen settings) | `ablation.py` | `results/ablation_cv.csv` |
-| 4. One-time test on week 6, bootstrap CIs, robustness, error analysis | `evaluate.py` | `results/test_metrics.csv`, `results/predictions.csv`, … |
-| 5. SHAP + permutation importance | `explain.py` | `results/shap_*.csv`, `results/permutation_importance_groups.csv` |
-| 6. k-means operating modes, after-hours energy | `cluster.py` | `results/cluster_*.csv` |
-| 7. UTP scenarios (kW, RM, solar, tCO₂e) | `scenarios.py` | `results/scenarios.json` |
-| 8. Problem/data figures (EDA, workflow, split) + headline stats | `make_figures.py` | `figures/proposal/` |
-| 9. Extra report figures (distributions, residuals, model comparison, scenarios) | `report_figures.py` | `figures/report/` |
-| 10. Presentation walkthrough + stakeholder dashboard | `build_dashboard.py` | `dashboard/index.html` |
+| 1. Clean + resample 1 s → 1 min (weeks 2–6) | `1_data_acquisition/prepare_data.py` | `data/processed/clemd_1min.parquet` |
+| 2. Feature dictionary + redundancy check | `2_feature_engineering/features.py` | `2_feature_engineering/results/feature_dictionary.csv`, `2_feature_engineering/results/redundant_feature_pairs.csv` |
+| 3. Baselines + RF/XGBoost/LightGBM, time-series CV, **model freeze** | `3_tree_models/train.py` | `3_tree_models/results/cv_results.csv`, `3_tree_models/results/freeze.json` |
+| 3b. Feature-group ablation (dev weeks only, frozen settings) | `3_tree_models/ablation.py` | `3_tree_models/results/ablation_cv.csv` |
+| 4. One-time test on week 6, bootstrap CIs, robustness, error analysis | `3_tree_models/evaluate.py` | `3_tree_models/results/test_metrics.csv`, `3_tree_models/results/predictions.csv`, … |
+| 5. SHAP + permutation importance | `4_explainability_clustering/explain.py` | `4_explainability_clustering/results/shap_*.csv`, `4_explainability_clustering/results/permutation_importance_groups.csv` |
+| 6. k-means operating modes, after-hours energy | `4_explainability_clustering/cluster.py` | `4_explainability_clustering/results/cluster_*.csv` |
+| 7. UTP scenarios (kW, RM, solar, tCO₂e) | `5_scenarios_dashboard/scenarios.py` | `5_scenarios_dashboard/results/scenarios.json` |
+| 8. Problem/data figures (EDA, workflow, split) + headline stats | `5_scenarios_dashboard/make_figures.py` | `5_scenarios_dashboard/figures/proposal/` |
+| 9. Extra report figures (distributions, residuals, model comparison, scenarios) | `5_scenarios_dashboard/report_figures.py` | `5_scenarios_dashboard/figures/report/` |
+| 10. Presentation walkthrough + stakeholder dashboard | `5_scenarios_dashboard/build_dashboard.py` | `5_scenarios_dashboard/dashboard/index.html` |
 
-Steps run in this order; each reads the previous step's output. Every script ends with `assert` self-checks, so a clean run with no traceback means the outputs are consistent. All randomness is seeded (`random_state=0`, `default_rng(0)`), so a rerun regenerates the same `results/`.
+Steps run in this order; each reads the previous step's output. Every script ends with `assert` self-checks, so a clean run with no traceback means the outputs are consistent. All randomness is seeded (`random_state=0`, `default_rng(0)`), so a rerun regenerates the same results.
 
 ### How the data is split
 
@@ -197,10 +211,10 @@ gantt
 ## Dashboard
 
 <p align="center">
-  <img src="figures/readme/dashboard.png" alt="Stakeholder dashboard: A/C share of peak, peak cut, demand-charge saving and after-hours savings" width="900">
+  <img src="5_scenarios_dashboard/figures/readme/dashboard.png" alt="Stakeholder dashboard: A/C share of peak, peak cut, demand-charge saving and after-hours savings" width="900">
 </p>
 
-`dashboard/index.html` is one offline file: an 11-step walkthrough of the project plus a stakeholder dashboard and a team page. Every chart has hover tooltips.
+`5_scenarios_dashboard/dashboard/index.html` is one offline file: an 11-step walkthrough of the project plus a stakeholder dashboard and a team page. Every chart has hover tooltips.
 
 | Key | Action |
 |---|---|
@@ -209,10 +223,10 @@ gantt
 | `D` | Stakeholder dashboard |
 | `T` | Light / dark theme |
 
-It is generated from `dashboard/template.html` and the files above; rerun `build_dashboard.py` after any result changes. Rebuilding needs the raw CLEMD folders (the data step reads a raw sample); the shipped `index.html` is already built. Team phone numbers are read from an optional `public/phones.json`, which is not included.
+It is generated from `5_scenarios_dashboard/dashboard/template.html` and the files above; rerun `build_dashboard.py` after any result changes. Rebuilding needs the raw CLEMD folders (the data step reads a raw sample); the shipped `index.html` is already built. Team phone numbers are read from an optional `5_scenarios_dashboard/public/phones.json`, which is not included.
 
 <p align="center">
-  <img src="figures/readme/limits-loop.png" alt="Limits step with the CRISP-ML(Q) cycle: four phases done, deployment and monitoring proposed next" width="900">
+  <img src="5_scenarios_dashboard/figures/readme/limits-loop.png" alt="Limits step with the CRISP-ML(Q) cycle: four phases done, deployment and monitoring proposed next" width="900">
 </p>
 
 ## Limitations
@@ -229,11 +243,11 @@ One building, about three weeks of A/C ground truth and one season, so confidenc
 
 <table>
 <tr>
-<td align="center" width="20%"><img src="public/Izzatul.png" width="140" alt="Izzatul Najwa Binti Che Zaki"><br><b>Izzatul Najwa Binti Che Zaki</b><br><sub>22007298</sub><br><sub>Data acquisition, cleaning and quality log</sub></td>
-<td align="center" width="20%"><img src="public/Izzati.png" width="140" alt="Nurul Izzati Binti Razali"><br><b>Nurul Izzati Binti Razali</b><br><sub>22007868</sub><br><sub>Feature engineering and baselines</sub></td>
-<td align="center" width="20%"><img src="public/Daphne.png" width="140" alt="Daphne Binti Douglas"><br><b>Daphne Binti Douglas</b><br><sub>22006239</sub><br><sub>Tree models, tuning, freeze and test</sub></td>
-<td align="center" width="20%"><img src="public/Masyitah.png" width="140" alt="Siti Nurmasyitah Binti Ab Aziz"><br><b>Siti Nurmasyitah Binti Ab Aziz</b><br><sub>22007601</sub><br><sub>Explainability, error analysis and clustering</sub></td>
-<td align="center" width="20%"><img src="public/Sharvin.png" width="140" alt="Sharvin A/L Kanesan"><br><b>Sharvin A/L Kanesan</b><br><sub>22006930</sub><br><sub>Scenarios, figures, integration and dashboard</sub></td>
+<td align="center" width="20%"><img src="5_scenarios_dashboard/public/Izzatul.png" width="140" alt="Izzatul Najwa Binti Che Zaki"><br><b>Izzatul Najwa Binti Che Zaki</b><br><sub>22007298</sub><br><sub>Data acquisition, cleaning and quality log</sub><br><sub><a href="1_data_acquisition/"><code>1_data_acquisition/</code></a></sub></td>
+<td align="center" width="20%"><img src="5_scenarios_dashboard/public/Izzati.png" width="140" alt="Nurul Izzati Binti Razali"><br><b>Nurul Izzati Binti Razali</b><br><sub>22007868</sub><br><sub>Feature engineering and baselines</sub><br><sub><a href="2_feature_engineering/"><code>2_feature_engineering/</code></a></sub></td>
+<td align="center" width="20%"><img src="5_scenarios_dashboard/public/Daphne.png" width="140" alt="Daphne Binti Douglas"><br><b>Daphne Binti Douglas</b><br><sub>22006239</sub><br><sub>Tree models, tuning, freeze and test</sub><br><sub><a href="3_tree_models/"><code>3_tree_models/</code></a></sub></td>
+<td align="center" width="20%"><img src="5_scenarios_dashboard/public/Masyitah.png" width="140" alt="Siti Nurmasyitah Binti Ab Aziz"><br><b>Siti Nurmasyitah Binti Ab Aziz</b><br><sub>22007601</sub><br><sub>Explainability, error analysis and clustering</sub><br><sub><a href="4_explainability_clustering/"><code>4_explainability_clustering/</code></a></sub></td>
+<td align="center" width="20%"><img src="5_scenarios_dashboard/public/Sharvin.png" width="140" alt="Sharvin A/L Kanesan"><br><b>Sharvin A/L Kanesan</b><br><sub>22006930</sub><br><sub>Scenarios, figures, integration and dashboard</sub><br><sub><a href="5_scenarios_dashboard/"><code>5_scenarios_dashboard/</code></a></sub></td>
 </tr>
 </table>
 

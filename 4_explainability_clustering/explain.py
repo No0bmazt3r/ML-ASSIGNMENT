@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -5,13 +7,16 @@ import numpy as np
 import pandas as pd
 import shap
 
-from evaluate import AC, FIG, INK2, TRAIN_WEEKS, frozen, full_table
-from features import RESULTS, TEST_WEEK, build, load
+from evaluate import AC, INK2, TRAIN_WEEKS, frozen, full_table
+from features import EXPLAIN_RESULTS, TEST_WEEK, build, load
+
+FIG = Path(__file__).resolve().parent / "figures"
+FIG.mkdir(exist_ok=True)
 
 N_REPEATS = 5
 
 
-# step 5: explain the frozen A/C model with SHAP and grouped permutation importance
+# explain the frozen A/C model with SHAP and grouped permutation importance
 def main():
     X, df = full_table()
     _, groups = build(load().head(100))
@@ -24,9 +29,9 @@ def main():
     # SHAP value of every feature for every test minute, then averaged by feature and by group
     sv = pd.DataFrame(shap.TreeExplainer(model).shap_values(Xt), index=Xt.index, columns=Xt.columns)
     glob = sv.abs().mean().sort_values(ascending=False).rename("mean_abs_shap_kw")
-    glob.to_frame().assign(group=group).to_csv(RESULTS / "shap_global_ac.csv")
+    glob.to_frame().assign(group=group).to_csv(EXPLAIN_RESULTS / "shap_global_ac.csv")
     by_group = sv.T.groupby(group).sum().T.abs().mean().sort_values(ascending=False).rename("mean_abs_shap_kw")
-    by_group.to_csv(RESULTS / "shap_groups_ac.csv")
+    by_group.to_csv(EXPLAIN_RESULTS / "shap_groups_ac.csv")
 
     # local explanation for the highest 15-minute window of the test week
     q = df.loc[test, "agg_p_kw"].resample("15min").mean()
@@ -34,7 +39,7 @@ def main():
     win = sv.loc[t0:t0 + pd.Timedelta("14min")].mean().sort_values(key=abs, ascending=False)
     local = win.head(10).rename("shap_kw").to_frame()
     local["feature_value"] = Xt.loc[t0:t0 + pd.Timedelta("14min"), local.index].mean()
-    local.to_csv(RESULTS / "shap_local_peak_ac.csv")
+    local.to_csv(EXPLAIN_RESULTS / "shap_local_peak_ac.csv")
     base = float(np.mean(model.predict(X[train])))
     pred_win = model.predict(Xt.loc[t0:t0 + pd.Timedelta("14min")]).mean()
     meas_win = yt.loc[t0:t0 + pd.Timedelta("14min")].mean()
@@ -51,13 +56,13 @@ def main():
             rises.append(np.abs(model.predict(Xp) - yt).mean() - mae0)
         perm[g] = {"mae_increase_kw": np.mean(rises), "std": np.std(rises), "n_features": len(cols)}
     perm = pd.DataFrame(perm).T.sort_values("mae_increase_kw", ascending=False)
-    perm.to_csv(RESULTS / "permutation_importance_groups.csv")
+    perm.to_csv(EXPLAIN_RESULTS / "permutation_importance_groups.csv")
 
     # ridge coefficients for the lighting model
     trl = df["week"].isin(TRAIN_WEEKS["light"])
     ridge = frozen("light").fit(X[trl], df.loc[trl, "light_kw"])
     coef = pd.Series(ridge[-1].coef_, index=X.columns).sort_values(key=abs, ascending=False)
-    coef.rename("coef_kw_per_sd").to_frame().assign(group=group).to_csv(RESULTS / "ridge_light_coefficients.csv")
+    coef.rename("coef_kw_per_sd").to_frame().assign(group=group).to_csv(EXPLAIN_RESULTS / "ridge_light_coefficients.csv")
 
     # figures: top 15 features, beeswarm, groups and the peak window
     top = glob.head(15)[::-1]

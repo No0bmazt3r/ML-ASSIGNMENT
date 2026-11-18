@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
@@ -6,10 +7,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from evaluate import AC, FIG, INK2, LIGHT
-from features import RESULTS, ROOT, TEST_WEEK
+from evaluate import AC, INK2, LIGHT
+from features import MODEL_RESULTS, SCENARIO_RESULTS, ROOT, TEST_WEEK
 
-# step 7: turn the A/C estimates into peak, cost, solar and carbon scenarios for one building
+FIG = Path(__file__).resolve().parent / "figures"
+FIG.mkdir(exist_ok=True)
+
+# turn the A/C estimates into peak, cost, solar and carbon scenarios for one building
 # TNB demand charge (RM per kW per month) and the grid emission factor
 RM_PER_KW_MONTH = (89.27, 97.06)
 GEF_T_PER_MWH = 0.740
@@ -57,7 +61,7 @@ def pv_profile():
 
 # run all scenarios on the weeks the model never trained on and save scenarios.json
 def main():
-    p = pd.read_csv(RESULTS / "predictions.csv", index_col=0, parse_dates=True)
+    p = pd.read_csv(MODEL_RESULTS / "predictions.csv", index_col=0, parse_dates=True)
     est = p[p["ac_pred_kw"].notna()]
     q = est[["agg_p_kw", "ac_pred_kw", "ac_kw", "light_kw", "light_pred_kw", "week"]].resample("15min").mean()
     q = q.dropna(subset=["agg_p_kw", "ac_pred_kw"])
@@ -145,7 +149,7 @@ def main():
                           "utp_scope2_t": UTP_SCOPE2_T, "pv_mwp": PV_MWP, "pr_range": PR_RANGE,
                           "annualised_from": f"{days} days in Sep-Oct 2023 (indicative only)",
                           "label": "SCENARIOS for one CLEMD-sized building, not UTP measurements"}
-    (RESULTS / "scenarios.json").write_text(json.dumps(out, indent=2, default=str))
+    (SCENARIO_RESULTS / "scenarios.json").write_text(json.dumps(out, indent=2, default=str))
 
     d = out["peak_drivers_week6_pct"]
     fig, ax = plt.subplots(figsize=(8, 3))

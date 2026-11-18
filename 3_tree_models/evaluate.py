@@ -1,5 +1,5 @@
-# step 4: test the frozen models once on week 6, with confidence intervals and error analysis
 import json
+from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
@@ -8,11 +8,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from features import RESULTS, ROOT, TARGETS, TEST_WEEK, build, load
+from features import MODEL_RESULTS, TARGETS, TEST_WEEK, build, load
 from train import MODELS, scores
 
-FIG = ROOT / "figures" / "results"
-FREEZE = json.loads((RESULTS / "freeze.json").read_text())
+FIG = Path(__file__).resolve().parent / "figures"
+FREEZE = json.loads((MODEL_RESULTS / "freeze.json").read_text())
 TRAIN_WEEKS = {t: set(w) for t, w in FREEZE["train_weeks"].items()}
 N_BOOT = 2000
 AC, LIGHT, INK2, GRID, SURF = "#2a78d6", "#eb6834", "#52514e", "#e6e5e0", "#fcfcfb"
@@ -80,11 +80,11 @@ def main():
                 unseen = ~df["week"].isin(TRAIN_WEEKS[target])
                 preds[f"{target}_pred_kw"] = pd.Series(est.predict(X[unseen]), index=X.index[unseen])
     metrics = pd.DataFrame(rows)
-    metrics.to_csv(RESULTS / "test_metrics.csv", index=False)
+    metrics.to_csv(MODEL_RESULTS / "test_metrics.csv", index=False)
 
     out = df[["week", "agg_p_kw", "ac_kw", "light_kw"]].join(pd.DataFrame(preds))
     out = out[out["ac_pred_kw"].notna() | out["light_pred_kw"].notna()]
-    out.round(4).to_csv(RESULTS / "predictions.csv")
+    out.round(4).to_csv(MODEL_RESULTS / "predictions.csv")
 
     # robustness check: train on week 4 only and test on week 5
     rob = []
@@ -93,7 +93,7 @@ def main():
         est = make("ac", model).fit(X[tr], df.loc[tr, "ac_kw"])
         pred = pd.Series(est.predict(X[te]), index=X.index[te])
         rob.append({"model": model, **scores(df.loc[te, "ac_kw"], pred, df.loc[te, "agg_p_kw"])})
-    pd.DataFrame(rob).to_csv(RESULTS / "robustness_w4_to_w5.csv", index=False)
+    pd.DataFrame(rob).to_csv(MODEL_RESULTS / "robustness_w4_to_w5.csv", index=False)
 
     w6 = out[out["week"] == TEST_WEEK].copy()
     w6["abs_err"] = (w6["ac_pred_kw"] - w6["ac_kw"]).abs()
@@ -103,7 +103,7 @@ def main():
     w6["step"] = w6["agg_p_kw"].diff().abs() > 5
     parts = [w6.groupby(k, observed=True)["abs_err"].agg(["mean", "count"]).assign(by=k).rename_axis("value").reset_index()
              for k in ("hour", "day_type", "load_band", "step")]
-    pd.concat(parts).rename(columns={"mean": "mae_kw"}).round(3).to_csv(RESULTS / "error_breakdown_ac.csv", index=False)
+    pd.concat(parts).rename(columns={"mean": "mae_kw"}).round(3).to_csv(MODEL_RESULTS / "error_breakdown_ac.csv", index=False)
 
     q = w6[["ac_kw", "ac_pred_kw", "agg_p_kw"]].resample("15min").mean().dropna()
     fig, ax = plt.subplots(figsize=(11, 4))

@@ -1,11 +1,11 @@
 # Results
 
-All numbers below are produced by the scripts in this repo (`./run_all.sh`) and stored in `results/`.
-Figures are in `figures/results/` (model results) and `figures/proposal/` (problem and data figures).
+All numbers below are produced by the scripts in this repo (`./run_all.sh`) and stored in the `results/` folder of each numbered folder.
+Figures are in each numbered folder's `figures/` (model results in `3_tree_models/`, `4_explainability_clustering/` and `5_scenarios_dashboard/`; problem and data figures in `5_scenarios_dashboard/figures/proposal/`).
 Figure titles carry no numbers; number them in the report captions.
 
 **Integrity of the test.** The model choice, features and search space were frozen and committed
-(commit `9e5fc5e`, record in `results/freeze.json`) before week 6 was ever loaded. Week 6 was then
+(commit `9e5fc5e`, record in `3_tree_models/results/freeze.json`) before week 6 was ever loaded. Week 6 was then
 evaluated once. Choices were not revisited after seeing the test results.
 
 ## 1. Accuracy on the sealed test week (RQ1, RQ2)
@@ -14,7 +14,7 @@ Train A/C on CLEMD weeks 4–5 and lighting on weeks 2–5, test on week 6 (19�
 95% CIs use a block bootstrap that resamples whole days (6 days, 2,000 resamples).
 Peak windows = top 5% of 15-min building demand in the test week (29 windows, ≥ 61.9 kW).
 
-**A/C (primary target, average 6.5 kW)** — `results/test_metrics.csv`
+**A/C (primary target, average 6.5 kW)** — `3_tree_models/results/test_metrics.csv`
 
 | Model | MAE kW [95% CI] | RMSE | R² | Peak-window MAE kW [95% CI] | Energy-share error (pp) |
 |---|---|---|---|---|---|
@@ -29,11 +29,11 @@ Peak windows = top 5% of 15-min building demand in the test week (29 windows, �
 - It does **not** dominate Ridge everywhere: Ridge has a lower RMSE (fewer large misses) and tighter
   CIs, and the CIs overlap. With 6 test days the honest claim is "tree models are better on typical error
   and at the peak point estimate, Ridge is competitive"; the gap is not statistically decisive.
-- Where it errs (`results/error_breakdown_ac.csv`, `figures/results/test_error_by_hour.png`):
+- Where it errs (`3_tree_models/results/error_breakdown_ac.csv`, `3_tree_models/figures/test_error_by_hour.png`):
   weekends 0.15 kW vs weekdays 1.78 kW; error rises at 08:00–14:00 when A/C ramps; minutes with a
   > 5 kW step change have 3.5 kW error vs 1.2 kW otherwise (switching, logger misalignment);
   error is worst at 30–60 kW building load (4.3–4.7 kW), exactly the ambiguous band shown in proposal Figure 8.
-- **Robustness (train week 4 → test week 5)** — `results/robustness_w4_to_w5.csv`: tree models hold up
+- **Robustness (train week 4 → test week 5)** — `3_tree_models/results/robustness_w4_to_w5.csv`: tree models hold up
   (MAE 1.16–1.18 kW, LightGBM peak-window MAE 1.04 kW) while Ridge degrades to 2.81 kW. Trained on
   less data, linear models drift more.
 
@@ -72,9 +72,9 @@ Peak windows = top 5% of 15-min building demand in the test week (29 windows, �
   which is why it handles light weekdays the time-of-day baseline gets wrong.
 - Local explanation of the week's peak (Thu 19 Oct 16:00, building 71.4 kW): estimated A/C 28.9 kW vs
   measured 30.4 kW; phase-2 power contributes +12.4 kW above the 5.9 kW baseline, 5th harmonics and THD add
-  ~+3 kW (`figures/results/shap_local_peak.png`).
+  ~+3 kW (`4_explainability_clustering/figures/shap_local_peak.png`).
 
-## 2b. Feature-group ablation (dev weeks only) — `ablation.py`, `results/ablation_cv.csv`
+## 2b. Feature-group ablation (dev weeks only) — `ablation.py`, `3_tree_models/results/ablation_cv.csv`
 
 Frozen LightGBM settings, same 4 CV folds on weeks 4–5, only the inputs change. Test week not used.
 
@@ -112,7 +112,7 @@ Silhouette picks **k = 2** (0.74; k = 3: 0.61).
 - The model over-estimates after-hours A/C by 10–27% (week 6: 30.6 vs 27.7 kWh/day; per mode above),
   so the after-hours savings below are somewhat optimistic.
 
-## 4. UTP scenarios (RQ5) — `scenarios.py`, `results/scenarios.json`
+## 4. UTP scenarios (RQ5) — `scenarios.py`, `5_scenarios_dashboard/results/scenarios.json`
 
 **Scenarios for one CLEMD-sized building, built only from main-meter A/C estimates on unseen weeks
 (2, 3, 6; 20 days). Not UTP measurements.** Week 6 is checked against the sub-meter.
@@ -165,7 +165,7 @@ repeats across every metered building. Annualising 20 days of Sep–Oct data is 
 - Not done (proposal stretch goals): the 1-D CNN and the 15-minute-ahead forecasting extension, and the
   optional NASA temperature feature. These were marked optional and dropped first.
 
-## Figure index (`figures/results/`)
+## Figure index
 
 | File | Shows |
 |---|---|

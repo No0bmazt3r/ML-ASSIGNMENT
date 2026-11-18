@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
@@ -9,16 +10,16 @@ import pandas as pd
 from matplotlib.patches import FancyBboxPatch
 
 from evaluate import AC, INK2, LIGHT
-from features import RESULTS, ROOT, TEST_WEEK, dataset, load
+from features import MODEL_RESULTS, SCENARIO_RESULTS, TEST_WEEK, dataset, load
 
-FIG = ROOT / "figures" / "report"
+FIG = Path(__file__).resolve().parent / "figures" / "report"
 OTHER = "#c3c2b7"
 NAMES = {"time_of_day": "Time-of-day avg.", "ridge": "Ridge", "random_forest": "Random Forest",
          "xgboost": "XGBoost", "lightgbm": "LightGBM"}
 ORDER = list(NAMES)
 
 
-# step 9: extra figures for the report, saved into figures/report
+# extra figures for the report, saved into figures/report
 def save(fig, name):
     fig.savefig(FIG / name)
     plt.close(fig)
@@ -46,7 +47,7 @@ def distributions():
 def prep_flow():
     df = load(include_test=True)
     n_ac = len(dataset("ac")[0]); n_l = len(dataset("light")[0])
-    n_test = len(pd.read_csv(RESULTS / "predictions.csv", usecols=["week"]).query("week == @TEST_WEEK"))
+    n_test = len(pd.read_csv(MODEL_RESULTS / "predictions.csv", usecols=["week"]).query("week == @TEST_WEEK"))
     steps = [("Raw CLEMD", "42 CSV files\n1-second rows\n≈ 5.9 GB"),
              ("Load weeks 2–6", "fix dates, typo file,\nblank rows;\nweek 1 dropped"),
              ("Resample + join", f"{len(df) + 135:,} minutes\nmain meter +\nsub-meters"),
@@ -68,7 +69,7 @@ def prep_flow():
 
 # test MAE of every model with bootstrap intervals
 def model_comparison():
-    tm = pd.read_csv(RESULTS / "test_metrics.csv").set_index(["target", "model"])
+    tm = pd.read_csv(MODEL_RESULTS / "test_metrics.csv").set_index(["target", "model"])
     panels = [("ac", "mae", "mae_ci", "A/C: MAE, all test minutes"),
               ("ac", "peak_mae_15min", "peak_mae_ci", "A/C: MAE in the 29 peak windows"),
               ("light", "mae", "mae_ci", "Lighting & sockets: MAE")]
@@ -93,12 +94,12 @@ def model_comparison():
 
 # residual plots for the frozen A/C model
 def residuals():
-    p = pd.read_csv(RESULTS / "predictions.csv", index_col=0, parse_dates=True)
+    p = pd.read_csv(MODEL_RESULTS / "predictions.csv", index_col=0, parse_dates=True)
     w6 = p[p["week"] == TEST_WEEK]
     res = w6["ac_pred_kw"] - w6["ac_kw"]
     q = w6[["agg_p_kw", "ac_kw", "ac_pred_kw"]].resample("15min").mean().dropna()
     q["res"] = q["ac_pred_kw"] - q["ac_kw"]
-    err = pd.read_csv(RESULTS / "error_breakdown_ac.csv").query("by == 'load_band'")
+    err = pd.read_csv(MODEL_RESULTS / "error_breakdown_ac.csv").query("by == 'load_band'")
     fig, axes = plt.subplots(1, 3, figsize=(14, 3.8), gridspec_kw={"width_ratios": [1.3, 1, 1], "wspace": 0.35})
     ax = axes[0]
     office = (q.index.day_of_week < 5) & (q.index.hour >= 8) & (q.index.hour < 17)
@@ -130,10 +131,10 @@ def residuals():
 
 # MAE per CV fold and the week 4 -> week 5 check
 def consistency():
-    cv = pd.read_csv(RESULTS / "cv_results.csv").query("target == 'ac'")
-    freeze = json.loads((RESULTS / "freeze.json").read_text())
+    cv = pd.read_csv(MODEL_RESULTS / "cv_results.csv").query("target == 'ac'")
+    freeze = json.loads((MODEL_RESULTS / "freeze.json").read_text())
     best = freeze["targets"]["ac"]["cv_best_params_per_model"]
-    rob = pd.read_csv(RESULTS / "robustness_w4_to_w5.csv").set_index("model")
+    rob = pd.read_csv(MODEL_RESULTS / "robustness_w4_to_w5.csv").set_index("model")
     fig, axes = plt.subplots(1, 2, figsize=(12, 3.6), sharey=True)
     y = np.arange(len(ORDER))[::-1]
     ax = axes[0]
@@ -158,7 +159,7 @@ def consistency():
 
 # lighting estimate vs measured on the test week
 def lighting_test():
-    p = pd.read_csv(RESULTS / "predictions.csv", index_col=0, parse_dates=True)
+    p = pd.read_csv(MODEL_RESULTS / "predictions.csv", index_col=0, parse_dates=True)
     q = p[p["week"] == TEST_WEEK][["light_kw", "light_pred_kw"]].resample("15min").mean().dropna()
     fig, ax = plt.subplots(figsize=(11, 3.4))
     ax.plot(q.index, q["light_kw"], color=LIGHT, lw=2, label="Lighting & sockets measured (sub-meters)")
@@ -172,7 +173,7 @@ def lighting_test():
 
 # peak shaving and after-hours scenario bars
 def scenarios():
-    s = json.loads((RESULTS / "scenarios.json").read_text())
+    s = json.loads((SCENARIO_RESULTS / "scenarios.json").read_text())
     sh = pd.DataFrame(s["peak_shaving"]["scenarios"])
     ah = pd.DataFrame(s["after_hours"]["scenarios"])
     fig, axes = plt.subplots(1, 2, figsize=(12, 3.6))

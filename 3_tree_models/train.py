@@ -1,4 +1,3 @@
-# step 3: train the baselines and tree models with time-series cross-validation, then freeze the best one
 import json
 import subprocess
 import time
@@ -15,7 +14,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBRegressor
 
-from features import RESULTS, TARGETS, dataset
+from features import MODEL_RESULTS, TARGETS, dataset
 
 # 4 folds in time order, with a 60 minute gap so the longest lag cannot see the validation part
 N_SPLITS, GAP = 4, 60
@@ -104,9 +103,9 @@ def choose(cv: pd.DataFrame) -> dict:
 
 # run CV for both targets and write freeze.json (never overwrite an existing freeze)
 def main():
-    RESULTS.mkdir(exist_ok=True)
+    MODEL_RESULTS.mkdir(exist_ok=True)
     cv = pd.concat([cross_validate(t) for t in ("ac", "light")])
-    cv.to_csv(RESULTS / "cv_results.csv", index=False)
+    cv.to_csv(MODEL_RESULTS / "cv_results.csv", index=False)
     X, _, _ = dataset("ac")
     git = lambda *a: subprocess.run(["git", *a], capture_output=True, text=True).stdout.strip()
     commit = git("rev-parse", "--short", "HEAD") + ("-dirty" if git("status", "--porcelain", "--", "*.py") else "")
@@ -119,12 +118,12 @@ def main():
         "features": list(X.columns),
         "targets": {t: choose(cv[cv.target == t]) for t in ("ac", "light")},
     }
-    path = RESULTS / "freeze.json"
+    path = MODEL_RESULTS / "freeze.json"
     # if the freeze already exists we only check that the rerun picks the same model
     if path.exists():
         old = json.loads(path.read_text())
         same = all(old["targets"][t][k] == freeze["targets"][t][k] for t in TARGETS for k in ("chosen_model", "params"))
-        (RESULTS / "freeze_rerun.json").write_text(json.dumps(freeze, indent=2))
+        (MODEL_RESULTS / "freeze_rerun.json").write_text(json.dumps(freeze, indent=2))
         print(f"\nfreeze.json kept; rerun {'REPRODUCES' if same else 'DIFFERS FROM'} the frozen choice")
         assert same, "rerun chose a different model: check data/feature changes"
     else:

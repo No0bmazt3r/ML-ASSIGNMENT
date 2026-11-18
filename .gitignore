@@ -25,7 +25,7 @@ models/
 .DS_Store
 Thumbs.db
 *:Zone.Identifier
-results/freeze_rerun.json
+3_tree_models/results/freeze_rerun.json
 
 # private, read by build_dashboard.py if present
-public/phones.json
+5_scenarios_dashboard/public/phones.json

@@ -1,10 +1,9 @@
-# step 1: read the raw CLEMD csv files, clean them and save one 1-minute table
 from datetime import datetime
 from pathlib import Path
 
 import pandas as pd
 
-ROOT = Path(__file__).resolve().parent
+ROOT = Path(__file__).resolve().parents[1]
 CLEMD = ROOT / "data" / "clemd"
 OUT = ROOT / "data" / "processed" / "clemd_1min.parquet"
 

@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.dates as mdates
@@ -7,8 +9,11 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 
-from evaluate import AC, FIG, INK2, LIGHT
-from features import RESULTS, WORK_END, WORK_START, load
+from evaluate import AC, INK2, LIGHT
+from features import EXPLAIN_RESULTS, MODEL_RESULTS, WORK_END, WORK_START, load
+
+FIG = Path(__file__).resolve().parent / "figures"
+FIG.mkdir(exist_ok=True)
 
 K_RANGE = range(2, 7)
 COLORS = [AC, LIGHT, INK2, "#1baf7a", "#eda100", "#8a5cd6"]
@@ -22,10 +27,10 @@ def daily_profiles(df):
     return prof.dropna()
 
 
-# step 6: k-means on the daily shapes to find operating modes, pick k with the silhouette score
+# k-means on the daily shapes to find operating modes, pick k with the silhouette score
 def main():
     df = load(include_test=True)
-    pred = pd.read_csv(RESULTS / "predictions.csv", index_col=0, parse_dates=True)
+    pred = pd.read_csv(MODEL_RESULTS / "predictions.csv", index_col=0, parse_dates=True)
     df = df.join(pred[["ac_pred_kw"]])
     prof = daily_profiles(df)
     shape = prof.div(prof.max(axis=1), axis=0)
@@ -36,7 +41,7 @@ def main():
         km = KMeans(k, n_init=50, random_state=0).fit(shape)
         search.append({"k": k, "silhouette": silhouette_score(shape, km.labels_), "inertia": km.inertia_})
     search = pd.DataFrame(search)
-    search.to_csv(RESULTS / "cluster_k_search.csv", index=False)
+    search.to_csv(EXPLAIN_RESULTS / "cluster_k_search.csv", index=False)
     k = int(search.loc[search["silhouette"].idxmax(), "k"])
     km = KMeans(k, n_init=50, random_state=0).fit(shape)
     energy = prof.sum(axis=1)
@@ -56,7 +61,7 @@ def main():
         "light_after_kwh": kwh(df["light_kw"].where(after)),
     }).loc[prof.index].join(labels)
     per_day["weekday"] = pd.to_datetime(per_day.index).day_name()
-    per_day.round(2).to_csv(RESULTS / "cluster_days.csv")
+    per_day.round(2).to_csv(EXPLAIN_RESULTS / "cluster_days.csv")
     summary = per_day.groupby("cluster").agg(
         days=("building_kwh", "size"),
         weekdays=("weekday", lambda s: int((~s.isin(["Saturday", "Sunday"])).sum())),
@@ -67,7 +72,7 @@ def main():
         light_kwh_day=("light_kwh", "mean"),
         light_after_kwh_day=("light_after_kwh", "mean"),
     ).round(2)
-    summary.to_csv(RESULTS / "cluster_summary.csv")
+    summary.to_csv(EXPLAIN_RESULTS / "cluster_summary.csv")
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 4), gridspec_kw={"width_ratios": [1.3, 1]})
     for c in range(k):

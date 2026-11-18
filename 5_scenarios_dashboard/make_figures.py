@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")
@@ -10,12 +11,12 @@ from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.patches import FancyBboxPatch
 
 from evaluate import AC, GRID, INK2, LIGHT, SURF
-from features import DATA, ROOT, WORK_END, WORK_START
+from features import DATA, WORK_END, WORK_START
 from scenarios import PR_RANGE, PV_COLOR as PV, PV_MWP, pv_profile
 
-FIG = ROOT / "figures" / "proposal"
+FIG = Path(__file__).resolve().parent / "figures" / "proposal"
 FIG.mkdir(parents=True, exist_ok=True)
-# step 8: figures for the problem and data chapters (uses weeks 4-6)
+# figures for the problem and data chapters (uses weeks 4-6)
 df = pd.read_parquet(DATA)
 df = df[df["week"] >= 4]
 
