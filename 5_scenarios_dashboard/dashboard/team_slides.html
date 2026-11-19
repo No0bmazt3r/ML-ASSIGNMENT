@@ -1,0 +1,1329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Who Did What</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<script>try { const t = localStorage.getItem("wsp-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>
+<style>
+/* same tokens as index.html so the two files feel like one product */
+:root {
+  --bg: #eceff3; --surface: #ffffff; --surface2: #f4f6f9; --ink: #0b1420; --ink2: #3b4757; --muted: #657182;
+  --grid: #e3e7ec; --axis: #c2c9d2; --wash: rgba(11,20,32,.05); --bad: #cc3333; --good: #179c6c; --m1: #d99200;
+  --code-bg: #0f1722; --code-ink: #d7dee8; --code-dim: #6b7889; --code-str: #9fd28a; --code-kw: #f0a35e; --code-num: #e8c46a; --code-com: #7f8c9d;
+  /* one accent per person */
+  --p1: #0f8b8d; --p2: #b87b00; --p3: #1f6fd1; --p4: #c4501f; --p5: #179c6c;
+  --display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --ease: cubic-bezier(.2,.7,.2,1); --spring: cubic-bezier(.34,1.4,.5,1);
+  --acc: var(--p3); color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0a0d11; --surface: #12171e; --surface2: #181f28; --ink: #edf1f5; --ink2: #b3bdc8; --muted: #8590a0;
+  --grid: #222a34; --axis: #384350; --wash: rgba(255,255,255,.05); --code-bg: #0b1017; --bad: #e66767; --good: #22b07c; --m1: #e0a325;
+  --p1: #2bb3b0; --p2: #e0a325; --p3: #4a92ec; --p4: #e46a35; --p5: #22b07c; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0a0d11; --surface: #12171e; --surface2: #181f28; --ink: #edf1f5; --ink2: #b3bdc8; --muted: #8590a0;
+  --grid: #222a34; --axis: #384350; --wash: rgba(255,255,255,.05); --code-bg: #0b1017; --bad: #e66767; --good: #22b07c; --m1: #e0a325;
+  --p1: #2bb3b0; --p2: #e0a325; --p3: #4a92ec; --p4: #e46a35; --p5: #22b07c; color-scheme: dark; }
+[data-p="1"] { --acc: var(--p1); } [data-p="2"] { --acc: var(--p2); } [data-p="3"] { --acc: var(--p3); }
+[data-p="4"] { --acc: var(--p4); } [data-p="5"] { --acc: var(--p5); }
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); color: var(--ink); font: 17px/1.5 var(--body); font-variant-numeric: tabular-nums; transition: background .3s var(--ease), color .3s var(--ease); }
+button { font: inherit; color: inherit; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--acc); outline-offset: 3px; border-radius: 6px; }
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
+.pad { padding-left: max(16px, min(3vw, 40px)); padding-right: max(16px, min(3vw, 40px)); }
+
+/* top bar */
+header { background: var(--surface); display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 10px; padding-bottom: 10px; position: relative; transition: background .3s var(--ease); }
+.brand b { display: block; font: 700 19px/1.1 var(--display); letter-spacing: -.01em; }
+.brand span { font-size: 13px; color: var(--muted); }
+.tools { display: flex; gap: 6px; }
+.iconbtn { height: 44px; min-width: 44px; padding: 0 12px; border-radius: 999px; border: 0; background: var(--surface2); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; font-weight: 500; transition: background .2s var(--ease), transform .2s var(--spring); }
+.iconbtn:hover { background: var(--wash); }
+.iconbtn:active { transform: scale(.94); }
+.iconbtn:disabled { opacity: .4; cursor: default; }
+.iconbtn[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.iconbtn svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--grid); }
+.progress i { display: block; height: 100%; background: var(--acc); transform-origin: left; transition: transform .4s var(--ease), background .3s var(--ease); }
+
+/* slides: one visible at a time */
+main { position: relative; min-height: 0; overflow: hidden; }
+.slide { position: absolute; inset: 0; overflow: auto; padding-top: clamp(14px, 3vh, 36px); padding-bottom: clamp(14px, 3vh, 36px); display: none; }
+.slide.on { display: block; animation: enter .45s var(--ease); }
+@keyframes enter { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.inner { max-width: 1680px; margin: 0 auto; height: 100%; }
+h1, h2 { font-family: var(--display); font-weight: 700; letter-spacing: -.02em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(40px, min(6.6vw, 10vh), 112px); line-height: .95; }
+h2 { font-size: clamp(26px, min(3.2vw, 5.4vh), 52px); line-height: 1.04; }
+.part { font: 600 15px/1.2 var(--body); color: var(--acc); margin: 0 0 10px; display: flex; align-items: center; gap: 10px; }
+.part::before { content: ""; width: 22px; height: 4px; border-radius: 2px; background: var(--acc); }
+.lede { font-size: clamp(16px, min(1.4vw, 2.5vh), 23px); color: var(--ink2); margin: 0; max-width: 52ch; }
+code, .path { font: 500 .88em/1.3 var(--mono); background: var(--wash); padding: 1px 6px; border-radius: 5px; }
+kbd { font: 600 12px/1 var(--mono); padding: 4px 7px; border-radius: 6px; background: var(--surface2); box-shadow: inset 0 -2px 0 var(--axis); color: var(--ink2); }
+
+/* title slide: faces lined up at the same size and height */
+.title { display: grid; align-content: center; gap: clamp(18px, 4vh, 44px); height: 100%; }
+.title .lede { max-width: 58ch; }
+.lineup { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.who { border: 0; background: var(--surface); border-radius: 16px; padding: 0 0 14px; cursor: pointer; text-align: left; overflow: hidden; display: grid; gap: 2px; transition: transform .25s var(--spring), box-shadow .2s var(--ease); }
+.who:hover { transform: translateY(-3px); box-shadow: inset 0 -4px 0 var(--acc); }
+.who .ph { height: clamp(120px, 28vh, 300px); width: 100%; position: relative; overflow: hidden; background: linear-gradient(to top, color-mix(in srgb, var(--acc) 22%, transparent), transparent 75%); }
+.who .ph img { position: absolute; left: 50%; top: 42%; height: calc(45% / var(--fh)); width: auto; max-width: none; transform: translate(calc(var(--cx) * -100%), calc(var(--cy) * -100%)); }
+.who b { font: 600 clamp(14px, 1.2vw, 18px)/1.25 var(--body); padding: 10px 16px 0; }
+.who span { font-size: 13.5px; color: var(--muted); padding: 0 16px; }
+.who kbd { justify-self: start; margin: 6px 16px 0; }
+
+/* pipeline flow diagram */
+.flowwrap { display: grid; align-content: center; gap: clamp(16px, 4vh, 40px); height: 100%; }
+.ends { display: flex; justify-content: space-between; gap: 16px; font-size: 15px; color: var(--ink2); }
+.ends span { background: var(--surface); border-radius: 999px; padding: 8px 16px; display: inline-flex; gap: 8px; align-items: center; }
+.ends b { color: var(--ink); }
+.flow { display: grid; grid-template-columns: minmax(0, 1fr) 96px minmax(0, 1fr) 96px minmax(0, 1fr) 96px minmax(0, 1fr) 96px minmax(0, 1fr); align-items: stretch; }
+.node { background: var(--surface); border-radius: 16px; padding: 18px 18px 20px; display: grid; gap: 8px; align-content: start; border-top: 5px solid var(--acc); opacity: 0; animation: ap .5s var(--ease) forwards; animation-delay: calc(var(--i) * .35s); }
+.node .n { width: 34px; height: 34px; border-radius: 50%; background: var(--acc); color: #fff; display: grid; place-items: center; font: 700 17px/1 var(--display); }
+.node b { font: 700 clamp(18px, 1.5vw, 24px)/1.1 var(--display); }
+.node .path { justify-self: start; font-size: 12.5px; }
+.node p { margin: 0; font-size: 14.5px; color: var(--ink2); line-height: 1.45; }
+.node small { font-size: 13px; color: var(--muted); }
+.link { position: relative; display: grid; align-content: center; justify-items: center; gap: 6px; padding: 0 4px; opacity: 0; animation: ap .4s var(--ease) forwards; animation-delay: calc(var(--i) * .35s + .2s); }
+.link i { width: 100%; height: 3px; border-radius: 2px; background: repeating-linear-gradient(90deg, var(--axis) 0 8px, transparent 8px 14px); background-size: 14px 3px; animation: flow 1s linear infinite; position: relative; }
+.link i::after { content: ""; position: absolute; right: -2px; top: -6px; border-left: 10px solid var(--axis); border-top: 7.5px solid transparent; border-bottom: 7.5px solid transparent; }
+.link span { font: 500 11.5px/1.3 var(--mono); color: var(--muted); text-align: center; }
+@keyframes flow { to { background-position: 14px 0; } }
+
+/* person intro: the topic is the title */
+.intro { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(20px, 4vw, 64px); height: 100%; align-items: center; }
+.about { display: flex; flex-direction: column; gap: clamp(12px, 2.4vh, 26px); min-width: 0; }
+.about h1 { font-size: clamp(40px, min(5.4vw, 9vh), 96px); }
+.built { list-style: none; margin: 0; padding: 0; display: grid; gap: clamp(8px, 1.4vh, 14px); }
+.built li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 12px; font-size: clamp(15px, min(1.2vw, 2.2vh), 19px); color: var(--ink2); }
+.built li::before { content: ""; width: 12px; height: 12px; margin: .45em 0 0 6px; border-radius: 3px; background: var(--acc); }
+.built b { color: var(--ink); font-weight: 600; }
+.io { display: grid; gap: 0; }
+.io .box { background: var(--surface); border-radius: 16px; padding: 16px 18px; display: grid; gap: 4px; }
+.io .box small { font-size: 13px; color: var(--muted); }
+.io .box b { font-size: clamp(15px, 1.2vw, 18px); font-weight: 600; }
+.io .box.mid { background: var(--acc); color: #fff; }
+.io .box.mid small { color: rgba(255,255,255,.8); }
+.io .box.mid b { font-family: var(--mono); font-weight: 500; font-size: clamp(14px, 1.05vw, 16px); }
+.io .down { height: 34px; display: grid; place-items: center; }
+.io .down::before { content: ""; width: 3px; height: 100%; background: var(--axis); }
+.logos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 18px; }
+.logo { background: #fff; border-radius: 14px; padding: 14px 10px 10px; display: grid; justify-items: center; gap: 8px; color: #1b222c; font-size: 13.5px; font-weight: 600; }
+.logo img { height: clamp(34px, 6vh, 56px); width: 100%; object-fit: contain; }
+
+/* code slide */
+.codeslide, .outslide, .animslide { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: clamp(12px, 2.4vh, 24px); height: 100%; }
+.codeslide > header, .outslide > header, .animslide > header { all: unset; display: grid; gap: 8px; }
+.codegrid, .outgrid, .animgrid { display: grid; grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); gap: 20px; min-height: 0; }
+.codebox { background: var(--code-bg); color: var(--code-ink); border-radius: 16px; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.codebox .file { display: flex; align-items: center; gap: 10px; padding: 12px 18px; font: 500 13.5px/1 var(--mono); color: var(--code-dim); border-bottom: 1px solid rgba(255,255,255,.07); }
+.codebox .file::before { content: ""; width: 10px; height: 10px; border-radius: 50%; background: var(--acc); }
+pre.code { margin: 0; padding: 12px 0 16px; overflow: auto; font: 400 clamp(12px, min(.98vw, 1.65vh), 16px)/1.45 var(--mono); flex: 1; counter-reset: ln; }
+pre.code .l { display: block; padding: 0 18px 0 0; position: relative; white-space: pre; transition: background .2s var(--ease), opacity .2s var(--ease); }
+pre.code .l::before { counter-increment: ln; content: counter(ln); display: inline-block; width: 3.2em; padding-right: 1.2em; text-align: right; color: var(--code-dim); opacity: .6; user-select: none; }
+pre.code .l.hl { background: color-mix(in srgb, var(--acc) 16%, transparent); box-shadow: inset 3px 0 0 var(--acc); }
+pre.code.focus .l { opacity: .32; }
+pre.code.focus .l.cur { opacity: 1; background: color-mix(in srgb, var(--acc) 26%, transparent); }
+pre.code .ell { color: var(--code-dim); font-style: italic; }
+pre.code .mk { display: inline-grid; place-items: center; width: 1.45em; height: 1.45em; margin-left: 12px; border-radius: 50%; background: var(--acc); color: #fff; font: 600 .78em/1 var(--body); vertical-align: 1px; }
+.t-c { color: var(--code-com); font-style: italic; } .t-s { color: var(--code-str); } .t-k { color: var(--code-kw); } .t-n { color: var(--code-num); }
+.callouts { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; overflow: auto; min-height: 0; }
+.callouts button { width: 100%; text-align: left; border: 0; cursor: pointer; background: var(--surface); border-radius: 14px; padding: clamp(10px, 1.6vh, 16px) 16px; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 4px 12px; transition: box-shadow .2s var(--ease), transform .2s var(--spring); }
+.callouts button:hover { transform: translateX(-2px); }
+.callouts button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px var(--acc); }
+.callouts .num { grid-row: span 2; width: 30px; height: 30px; border-radius: 50%; background: var(--acc); color: #fff; display: grid; place-items: center; font: 600 14px/1 var(--body); }
+.callouts b { font: 600 clamp(14.5px, min(1.15vw, 2.1vh), 18px)/1.3 var(--body); }
+.callouts span { font-size: clamp(13px, min(1vw, 1.9vh), 15.5px); color: var(--ink2); line-height: 1.45; }
+
+/* run-order strip on the code slides: lit steps are the ones in the excerpt */
+.callflow { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 6px 10px; margin-top: 4px; }
+.callflow > b { font: 600 13px/1 var(--body); color: var(--muted); }
+.callflow ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 0; font: 500 clamp(11.5px, .85vw, 13.5px)/1 var(--mono); }
+.callflow li { display: flex; align-items: center; color: var(--ink2); }
+.callflow li + li::before { content: "→"; margin: 0 7px; color: var(--muted); font-family: var(--body); }
+.callflow li span { padding: 6px 9px; border-radius: 8px; background: var(--surface); }
+.callflow li.on span { background: var(--acc); color: #fff; }
+.callflow li.file span { background: none; padding: 6px 0; font-weight: 600; color: var(--muted); }
+/* code walkthrough: arrows run one numbered block at a time */
+.rcol { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.rcol .callouts { flex: 0 1 auto; }
+.walk .callouts button:not([aria-pressed="true"]) { opacity: .6; padding-top: 10px; padding-bottom: 10px; }
+.walk .callouts button:not([aria-pressed="true"]) > span:last-child { display: none; }
+.console { display: none; flex: 1 1 auto; }
+.walk .console { display: flex; animation: ap .4s var(--ease) both; }
+.trace { padding: 12px 18px 16px; font: 400 clamp(12.5px, min(.95vw, 1.8vh), 15px)/1.65 var(--mono); overflow: auto; }
+.tl { opacity: 0; animation: ap .45s var(--ease) forwards; animation-delay: var(--d); white-space: pre-wrap; }
+.tl::before { content: "› "; color: var(--code-dim); }
+.tl.ok { color: #6fd39b; } .tl.no { color: #ff8a85; }
+.tl.ok::before, .tl.no::before { content: ""; }
+pre.code.focus .l.cur { animation: run .55s var(--ease) both; animation-delay: calc(var(--k, 0) * .12s); }
+@keyframes run { from { opacity: .32; background: transparent; } 45% { opacity: 1; background: color-mix(in srgb, var(--acc) 50%, transparent); } to { opacity: 1; background: color-mix(in srgb, var(--acc) 26%, transparent); } }
+.callflow li { transition: opacity .3s var(--ease); }
+.callflow.run li { opacity: .35; }
+.callflow.run li.now { opacity: 1; }
+.callflow li.now span { background: var(--acc); color: #fff; box-shadow: 0 0 0 3px color-mix(in srgb, var(--acc) 35%, transparent); }
+@media (prefers-reduced-motion: reduce) { .tl, pre.code.focus .l.cur, .walk .console { animation: none; opacity: 1; } }
+/* animation slide: stage on the left, step text on the right */
+.stagebox { background: var(--surface); border-radius: 16px; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.stage { flex: 1 1 auto; min-height: 260px; position: relative; }
+.stage svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.ctrl { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--grid); }
+.ctrl .dots { display: flex; gap: 6px; margin: 0 auto; }
+.ctrl .dots i { width: 28px; height: 6px; border-radius: 3px; background: var(--grid); transition: background .3s var(--ease); }
+.ctrl .dots i.done { background: var(--acc); }
+.ctrl .lbl { font: 500 13.5px/1 var(--mono); color: var(--muted); min-width: 7em; text-align: right; }
+.steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; overflow: auto; min-height: 0; }
+.steps button { width: 100%; text-align: left; border: 0; cursor: pointer; background: var(--surface); border-radius: 14px; padding: 12px 16px; display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 2px 12px; opacity: .55; transition: opacity .3s var(--ease), box-shadow .3s var(--ease); }
+.steps .num { grid-row: span 2; width: 28px; height: 28px; border-radius: 50%; box-shadow: inset 0 0 0 2px var(--acc); color: var(--acc); display: grid; place-items: center; font: 600 13px/1 var(--body); }
+.steps b { font: 600 clamp(14.5px, min(1.15vw, 2.1vh), 18px)/1.3 var(--body); }
+.steps span.x { display: none; font-size: clamp(13.5px, min(1.05vw, 2vh), 16px); color: var(--ink2); line-height: 1.5; }
+.steps button.done { opacity: .8; }
+.steps button.done .num { background: var(--acc); color: #fff; }
+.steps button.cur { opacity: 1; box-shadow: inset 0 0 0 2px var(--acc); }
+.steps button.cur .num { background: var(--acc); color: #fff; }
+.steps button.cur span.x { display: block; animation: ap .5s var(--ease) both .15s; }
+/* svg building blocks used by the scenes */
+.stage text { fill: var(--ink); font-family: var(--body); font-size: 14px; }
+.stage .lab { fill: var(--muted); font-size: 12.5px; }
+.stage .mono { font-family: var(--mono); }
+.stage .big { font: 700 40px var(--display); }
+.stage .mid { font-size: 17px; font-weight: 600; }
+.stage .acc { fill: var(--acc); } .stage .bad { fill: var(--bad); } .stage .good { fill: var(--good); } .stage .muted { fill: var(--axis); } .stage .m1 { fill: var(--m1); } .stage .blue { fill: var(--p3); }
+.stage .card { fill: var(--surface2); }
+.stage .gridl { stroke: var(--grid); stroke-width: 1; }
+.stage .ln { fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+.stage .s-acc { stroke: var(--acc); } .stage .s-ink { stroke: var(--ink2); } .stage .s-mut { stroke: var(--axis); } .stage .s-bad { stroke: var(--bad); } .stage .s-good { stroke: var(--good); } .stage .s-org { stroke: var(--p4); } .stage .s-m1 { stroke: var(--m1); } .stage .s-blue { stroke: var(--p3); }
+.ap { opacity: 0; animation: ap .55s var(--ease) forwards; animation-delay: var(--d, 0s); }
+@keyframes ap { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.dr { stroke-dasharray: 1; stroke-dashoffset: 1; animation: dr 1.6s var(--ease) forwards; animation-delay: var(--d, 0s); }
+@keyframes dr { to { stroke-dashoffset: 0; } }
+.gx, .gy { transform-box: fill-box; animation: g .7s var(--ease) both; animation-delay: var(--d, 0s); }
+.gx { transform-origin: left center; } .gy { transform-origin: center bottom; }
+.gx { --g0: scaleX(0); } .gy { --g0: scaleY(0); }
+@keyframes g { from { transform: var(--g0); } to { transform: none; } }
+.fo { animation: ap .3s var(--ease) both var(--d, 0s), fo .7s var(--ease) forwards var(--f, 3s); }
+@keyframes fo { to { opacity: .12; } }
+.gone { animation: ap .3s var(--ease) both var(--d, 0s), gone .6s var(--ease) forwards var(--f, 3s); }
+@keyframes gone { to { opacity: 0; } }
+.mv { transform-box: fill-box; animation: mv 1s var(--ease) forwards; animation-delay: var(--d, 0s); }
+@keyframes mv { to { transform: translate(var(--dx, 0), var(--dy, 0)); } }
+
+/* output slide */
+.figs { display: flex; flex-direction: column; gap: 14px; min-height: 0; }
+.fig { flex: 1 1 0; margin: 0; background: #fcfcfb; border-radius: 16px; padding: 12px; min-height: 0; display: flex; flex-direction: column; gap: 6px; }
+.fig img { flex: 1 1 0; min-height: 0; width: 100%; object-fit: contain; }
+.fig figcaption { font-size: 13px; color: #52514e; font-family: var(--mono); }
+.side { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: auto; }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.fact { background: var(--surface); border-radius: 14px; padding: clamp(10px, 1.6vh, 16px) 16px; display: grid; gap: 4px; align-content: start; }
+.fact b { font: 700 clamp(22px, min(2.2vw, 4vh), 40px)/1 var(--display); letter-spacing: -.01em; color: var(--acc); }
+.fact b small { font: 600 .48em var(--body); color: var(--ink2); margin-left: 3px; }
+.fact span { font-size: clamp(12.5px, 1.6vh, 14px); color: var(--muted); line-height: 1.35; }
+.fact.bad b { color: var(--p4); }
+.means { background: var(--surface); border-radius: 14px; padding: 16px 18px; border-left: 5px solid var(--acc); }
+.means h3 { margin: 0 0 6px; font: 600 16px/1.3 var(--body); }
+.means p { margin: 0; font-size: clamp(14px, min(1.1vw, 2vh), 16.5px); color: var(--ink2); }
+.means p + p { margin-top: 8px; }
+.bars { background: #fcfcfb; color: #1b222c; border-radius: 16px; padding: 16px 20px; display: grid; gap: 10px; flex: none; }
+.bars h4 { margin: 0; font: 600 15px/1.3 var(--body); }
+.bar { display: grid; grid-template-columns: 9em minmax(0, 1fr) 2.6em; gap: 12px; align-items: center; font-size: 14.5px; }
+.bar i { display: block; height: 16px; border-radius: 4px; background: var(--acc); width: calc(var(--v) / 53 * 100%); }
+.bar em { font-style: normal; font-weight: 600; text-align: right; }
+
+/* closing */
+.close { display: grid; align-content: center; gap: clamp(18px, 4vh, 40px); height: 100%; }
+.close .facts { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.close .fact:nth-child(-n+2) b { color: var(--p3); } .close .fact:nth-child(n+3) b { color: var(--p5); }
+.cta { display: flex; gap: 10px; flex-wrap: wrap; }
+.cta a { text-decoration: none; display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px; border-radius: 999px; background: var(--ink); color: var(--bg); font-weight: 600; font-size: 15px; }
+
+/* footer */
+footer { background: var(--surface); display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-top: 8px; padding-bottom: 8px; transition: background .3s var(--ease); }
+.keys { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+.keys span { display: inline-flex; gap: 6px; align-items: center; }
+.nav { display: flex; align-items: center; gap: 10px; }
+.count { font: 500 14px/1 var(--mono); color: var(--muted); min-width: 5.5em; text-align: center; }
+
+/* speaker notes */
+.notes { display: none; }
+.drawer { position: fixed; left: 50%; bottom: 72px; transform: translate(-50%, 20px); width: min(860px, calc(100% - 32px)); max-height: 40vh; overflow: auto; background: var(--ink); color: var(--bg); border-radius: 16px; padding: 18px 22px; font-size: 16px; line-height: 1.55; opacity: 0; pointer-events: none; transition: opacity .2s var(--ease), transform .25s var(--ease); z-index: 5; }
+.drawer.open { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+.drawer b { display: block; font: 600 13px/1.2 var(--body); opacity: .7; margin-bottom: 6px; }
+.drawer p { margin: 0; }
+.drawer p + p { margin-top: 8px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .slide.on, .node, .link, .link i, .steps button.cur span.x { animation: none; opacity: 1; }
+  .ap, .fo, .gone, .gx, .gy, .dr, .mv { animation: none !important; opacity: 1; stroke-dashoffset: 0; transform: none; }
+  .gone { opacity: 0; } .fo { opacity: .12; } .mv { transform: translate(var(--dx, 0), var(--dy, 0)); }
+}
+@media (max-width: 1100px) {
+  .intro, .codegrid, .outgrid, .animgrid { grid-template-columns: minmax(0, 1fr); }
+  .inner, .codeslide, .outslide, .animslide, .intro, .title, .close, .flowwrap { height: auto; }
+  .stage { min-height: 0; aspect-ratio: 16 / 9; }
+  .fig { min-height: 220px; }
+  .flow { grid-template-columns: minmax(0, 1fr); }
+  .link { height: 64px; }
+  .link i { width: 3px; height: 100%; background: repeating-linear-gradient(180deg, var(--axis) 0 8px, transparent 8px 14px); }
+  .link i::after { display: none; }
+  .lineup { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+  .close .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .keys, .ctrl .lbl { display: none; }
+  pre.code { max-height: 60vh; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="pad">
+  <div class="brand"><b>Who sets the peak?</b><span>Group 8, TEB3123 Machine Learning</span></div>
+  <div class="tools">
+    <button class="iconbtn" id="notesBtn" aria-pressed="false" title="Speaker notes (N)"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5z"/><path d="M9 9h6M9 13h6M9 17h3"/></svg><span>Notes</span></button>
+    <button class="iconbtn" id="themeBtn" title="Light or dark (T)" aria-label="Switch light or dark theme"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+    <button class="iconbtn" id="fsBtn" title="Fullscreen (F)" aria-label="Fullscreen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+  </div>
+  <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+</header>
+
+<main id="deck">
+
+<!-- ============ TITLE ============ -->
+<section class="slide pad" data-p="0" aria-label="Title">
+  <div class="inner title">
+    <div>
+      <p class="part">Group 8 project walkthrough</p>
+      <h1>Who sets the peak?<br>Who did what.</h1>
+    </div>
+    <p class="lede">We estimated a building's air-conditioning load from its main meter alone, then turned that into peak, cost and carbon decisions for UTP. Each of us built one part of the pipeline. Here is the code that matters in each part, how it works, and what it produced.</p>
+    <div class="lineup">
+      <button class="who" data-p="1" data-go="1"><span class="ph"><img src="../public/Izzatul.png" alt="Izzatul Najwa" style="--fh:.29;--cx:.50;--cy:.255"></span><b>Izzatul Najwa</b><span>Data acquisition and cleaning</span><kbd>1</kbd></button>
+      <button class="who" data-p="2" data-go="2"><span class="ph"><img src="../public/Izzati.png" alt="Nurul Izzati" style="--fh:.27;--cx:.50;--cy:.245"></span><b>Nurul Izzati</b><span>Feature engineering and baselines</span><kbd>2</kbd></button>
+      <button class="who" data-p="3" data-go="3"><span class="ph"><img src="../public/Daphne.png" alt="Daphne" style="--fh:.50;--cx:.50;--cy:.39"></span><b>Daphne</b><span>Tree models, freeze and test</span><kbd>3</kbd></button>
+      <button class="who" data-p="4" data-go="4"><span class="ph"><img src="../public/Masyitah.png" alt="Siti Nurmasyitah" style="--fh:.20;--cx:.51;--cy:.15"></span><b>Siti Nurmasyitah</b><span>Explainability and clustering</span><kbd>4</kbd></button>
+      <button class="who" data-p="5" data-go="5"><span class="ph"><img src="../public/Sharvin.png" alt="Sharvin" style="--fh:.24;--cx:.50;--cy:.17"></span><b>Sharvin</b><span>Scenarios, integration and dashboard</span><kbd>5</kbd></button>
+    </div>
+  </div>
+  <aside class="notes"><p>Good morning. We're Group 8. Our project asks one question: which load sets a building's electricity peak, when all you have is the main meter?</p><p>Each of us owned one part of the code. We'll go in pipeline order. Each person shows what they built, their key code, an animation of how it works, and what it produced.</p></aside>
+</section>
+
+<!-- ============ PIPELINE FLOW ============ -->
+<section class="slide pad" data-p="0" aria-label="How the parts connect">
+  <div class="inner flowwrap">
+    <div>
+      <p class="part">How the five parts connect</p>
+      <h2>Raw meter files in, decisions out. Each step feeds the next.</h2>
+    </div>
+    <div class="ends"><span>Starts with <b>42 raw CSV files, 5.9 GB</b></span><span>Ends with <b>kW, RM and tCO₂e for UTP</b></span></div>
+    <div class="flow">
+      <div class="node" data-p="1" style="--i:0"><span class="n">1</span><b>Clean</b><span class="path">prepare_data.py</span><p>Fix dates and file names, average 1 s to 1 min, drop the outage.</p><small>Izzatul</small></div>
+      <div class="link" style="--i:0"><i></i><span>clemd_1min<br>.parquet</span></div>
+      <div class="node" data-p="2" style="--i:1"><span class="n">2</span><b>Build features</b><span class="path">features.py</span><p>Power, harmonics, power quality, lags and calendar for every minute.</p><small>Izzati</small></div>
+      <div class="link" style="--i:1"><i></i><span>98 features<br>per minute</span></div>
+      <div class="node" data-p="3" style="--i:2"><span class="n">3</span><b>Train, freeze, test</b><span class="path">train.py · evaluate.py</span><p>Time-ordered CV, the 5% rule, freeze, then one test on week 6.</p><small>Daphne</small></div>
+      <div class="link" style="--i:2"><i></i><span>frozen model<br>+ predictions</span></div>
+      <div class="node" data-p="4" style="--i:3"><span class="n">4</span><b>Explain</b><span class="path">explain.py · cluster.py</span><p>SHAP, permutation importance and k-means operating modes.</p><small>Masyitah</small></div>
+      <div class="link" style="--i:3"><i></i><span>what drives<br>the A/C</span></div>
+      <div class="node" data-p="5" style="--i:4"><span class="n">5</span><b>Decide</b><span class="path">scenarios.py</span><p>Peak trim, pre-cooling test, after-hours carbon, plus the dashboard.</p><small>Sharvin</small></div>
+    </div>
+    <p class="lede" style="font-size:15px;color:var(--muted)"><code>run_all.sh</code> runs all 11 steps in order in about 13 minutes. Every script ends with <code>assert</code> checks, so a run with no error means the outputs agree with each other.</p>
+  </div>
+  <aside class="notes"><p>This is the whole pipeline. It starts with 42 raw files and ends with numbers UTP can act on.</p><p>Step 1 cleans the data, step 2 builds features, step 3 trains and tests the model, step 4 explains it, and step 5 turns the estimates into decisions. The labels on the arrows are the files passed between the steps.</p></aside>
+</section>
+
+<!-- ============ 1 IZZATUL ============ -->
+<section class="slide pad" data-p="1" data-first aria-label="Part 1: what I did">
+  <div class="inner intro">
+    <div class="about">
+      <p class="part">Part 1 of 5</p>
+      <h1>Data acquisition and cleaning</h1>
+      <p class="lede">I turned 42 messy raw CSV files into one clean table that every later step reads.</p>
+      <ul class="built">
+        <li><span><b>Mixed date formats.</b> Some files were M/D/Y and some D/M/Y. The loader works out which one each file uses.</span></li>
+        <li><span><b>Broken files.</b> Week 4's main meter file was saved as <code>Aggregtae.csv</code>. Week 1 had no main meter, so it was dropped.</span></li>
+        <li><span><b>1 second to 1 minute.</b> I averaged the main meter and 4 sub-meters onto one shared clock.</span></li>
+        <li><span><b>Power outage.</b> 135 minutes on 5 Oct had near-zero voltage. That isn't real demand, so it was removed.</span></li>
+      </ul>
+    </div>
+    <div>
+      <div class="io"><div class="box"><small>Takes in</small><b>42 raw CSV files, 1 reading per second, 5.9 GB</b></div><div class="down"></div><div class="box mid"><small>My script</small><b>1_data_acquisition/prepare_data.py</b></div><div class="down"></div><div class="box"><small>Hands on</small><b>clemd_1min.parquet: 41,680 clean minutes, 15 MB</b></div></div>
+      <div class="logos"><span class="logo"><img src="../public/logos/pandas.svg" alt="">pandas</span><span class="logo"><img src="../public/logos/numpy.svg" alt="">NumPy</span><span class="logo"><img src="../public/logos/parquet.svg" alt="">Parquet</span></div>
+    </div>
+  </div>
+  <aside class="notes"><p>My part was the data. The CLEMD dataset comes as 42 CSV files at one reading per second, about 5.9 gigabytes.</p><p>The files weren't consistent. Date formats changed between weeks, one file name had a typo, and there was a power cut on the 5th of October. My script fixes all of that and saves one clean one-minute table.</p></aside>
+</section>
+
+<section class="slide pad" data-p="1" aria-label="Part 1: key code">
+  <div class="inner codeslide">
+    <header><p class="part">Key code</p><h2>Work out each file's date format instead of guessing it</h2><div class="callflow"><b>Run order</b><ol><li><span>main()</span></li><li><span>for each week: week_frame()</span></li><li class="on"><span>find()</span></li><li><span>load()</span></li><li class="on"><span>date_format()</span></li><li class="on"><span>resample to 1 min</span></li><li><span>join sub-meters</span></li><li class="on"><span>drop outage</span></li><li><span>save parquet</span></li><li><span>asserts</span></li></ol></div></header>
+    <div class="codegrid">
+      <div class="codebox"><div class="file">prepare_data.py</div>
+<pre class="code" data-groups='{"1":"2-8","2":"11-12","3":"16-19","4":"22-24"}'># some files use M/D/Y and some D/M/Y, so we try both
+def date_format(first_date: str, start: datetime) -&gt; str:
+    for fmt in ("%m/%d/%Y", "%d/%m/%Y"):
+        try:
+            if datetime.strptime(first_date, fmt) == start:
+                return fmt
+        except ValueError:
+            pass
+    raise ValueError(f"first date {first_date!r} matches neither format")
+
+# week 4 has the main meter file spelt wrong (Aggregtae.csv)
+FILE_ALIASES = {"Aggregate": ["Aggregate.csv", "Aggregtae.csv"]}
+
+def week_frame(folder, week, start):
+    agg = load(find(folder, "Aggregate"), start, all_cols=True)
+    p = agg["p_kw"].resample("1min")
+    parts = [agg.add_prefix("agg_").resample("1min").mean(),
+             p.std().rename("agg_p_kw_std"),
+             p.min().rename("agg_p_kw_min"), p.max().rename("agg_p_kw_max")]
+    ...
+
+# on 5 Oct the supply went down (all circuits ~0 V)
+outage = df["agg_Voltage1"] &lt; 100
+df = df[~outage]</pre>
+      </div>
+      <ol class="callouts">
+        <li><button data-c="1"><span class="num">1</span><b>Check against a known date</b><span>"01/10" could be 1 Oct or 10 Jan. Each folder's start date is known, so the format that gives that date is the right one.</span></button></li>
+        <li><button data-c="2"><span class="num">2</span><b>Accept the typo</b><span>The raw data is left as published. The loader just knows both spellings.</span></button></li>
+        <li><button data-c="3"><span class="num">3</span><b>Keep more than the mean</b><span>Each minute also keeps the std, min and max of the 60 one-second readings. Fast A/C switching shows up there.</span></button></li>
+        <li><button data-c="4"><span class="num">4</span><b>Drop the outage</b><span>Voltage under 100 V means the supply was off, not that demand was low.</span></button></li>
+      </ol>
+    </div>
+  </div>
+  <aside class="notes"><p>Point 1 is the date fix. Instead of guessing the format, I check which format turns the first row into the folder's known start date.</p><p>Point 3: when averaging to one minute I also keep the spread inside the minute. Point 4 removes the outage, because zero power during a blackout would teach the model something false.</p></aside>
+</section>
+
+<section class="slide pad" data-p="1" data-anim="izzatul" aria-label="Part 1: how it works">
+  <div class="inner animslide">
+    <header><p class="part">How it works, step by step</p><h2>From 42 raw files to one clean table</h2></header>
+    <div class="animgrid"></div>
+  </div>
+  <aside class="notes"><p>Press the right arrow to move through each step. The data here is real: the readings come from the CLEMD files.</p><p>First the files, then the date check, then 60 seconds becoming one minute, then the outage, and finally the saved table.</p></aside>
+</section>
+
+<section class="slide pad" data-p="1" aria-label="Part 1: output">
+  <div class="inner outslide">
+    <header><p class="part">What it produced</p><h2>5.9 GB of raw files became a 15 MB table the whole team uses</h2></header>
+    <div class="outgrid">
+      <div class="figs">
+        <figure class="fig"><img src="../figures/report/fig_prep_flow.png" alt="Data preparation flow: 42 CSV files, load weeks 2 to 6, resample to 41,815 minutes, remove 135 outage minutes, 98 features, partition into train and test"><figcaption>figures/report/fig_prep_flow.png</figcaption></figure>
+        <figure class="fig"><img src="../figures/proposal/fig03_data_availability.png" alt="Which circuits have data in which week"><figcaption>figures/proposal/fig03_data_availability.png</figcaption></figure>
+      </div>
+      <div class="side">
+        <div class="facts">
+          <div class="fact"><b>41,680</b><span>clean minutes, weeks 2 to 6</span></div>
+          <div class="fact"><b>~400×</b><span>smaller: 5.9 GB of CSVs to a 15 MB parquet</span></div>
+          <div class="fact"><b>135<small>min</small></b><span>outage removed on 5 Oct</span></div>
+          <div class="fact"><b>5</b><span>circuits joined: main meter, A/C and 3 lighting boards</span></div>
+        </div>
+        <div class="means"><h3>What this means</h3><p>Everyone else works from <code>clemd_1min.parquet</code>. They don't need the 5.9 GB download to run steps 2 to 9.</p><p>Weeks 2 and 3 have no A/C sub-meter, so A/C can only be trained on weeks 4 and 5. That shapes how the models are split.</p></div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><p>The output is one parquet file of 41,680 clean minutes, about 400 times smaller than the raw data.</p><p>The bottom chart shows which circuits exist in which week. A/C only has a sub-meter from week 4, which is why the A/C model trains on weeks 4 and 5 only. Next: feature engineering.</p></aside>
+</section>
+
+<!-- ============ 2 IZZATI ============ -->
+<section class="slide pad" data-p="2" data-first aria-label="Part 2: what I did">
+  <div class="inner intro">
+    <div class="about">
+      <p class="part">Part 2 of 5</p>
+      <h1>Feature engineering and baselines</h1>
+      <p class="lede">I turned each minute of main-meter readings into 98 numbers a model can learn from.</p>
+      <ul class="built">
+        <li><span><b>Harmonic ratios.</b> Each harmonic compared with the fundamental, per phase. Inverter A/C compressors have a distinct pattern.</span></li>
+        <li><span><b>Gap-safe lags.</b> Past power values that never reach across a missing day or the outage.</span></li>
+        <li><span><b>Calendar features.</b> Hour as sine and cosine, weekday, weekend and office hours.</span></li>
+        <li><span><b>Redundancy check and baselines.</b> I flagged near-duplicate features and set up the time-of-day baseline that every model has to beat.</span></li>
+      </ul>
+    </div>
+    <div>
+      <div class="io"><div class="box"><small>Takes in</small><b>clemd_1min.parquet, the clean main-meter readings</b></div><div class="down"></div><div class="box mid"><small>My script</small><b>2_feature_engineering/features.py</b></div><div class="down"></div><div class="box"><small>Hands on</small><b>98 features per minute in 5 groups, plus the feature dictionary</b></div></div>
+      <div class="logos"><span class="logo"><img src="../public/logos/pandas.svg" alt="">pandas</span><span class="logo"><img src="../public/logos/numpy.svg" alt="">NumPy</span><span class="logo"><img src="../public/logos/scikitlearn.svg" alt="">scikit-learn</span></div>
+    </div>
+  </div>
+  <aside class="notes"><p>The main meter only gives the building total. My job was to pull as much signal as possible out of it.</p><p>I built 98 features in five groups: power, power quality, harmonics, past values, and calendar. The harmonics matter most, because A/C compressors leave a recognisable mark on the current.</p></aside>
+</section>
+
+<section class="slide pad" data-p="2" aria-label="Part 2: key code">
+  <div class="inner codeslide">
+    <header><p class="part">Key code</p><h2>Lags that never cross a gap in the data</h2><div class="callflow"><b>Run order</b><ol><li><span>main()</span></li><li><span>load()</span></li><li class="on"><span>build(): raw columns</span></li><li class="on"><span>harmonic ratios</span></li><li class="on"><span>stretch ids</span></li><li class="on"><span>lags</span></li><li class="on"><span>calendar</span></li><li><span>feature dictionary</span></li><li><span>redundancy check</span></li><li class="on"><span>assert</span></li></ol></div></header>
+    <div class="codegrid">
+      <div class="codebox"><div class="file">features.py · build()</div>
+<pre class="code" data-groups='{"1":"2-5","2":"8-9","3":"10-11","4":"14-16","5":"19"}'># harmonic size compared to the fundamental for each phase
+for ph in "123":
+    h1 = agg[f"agg_Current{ph}H1"].replace(0, np.nan)
+    for h in (3, 5, 7, 9, 11, 13, 15):
+        add("harmonics", f"ratio_{ph}H{h}", agg[f"agg_Current{ph}H{h}"] / h1)
+
+# split the data where there are gaps so lags never jump across a missing day
+seg = (df.index.to_series().diff() != pd.Timedelta("1min")).cumsum()
+p = df["agg_p_kw"].groupby(seg)
+for lag in LAGS:                       # 1, 5, 15, 60 minutes
+    add("temporal", f"p_lag{lag}", p.shift(lag))
+
+# calendar: 23:59 and 00:00 should be neighbours
+hour = t.hour + t.minute / 60
+add("calendar", "hour_sin", np.sin(2 * np.pi * hour / 24))
+add("calendar", "hour_cos", np.cos(2 * np.pi * hour / 24))
+
+# check: the first minute after a gap has no lag value
+assert X.loc[after_gap, "p_lag1"].isna().all()</pre>
+      </div>
+      <ol class="callouts">
+        <li><button data-c="1"><span class="num">1</span><b>Harmonic ratios</b><span>Dividing by the fundamental gives the shape of the current, not its size. Inverter compressors raise the 5th, 7th and 11th.</span></button></li>
+        <li><button data-c="2"><span class="num">2</span><b>Segment ID trick</b><span>Wherever two minutes are not 1 minute apart, <code>cumsum</code> starts a new segment number. Lags are only computed inside a segment.</span></button></li>
+        <li><button data-c="3"><span class="num">3</span><b>Lags per segment</b><span>After a gap the lag is left blank instead of borrowing a value from the day before.</span></button></li>
+        <li><button data-c="4"><span class="num">4</span><b>Hour on a circle</b><span>Sine and cosine put 23:59 next to 00:00. A plain 0 to 23 number would put them far apart.</span></button></li>
+        <li><button data-c="5"><span class="num">5</span><b>Proved by a test</b><span>The script fails if a lag ever leaks across a gap.</span></button></li>
+      </ol>
+    </div>
+  </div>
+  <aside class="notes"><p>The important line is the segment trick in point 2. The data has gaps, like the outage and missing days. A normal shift would give the first minute after a gap a value from hours earlier.</p><p>So I give every unbroken stretch its own number and shift only inside it. The assert in point 5 checks it on every run.</p></aside>
+</section>
+
+<section class="slide pad" data-p="2" data-anim="izzati" aria-label="Part 2: how it works">
+  <div class="inner animslide">
+    <header><p class="part">How it works, step by step</p><h2>From one meter reading to 98 features</h2></header>
+    <div class="animgrid"></div>
+  </div>
+  <aside class="notes"><p>The first step uses real CLEMD numbers: the harmonic spectrum when the A/C is off and when it is running hard.</p><p>Then the gap trick for lags, the clock trick for hours, and finally the 98 features by group.</p></aside>
+</section>
+
+<section class="slide pad" data-p="2" aria-label="Part 2: output">
+  <div class="inner outslide">
+    <header><p class="part">What it produced</p><h2>98 features, and the main meter clearly "sees" the A/C</h2></header>
+    <div class="outgrid">
+      <div class="figs">
+        <div class="bars" role="img" aria-label="Features per group: harmonics 53, power quality 16, power 15, temporal 9, calendar 5">
+          <h4>Features per group (feature_dictionary.csv)</h4>
+          <div class="bar"><span>Harmonics</span><i style="--v:53"></i><em>53</em></div>
+          <div class="bar"><span>Power quality</span><i style="--v:16"></i><em>16</em></div>
+          <div class="bar"><span>Power</span><i style="--v:15"></i><em>15</em></div>
+          <div class="bar"><span>Temporal</span><i style="--v:9"></i><em>9</em></div>
+          <div class="bar"><span>Calendar</span><i style="--v:5"></i><em>5</em></div>
+        </div>
+        <figure class="fig"><img src="../figures/proposal/fig07_feature_correlation.png" alt="Correlation of main-meter signals with A/C power: total power 0.94, 5th harmonic 0.86, THD 0.85"><figcaption>figures/proposal/fig07_feature_correlation.png</figcaption></figure>
+      </div>
+      <div class="side">
+        <div class="facts">
+          <div class="fact"><b>98</b><span>features per minute in 5 groups</span></div>
+          <div class="fact"><b>0.86</b><span>correlation of the 5th harmonic with A/C</span></div>
+          <div class="fact"><b>130</b><span>near-duplicate pairs (|r| &gt; 0.98) flagged</span></div>
+          <div class="fact"><b>2.26<small>kW</small></b><span>time-of-day baseline error to beat</span></div>
+        </div>
+        <div class="means"><h3>What this means</h3><p>Harmonics and THD track A/C almost as closely as total power does. That's the signature of inverter compressors.</p><p>Later, the ablation removed the harmonics group and the error went up 21%. These features carry information nothing else gives the model.</p></div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><p>Here are the 98 features by group. Most of them are harmonics.</p><p>The chart shows that the 5th and 7th harmonics and THD correlate with A/C at about 0.85. That's why the model can separate A/C from other load. Next: the models.</p></aside>
+</section>
+
+<!-- ============ 3 DAPHNE ============ -->
+<section class="slide pad" data-p="3" data-first aria-label="Part 3: what I did">
+  <div class="inner intro">
+    <div class="about">
+      <p class="part">Part 3 of 5</p>
+      <h1>Models, freeze and test</h1>
+      <p class="lede">I picked the model fairly, locked it in, and tested it once on a week nobody had touched.</p>
+      <ul class="built">
+        <li><span><b>Five models.</b> Time-of-day average, Ridge, Random Forest, XGBoost and LightGBM, each with a small grid.</span></li>
+        <li><span><b>Time-ordered cross-validation.</b> 4 folds in time order, with a 60-minute gap so the past never sees the future.</span></li>
+        <li><span><b>A rule written first.</b> A tree model only wins if it beats Ridge by at least 5%.</span></li>
+        <li><span><b>Freeze, then test.</b> I saved <code>freeze.json</code> before week 6 was loaded, then ran one test with bootstrap confidence intervals.</span></li>
+      </ul>
+    </div>
+    <div>
+      <div class="io"><div class="box"><small>Takes in</small><b>98 features and the measured A/C (weeks 4 and 5)</b></div><div class="down"></div><div class="box mid"><small>My scripts</small><b>3_tree_models/train.py · evaluate.py · ablation.py</b></div><div class="down"></div><div class="box"><small>Hands on</small><b>freeze.json, test_metrics.csv, predictions.csv</b></div></div>
+      <div class="logos"><span class="logo"><img src="../public/logos/lightgbm.svg" alt="">LightGBM</span><span class="logo"><img src="../public/logos/xgboost.png" alt="">XGBoost</span><span class="logo"><img src="../public/logos/scikitlearn.svg" alt="">scikit-learn</span></div>
+    </div>
+  </div>
+  <aside class="notes"><p>My part was choosing and testing the model without fooling ourselves.</p><p>We wrote down the selection rule before training, did all tuning on weeks 4 and 5, and froze the choice in a file before week 6 was ever loaded. Week 6 was tested exactly once.</p></aside>
+</section>
+
+<section class="slide pad" data-p="3" aria-label="Part 3: key code">
+  <div class="inner codeslide">
+    <header><p class="part">Key code</p><h2>Choose by a rule, then freeze the choice</h2><div class="callflow"><b>Run order</b><ol><li class="file"><span>train.py</span></li><li><span>cross_validate() per target</span></li><li class="on"><span>every model × grid × 4 folds</span></li><li><span>scores()</span></li><li class="on"><span>choose()</span></li><li class="on"><span>freeze.json</span></li><li class="file"><span>evaluate.py</span></li><li><span>one test on week 6</span></li><li><span>bootstrap()</span></li></ol></div></header>
+    <div class="codegrid">
+      <div class="codebox"><div class="file">train.py</div>
+<pre class="code" data-groups='{"1":"1-2,6-7","2":"3-4,13-16","3":"18-24"}'># 4 folds in time order, with a 60 minute gap so the longest lag cannot see validation
+N_SPLITS, GAP = 4, 60
+# a tree model has to beat ridge by at least 5% or we just keep ridge
+MIN_GAIN_OVER_RIDGE = 0.05
+
+for params in ParameterGrid(grid):
+    for fold, (tr, va) in enumerate(TimeSeriesSplit(N_SPLITS, gap=GAP).split(X)):
+        model = make(**params).fit(X.iloc[tr], y.iloc[tr])
+        ...
+
+def choose(cv):
+    ...
+    ridge_mae = best.loc["ridge", "mae"]
+    trees = best.drop(index=["time_of_day", "ridge"])
+    top = trees["mae"].idxmin()
+    chosen = top if trees.loc[top, "mae"] &lt;= (1 - MIN_GAIN_OVER_RIDGE) * ridge_mae else "ridge"
+
+# if the freeze already exists we only check that the rerun picks the same model
+if path.exists():
+    old = json.loads(path.read_text())
+    same = all(old["targets"][t][k] == freeze["targets"][t][k] for t in TARGETS ...)
+    assert same, "rerun chose a different model: check data/feature changes"
+else:
+    path.write_text(json.dumps(freeze, indent=2))</pre>
+      </div>
+      <ol class="callouts">
+        <li><button data-c="1"><span class="num">1</span><b>Time-ordered folds</b><span>Random folds would let the model train on 3 pm and validate on 2 pm. The 60-minute gap matches the longest lag feature.</span></button></li>
+        <li><button data-c="2"><span class="num">2</span><b>The 5% rule</b><span>A complex model has to earn its place. Otherwise the simple Ridge model stays.</span></button></li>
+        <li><button data-c="3"><span class="num">3</span><b>Never overwrite the freeze</b><span>A rerun can only confirm the frozen choice. If it picks something else, the script stops.</span></button></li>
+      </ol>
+    </div>
+  </div>
+  <aside class="notes"><p>Three things. One, the folds respect time, with a gap. Two, the 5% rule. LightGBM's CV error was 0.99 kW against Ridge's 2.27, so it passed easily.</p><p>Three, the freeze file is never overwritten. Rerunning only checks that the same model is chosen again. That's what makes the week 6 result honest.</p></aside>
+</section>
+
+<section class="slide pad" data-p="3" data-anim="daphne" aria-label="Part 3: how it works">
+  <div class="inner animslide">
+    <header><p class="part">How it works, step by step</p><h2>From five candidate models to one honest test</h2></header>
+    <div class="animgrid"></div>
+  </div>
+  <aside class="notes"><p>All numbers here are the real cross-validation and test results.</p><p>Folds first, then the race, then the 5% rule, the freeze, and finally the single test on week 6 with the real measured and estimated A/C.</p></aside>
+</section>
+
+<section class="slide pad" data-p="3" aria-label="Part 3: output">
+  <div class="inner outslide">
+    <header><p class="part">What it produced</p><h2>LightGBM: 1.24 kW typical error on the sealed test week</h2></header>
+    <div class="outgrid">
+      <div class="figs">
+        <figure class="fig"><img src="../figures/report/fig_model_comparison.png" alt="Test-week MAE for each model with 95% bootstrap intervals"><figcaption>figures/report/fig_model_comparison.png</figcaption></figure>
+        <figure class="fig"><img src="../../3_tree_models/figures/test_week_timeseries.png" alt="Estimated versus measured A/C over the test week, 19 to 24 Oct 2023"><figcaption>3_tree_models/figures/test_week_timeseries.png</figcaption></figure>
+      </div>
+      <div class="side">
+        <div class="facts">
+          <div class="fact"><b>1.24<small>kW</small></b><span>A/C MAE, 95% CI 0.56 to 1.87</span></div>
+          <div class="fact"><b>−45%</b><span>error compared with the time-of-day baseline (2.26 kW)</span></div>
+          <div class="fact"><b>1.52<small>kW</small></b><span>error in the top-5% peak windows</span></div>
+          <div class="fact"><b>+21%</b><span>error without harmonics (ablation)</span></div>
+        </div>
+        <div class="means"><h3>What this means</h3><p>The orange dashed estimate follows the measured A/C closely through the whole week, using only the main meter.</p><p>To be honest about it: Ridge has fewer large misses (lower RMSE), and with 6 test days the confidence intervals overlap. Trees are better on typical error, but not by a decisive margin.</p></div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><p>On week 6, which no one touched before the freeze, LightGBM's typical error is 1.24 kW on an A/C load that averages 6.5 kW. That's 45% better than just using the timetable.</p><p>We also report the weak spots. Ridge has fewer big misses and the intervals overlap. Next: why the model works.</p></aside>
+</section>
+
+<!-- ============ 4 MASYITAH ============ -->
+<section class="slide pad" data-p="4" data-first aria-label="Part 4: what I did">
+  <div class="inner intro">
+    <div class="about">
+      <p class="part">Part 4 of 5</p>
+      <h1>Explainability and clustering</h1>
+      <p class="lede">I showed why the model works, and found how the building behaves from day to day.</p>
+      <ul class="built">
+        <li><span><b>SHAP.</b> How many kW each feature adds to the A/C estimate, for every test minute.</span></li>
+        <li><span><b>Grouped permutation importance.</b> Shuffle a whole feature group and measure how much worse the model gets.</span></li>
+        <li><span><b>Peak explanation.</b> Why the model said 28.9 kW at the week's highest 15 minutes (measured: 30.4).</span></li>
+        <li><span><b>Operating modes.</b> k-means on the daily load shape, with k picked by the silhouette score.</span></li>
+      </ul>
+    </div>
+    <div>
+      <div class="io"><div class="box"><small>Takes in</small><b>The frozen LightGBM model and the week 6 predictions</b></div><div class="down"></div><div class="box mid"><small>My scripts</small><b>4_explainability_clustering/explain.py · cluster.py</b></div><div class="down"></div><div class="box"><small>Hands on</small><b>SHAP and permutation results, 2 operating modes</b></div></div>
+      <div class="logos"><span class="logo"><img src="../public/logos/shap.png" alt="">SHAP</span><span class="logo"><img src="../public/logos/scikitlearn.svg" alt="">scikit-learn</span><span class="logo"><img src="../public/logos/matplotlib.svg" alt="">Matplotlib</span></div>
+    </div>
+  </div>
+  <aside class="notes"><p>A good error number isn't enough. We need to know the model is using real physics and not a shortcut.</p><p>I used SHAP and permutation importance to see what the model relies on, and k-means clustering to find the building's operating modes from the main meter alone.</p></aside>
+</section>
+
+<section class="slide pad" data-p="4" aria-label="Part 4: key code">
+  <div class="inner codeslide">
+    <header><p class="part">Key code</p><h2>Explain by feature group, cluster by daily shape</h2><div class="callflow"><b>Run order</b><ol><li class="file"><span>explain.py</span></li><li class="on"><span>SHAP per minute</span></li><li class="on"><span>sum by group</span></li><li class="on"><span>shuffle each group</span></li><li class="file"><span>cluster.py</span></li><li><span>daily_profiles()</span></li><li class="on"><span>normalise each day</span></li><li class="on"><span>KMeans k = 2..6</span></li><li class="on"><span>silhouette picks k</span></li></ol></div></header>
+    <div class="codegrid">
+      <div class="codebox"><div class="file">explain.py · cluster.py</div>
+<pre class="code" data-groups='{"1":"2-3","2":"6-11","3":"14","4":"15-17,19"}'># explain.py: SHAP value of every feature for every test minute
+sv = pd.DataFrame(shap.TreeExplainer(model).shap_values(Xt), index=Xt.index, columns=Xt.columns)
+by_group = sv.T.groupby(group).sum().T.abs().mean()
+
+# shuffle one whole feature group and see how much the error goes up
+for g, cols in group.groupby(group).groups.items():
+    for _ in range(N_REPEATS):
+        Xp = Xt.copy()
+        Xp[list(cols)] = Xp[list(cols)].to_numpy()[rng.permutation(len(Xp))]
+        rises.append(np.abs(model.predict(Xp) - yt).mean() - mae0)
+    perm[g] = {"mae_increase_kw": np.mean(rises), ...}
+
+# cluster.py: compare days by shape, not by size
+shape = prof.div(prof.max(axis=1), axis=0)
+for k in K_RANGE:                      # 2 to 6
+    km = KMeans(k, n_init=50, random_state=0).fit(shape)
+    search.append({"k": k, "silhouette": silhouette_score(shape, km.labels_)})
+...
+k = int(search.loc[search["silhouette"].idxmax(), "k"])</pre>
+      </div>
+      <ol class="callouts">
+        <li><button data-c="1"><span class="num">1</span><b>SHAP per minute, then per group</b><span>Each feature's kW contribution is added up within its group, so we can say "harmonics" instead of reading 53 separate bars.</span></button></li>
+        <li><button data-c="2"><span class="num">2</span><b>Shuffle whole groups</b><span>Features in a group are correlated. Shuffling one at a time, its neighbours would cover for it and hide its importance.</span></button></li>
+        <li><button data-c="3"><span class="num">3</span><b>Normalise each day</b><span>Dividing by the day's maximum groups days by when the load happens, not by how big it is.</span></button></li>
+        <li><button data-c="4"><span class="num">4</span><b>Let the data pick k</b><span>Silhouette was highest at k = 2 (0.74), so k wasn't hand-picked.</span></button></li>
+      </ol>
+    </div>
+  </div>
+  <aside class="notes"><p>Point 2 is the key decision. Our features come in correlated families. If you shuffle one harmonic alone, the others still carry the information, so it looks unimportant. Shuffling the whole group fixes that.</p><p>For clustering, I scale every day to its own peak, so the clusters are about the shape of the day. The silhouette score chose two clusters.</p></aside>
+</section>
+
+<section class="slide pad" data-p="4" data-anim="masyitah" aria-label="Part 4: how it works">
+  <div class="inner animslide">
+    <header><p class="part">How it works, step by step</p><h2>Opening up the model, then grouping the days</h2></header>
+    <div class="animgrid"></div>
+  </div>
+  <aside class="notes"><p>The waterfall uses the real SHAP values for the week's peak. The day shapes and the calendar come from the real clustering output.</p></aside>
+</section>
+
+<section class="slide pad" data-p="4" aria-label="Part 4: output">
+  <div class="inner outslide">
+    <header><p class="part">What it produced</p><h2>The model reads real A/C physics, and the meter alone found a public holiday</h2></header>
+    <div class="outgrid">
+      <div class="figs">
+        <figure class="fig"><img src="../../4_explainability_clustering/figures/importance_by_group.png" alt="SHAP and permutation importance by feature group: power first, harmonics second"><figcaption>4_explainability_clustering/figures/importance_by_group.png</figcaption></figure>
+        <figure class="fig"><img src="../../4_explainability_clustering/figures/cluster_profiles.png" alt="Two daily operating modes from k-means and the mode of each day"><figcaption>4_explainability_clustering/figures/cluster_profiles.png</figcaption></figure>
+      </div>
+      <div class="side">
+        <div class="facts">
+          <div class="fact"><b>4.97<small>kW</small></b><span>mean |SHAP| from power features</span></div>
+          <div class="fact"><b>1.20<small>kW</small></b><span>from harmonics, second on both methods</span></div>
+          <div class="fact"><b>k = 2</b><span>working and non-working days, silhouette 0.74</span></div>
+          <div class="fact"><b>28 Sep</b><span>a Thursday placed in the non-working mode</span></div>
+        </div>
+        <div class="means"><h3>What this means</h3><p>Phase-2 power is the single strongest feature, and then the 5th, 7th and 11th harmonics. Calendar barely matters, so the model reads A/C from the electricity, not from the timetable.</p><p>The Thursday in the non-working mode is Maulidur Rasul, a public holiday. The main meter found it without being told.</p></div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><p>Both methods agree: power first, harmonics second. Harmonics are the fingerprint of inverter compressors, so the model is using real physics.</p><p>The clustering split days into working and non-working. One Thursday landed in the non-working group, and that was the Maulidur Rasul holiday. Next: turning this into decisions.</p></aside>
+</section>
+
+<!-- ============ 5 SHARVIN ============ -->
+<section class="slide pad" data-p="5" data-first aria-label="Part 5: what I did">
+  <div class="inner intro">
+    <div class="about">
+      <p class="part">Part 5 of 5</p>
+      <h1>Scenarios and integration</h1>
+      <p class="lede">I turned the A/C estimates into numbers UTP can act on: kW off the peak, ringgit, and tonnes of CO₂.</p>
+      <ul class="built">
+        <li><span><b>Peak shaving.</b> Trim A/C by 10, 20 or 30% only while the building is above its top-5% demand.</span></li>
+        <li><span><b>Pre-cooling test.</b> Move 20% of afternoon A/C earlier in the day. It made the peak worse, so we dropped it.</span></li>
+        <li><span><b>After-hours savings.</b> kWh and tCO₂e for three definitions of office hours.</span></li>
+        <li><span><b>Integration.</b> <code>run_all.sh</code>, the report figures, the stakeholder dashboard and these slides.</span></li>
+      </ul>
+    </div>
+    <div>
+      <div class="io"><div class="box"><small>Takes in</small><b>A/C estimates on weeks the model never trained on</b></div><div class="down"></div><div class="box mid"><small>My scripts</small><b>5_scenarios_dashboard/scenarios.py · build_dashboard.py</b></div><div class="down"></div><div class="box"><small>Hands on</small><b>scenarios.json, report figures, the dashboard</b></div></div>
+      <div class="logos"><span class="logo"><img src="../public/logos/python.svg" alt="">Python</span><span class="logo"><img src="../public/logos/matplotlib.svg" alt="">Matplotlib</span><span class="logo"><img src="../public/logos/html5.svg" alt="">HTML</span></div>
+    </div>
+  </div>
+  <aside class="notes"><p>An accurate estimate is only useful if it changes a decision. My part turns the A/C estimate into scenarios for UTP's facilities team.</p><p>I also joined everyone's code into one pipeline, made the report figures, and built the dashboard.</p></aside>
+</section>
+
+<section class="slide pad" data-p="5" aria-label="Part 5: key code">
+  <div class="inner codeslide">
+    <header><p class="part">Key code</p><h2>Peak shaving fits in one line. Pre-cooling only moves energy around</h2><div class="callflow"><b>Run order</b><ol><li><span>read predictions.csv</span></li><li><span>peak drivers</span></li><li class="on"><span>trigger = top 5%</span></li><li class="on"><span>shave() per trim</span></li><li class="on"><span>precool() per window</span></li><li><span>after-hours kWh</span></li><li class="on"><span>RM and tCO₂e</span></li><li><span>scenarios.json</span></li></ol></div></header>
+    <div class="codegrid">
+      <div class="codebox"><div class="file">scenarios.py</div>
+<pre class="code" data-groups='{"1":"6-7,19","2":"10-17","3":"2-3,22","4":"21"}'># TNB demand charge (RM per kW per month) and the grid emission factor
+RM_PER_KW_MONTH = (89.27, 97.06)
+GEF_T_PER_MWH = 0.740
+
+# cut A/C by some % whenever building demand is above the threshold
+def shave(agg, ac, trim, thr):
+    return (agg - trim * ac * (agg &gt;= thr)).max()
+
+# move part of the afternoon A/C into an earlier window (same total energy)
+def precool(q, ac_col, shift, window=(11, 13)):
+    ...
+        late = day &amp; (q.index.hour &gt;= 14) &amp; (q.index.hour &lt; 16)
+        early = day &amp; (q.index.hour &gt;= window[0]) &amp; (q.index.hour &lt; window[1])
+        if late.any() and early.any():
+            moved = shift * q.loc[late, ac_col]
+            new[late] -= moved
+            new[early] += moved.sum() / early.sum()
+
+thr = q["agg_p_kw"].quantile(0.95)      # 53.1 kW trigger
+...
+"label": "SCENARIOS for one CLEMD-sized building, not UTP measurements"
+"rm_per_year": [round(12 * cut * r) for r in RM_PER_KW_MONTH]</pre>
+      </div>
+      <ol class="callouts">
+        <li><button data-c="1"><span class="num">1</span><b>Trim only at the top</b><span><code>(agg &gt;= thr)</code> is 1 only in high-demand windows, so comfort is untouched the rest of the day.</span></button></li>
+        <li><button data-c="2"><span class="num">2</span><b>Pre-cooling keeps energy the same</b><span>The kWh taken from 2 to 4 pm is added back earlier. The test is whether that lowers the maximum.</span></button></li>
+        <li><button data-c="3"><span class="num">3</span><b>kW to ringgit</b><span>The monthly demand charge is set by the worst 15 minutes, so every kW cut saves about RM 89 to 97 a month.</span></button></li>
+        <li><button data-c="4"><span class="num">4</span><b>Labelled as a scenario</b><span>Every number carries this label. A better estimate is never claimed as a measured saving.</span></button></li>
+      </ol>
+    </div>
+  </div>
+  <aside class="notes"><p>The shave function is one line: whenever the building is above 53 kW, cut A/C by the trim percentage, then find the new maximum.</p><p>Pre-cooling was our proposal's idea. It moves afternoon cooling into the morning without changing total energy. The code let us test it honestly, and the animation shows it failed.</p></aside>
+</section>
+
+<section class="slide pad" data-p="5" data-anim="sharvin" aria-label="Part 5: how it works">
+  <div class="inner animslide">
+    <header><p class="part">How it works, step by step</p><h2>From an A/C estimate to kW, ringgit and carbon</h2></header>
+    <div class="animgrid"></div>
+  </div>
+  <aside class="notes"><p>This is the real peak day, Thursday 19 October, with the real model estimates.</p><p>Find the trigger, trim the A/C above it, convert the kW to ringgit, test pre-cooling, and finish with the after-hours carbon.</p></aside>
+</section>
+
+<section class="slide pad" data-p="5" aria-label="Part 5: output">
+  <div class="inner outslide">
+    <header><p class="part">What it produced</p><h2>A 20% A/C trim takes 5.8 kW off the peak. Pre-cooling backfired</h2></header>
+    <div class="outgrid">
+      <div class="figs">
+        <figure class="fig"><img src="../figures/report/fig_scenarios.png" alt="Peak shaving from the estimate versus the measured A/C, and after-hours tCO2e for three office-hour definitions"><figcaption>figures/report/fig_scenarios.png</figcaption></figure>
+        <figure class="fig"><img src="../figures/scenario_precooling.png" alt="Pre-cooling scenario on the peak weekday raises demand earlier in the day"><figcaption>figures/scenario_precooling.png</figcaption></figure>
+      </div>
+      <div class="side">
+        <div class="facts">
+          <div class="fact"><b>−5.8<small>kW</small></b><span>max demand at a 20% trim (sub-meter check: 6.1)</span></div>
+          <div class="fact"><b>RM 6.2–6.7k</b><span>a year in demand charges</span></div>
+          <div class="fact"><b>6.8<small>t</small></b><span>CO₂e a year from after-hours cuts (9,243 kWh)</span></div>
+          <div class="fact bad"><b>+5.2<small>kW</small></b><span>pre-cooling raised the peak, so it was dropped</span></div>
+        </div>
+        <div class="means"><h3>What this means</h3><p>The saving worked out from the estimate (5.8 kW) is close to the one from the real sub-meter (6.1 kW). The model is good enough to plan with.</p><p>Pre-cooling just created a new peak earlier in the day. We report it as a negative result. All figures are for one CLEMD-sized building, not UTP measurements.</p></div>
+      </div>
+    </div>
+  </div>
+  <aside class="notes"><p>Trimming A/C by 20% only during peak windows cuts maximum demand by 5.8 kW, about 6 to 7 thousand ringgit a year for one building. The check against the real sub-meter gives 6.1 kW, so the estimate holds up.</p><p>Pre-cooling backfired and added 5.2 kW to the peak, so we dropped it. The full interactive version is in our stakeholder dashboard.</p></aside>
+</section>
+
+<!-- ============ CLOSING ============ -->
+<section class="slide pad" data-p="0" aria-label="Summary and questions">
+  <div class="inner close">
+    <div>
+      <p class="part">What the five parts add up to</p>
+      <h1>From one main meter to a decision.</h1>
+    </div>
+    <div class="facts">
+      <div class="fact"><b>44%</b><span>estimated A/C share of the peak (measured: 45.4%)</span></div>
+      <div class="fact"><b>1.24<small>kW</small></b><span>A/C error on the sealed test week</span></div>
+      <div class="fact"><b>−5.8<small>kW</small></b><span>peak cut from a 20% A/C trim</span></div>
+      <div class="fact"><b>6.8<small>t</small></b><span>CO₂e a year from after-hours schedules</span></div>
+    </div>
+    <p class="lede">Limits: one building, about three weeks of A/C data, one season. The method transfers to other buildings, but this trained model doesn't.</p>
+    <div class="cta"><a href="index.html">Open the stakeholder dashboard</a></div>
+    <h2>Questions?</h2>
+  </div>
+  <aside class="notes"><p>To sum up: from the main meter alone we estimate A/C at 44% of the peak, against 45% measured. That points to a simple trim rule worth about 5.8 kW.</p><p>The limits are real: one building and one season. Thank you, we're happy to take questions.</p></aside>
+</section>
+
+</main>
+
+<footer class="pad">
+  <div class="keys" aria-hidden="true">
+    <span><kbd>←</kbd><kbd>→</kbd> slides, code blocks and animation steps</span><span><kbd>1</kbd>–<kbd>5</kbd> person</span><span><kbd>0</kbd> start</span><span><kbd>P</kbd> play</span><span><kbd>N</kbd> notes</span><span><kbd>T</kbd> theme</span><span><kbd>F</kbd> fullscreen</span>
+  </div>
+  <div class="nav">
+    <button class="iconbtn" id="prev" aria-label="Previous"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <span class="count" id="count" aria-live="polite"></span>
+    <button class="iconbtn" id="next" aria-label="Next"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+  </div>
+</footer>
+</div>
+<div class="drawer" id="drawer" role="region" aria-label="Speaker notes"></div>
+
+<script>
+// real data pulled from the CLEMD files and the results folders (see the note at the end of this file)
+const D = {"sec_kw":[60.04,59.96,59.94,59.88,59.86,59.86,59.8,59.74,59.76,59.76,59.82,59.84,59.8,59.74,59.76,59.76,59.76,59.76,59.74,59.78,59.78,59.84,59.86,59.8,59.9,60.1,60.6,60.38,60.26,60.34,60.42,60.48,60.52,60.58,60.6,60.58,60.56,60.56,60.54,60.56,60.56,60.6,60.56,60.58,60.74,61.38,61.66,61.66,61.64,61.72,61.54,61.38,61.28,61.26,61.22,61.52,61.56,61.86,62.26,62.52,61.98,61.2,61.2,61.2,61.2,61.18,61.22,61.22,61.2,61.26,61.28,61.28,61.28,61.26,61.24,61.28,61.3,61.26,61.28,61.26,61.28,61.4,61.48,61.46,61.48,61.48,61.46,61.46,61.46,61.5,61.54,61.56,61.54,61.56,61.52,61.54,61.56,61.56,61.54,61.52,61.58,61.56,61.6,61.58,61.5,61.56,61.48,61.58,61.56,61.52,61.54,61.54,61.56,61.68,61.92,62.16,61.82,61.78,61.72,61.66,61.62,61.66,61.6,61.6,61.5,61.28,61.12,60.88,60.74,60.58,60.44,60.26,60.06,59.9,59.7,59.44,59.28,59.12,58.92,58.78,58.64,58.52,58.38,58.2,58.06,57.86,57.7,57.56,57.4,57.26,57.22,57.22,57.14,57.12,57.1,57.08,57.04,57.06,57.14,57.2,57.38,58.08,58.22,58.38,58.66,59.46,59.88,60.42,60.98,61.3,61.7,62.12,62.38,62.68,63.0,63.44,64.1,64.26,64.38,64.64,64.82,64.94,65.1,65.2,65.28,65.4,65.5,65.58,65.6,65.64,65.78,65.9,66.0,66.12,66.22,66.38,66.46,66.62,66.76,66.94,67.1,67.24,67.4,67.58,67.74,68.02,68.38,68.72,69.02,69.4,69.72,69.84,69.96,70.12,70.28,70.46,70.6,70.78,70.94,71.12,71.32,71.36,71.26,71.04,70.82,70.62,70.44,70.24,70.06,69.92,69.74,69.54,69.28,69.04,68.78,68.56,68.58,68.62,68.7,68.32,68.24,68.16,68.42,68.24,68.4,67.42,54.86,50.9,50.7,50.68,50.62,50.56,50.46,50.4,50.32,50.26,50.2,50.14,50.1,50.02,49.98,49.94,49.86,49.76,49.64,49.64,49.58,49.5,49.48,49.44,49.4,49.16,48.64,48.54,48.5,48.48,48.52,48.56,48.62,48.7,48.84,48.88,48.94,49.08,49.24,49.48,49.76,50.18,50.62,51.1,51.56,52.08,52.58,53.12,53.66,54.36,55.06,56.08,56.26,56.84],"min_kw":[60.5,61.47,59.75,68.28,52.35],"outage":{"start":"Thu 05 Oct 11:50","step_min":5,"v":[241.0,241.0,238.0,238.0,238.0,238.0,238.0,238.0,238.0,238.0,238.0,238.0,238.0,238.0,238.0,238.0,238.0,237.0,237.0,237.0,237.0,237.0,237.0,236.0,236.0,236.0,235.0,235.0,235.0,235.0,235.0,236.0,236.0,236.0,236.0,185.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,57.0,242.0,241.0,241.0,242.0,242.0,242.0,242.0,242.0,242.0,243.0,243.0,240.0,240.0,240.0,241.0,241.0,240.0,240.0,240.0,240.0,240.0,240.0,240.0,240.0,240.0,240.0,239.0,239.0,239.0,240.0,239.0,239.0,240.0,240.0,240.0,240.0],"from":"14:50","to":"17:00"},"spec_off":[0.036,0.063,0.031,0.044,0.021,0.017,0.027],"spec_on":[0.091,0.255,0.176,0.018,0.026,0.036,0.019],"w6_hour":{"t0":"Thu 19 Oct 00:00","meas":[1.9,1.6,1.7,2.3,1.8,1.8,1.7,3.0,10.1,21.0,28.8,29.7,32.2,31.0,33.4,32.2,18.9,4.4,2.2,2.0,1.7,1.6,2.0,2.0,1.6,1.7,2.1,1.8,1.8,1.6,1.6,1.6,12.1,18.1,24.4,25.9,28.2,29.1,29.8,27.3,22.2,11.6,2.9,1.5,1.6,2.0,1.6,1.5,1.5,2.0,1.9,2.1,1.8,1.8,1.6,1.6,1.5,1.9,1.9,2.4,1.8,1.6,1.7,2.1,1.6,1.7,1.8,2.1,1.7,2.3,1.7,1.9,1.7,1.8,1.6,1.9,1.9,1.6,1.6,2.1,1.8,1.7,1.7,1.7,1.8,2.1,2.2,2.1,2.0,2.9,1.7,2.0,1.6,1.6,1.6,1.9,1.8,1.7,1.6,1.7,1.9,1.9,1.9,2.4,9.1,9.3,12.5,23.4,22.3,25.2,28.7,29.5,16.8,4.8,0.8,0.0,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,0.1,1.1,5.3,4.7,8.0,19.4,7.1,6.8,17.6,21.8,21.6,5.7,1.5,1.6,1.5,2.0,1.7,1.7,1.4],"est":[2.0,1.7,1.8,2.4,2.0,1.9,1.6,3.6,10.6,13.5,26.6,25.9,30.8,30.2,32.6,31.8,18.0,6.2,2.9,2.9,2.9,3.9,3.0,3.1,2.8,3.3,3.5,3.1,2.8,2.9,3.2,3.3,8.8,13.9,18.8,20.8,23.8,24.0,22.4,23.2,18.0,9.7,2.6,1.4,1.5,1.9,1.6,1.5,1.3,1.8,2.0,2.1,1.7,1.6,1.6,1.5,1.2,1.6,1.8,2.3,1.7,1.6,1.8,2.2,1.7,1.8,1.8,1.8,1.6,2.3,1.7,1.9,1.5,1.7,1.7,2.1,2.0,1.7,1.7,2.2,1.8,1.5,1.7,1.7,1.7,1.9,2.2,2.0,1.9,2.9,1.6,1.8,1.4,1.5,1.6,1.8,1.6,1.6,1.6,1.8,1.9,2.0,1.9,2.5,10.7,10.0,16.6,24.1,21.4,20.9,26.6,28.1,15.1,4.1,1.3,1.4,1.6,1.5,0.5,0.1,0.0,0.1,0.1,0.1,0.1,-0.1,0.3,1.3,6.3,5.4,10.4,19.3,15.5,15.9,16.7,20.2,21.4,5.5,1.4,1.5,1.5,2.1,1.8,1.7,1.3],"days":["Thu 19","Fri 20","Sat 21","Sun 22","Mon 23","Tue 24","Wed 25"]},"peak_day":{"label":"Thu 19 Oct 2023","thr":53.1,"agg":[9.0,8.5,8.7,9.0,8.8,10.0,10.5,10.5,10.2,10.2,12.0,10.5,9.5,8.8,8.5,9.1,9.0,9.0,8.9,8.2,8.7,10.1,10.6,10.3,9.9,9.7,9.9,12.6,28.0,37.5,39.5,36.7,37.8,36.1,46.7,55.4,56.0,57.9,60.0,56.2,63.0,63.8,61.9,66.8,70.2,65.9,65.6,68.4,64.5,65.4,58.5,60.6,63.2,61.5,66.2,70.2,70.8,68.2,68.2,63.0,67.5,71.4,51.6,25.3,22.0,19.5,15.3,14.3,14.9,13.5,10.8,9.3,9.3,10.1,10.1,9.6,9.4,10.3,10.9,11.0,10.3,11.8,11.2,14.4,12.3,12.8,12.6,11.4,12.2,11.8,12.5,11.1,11.5],"ac":[2.0,1.5,1.7,1.7,1.8,1.8,1.6,1.8,1.9,2.1,3.8,2.3,1.5,1.8,1.8,2.3,2.2,2.1,1.9,1.8,1.6,1.8,1.5,1.8,1.5,1.4,1.6,2.8,8.6,11.6,12.3,9.4,9.3,11.3,12.4,15.2,15.2,21.7,29.0,26.9,29.0,30.2,21.3,24.3,27.9,29.6,31.2,31.4,31.1,32.4,31.6,27.8,29.2,29.5,31.9,35.2,33.7,31.9,32.4,30.4,32.4,28.9,20.5,11.8,10.9,10.2,4.9,4.7,5.0,4.2,2.6,2.3,2.5,2.8,3.3,2.7,2.6,2.8,2.8,3.4,2.7,3.5,3.2,5.8,3.1,3.3,2.6,2.6,3.5,2.9,3.5,2.9,3.1],"trim":[9.0,8.5,8.7,9.0,8.8,10.0,10.5,10.5,10.2,10.2,12.0,10.5,9.5,8.8,8.5,9.1,9.0,9.0,8.9,8.2,8.7,10.1,10.6,10.3,9.9,9.7,9.9,12.6,28.0,37.5,39.5,36.7,37.8,36.1,46.7,52.4,53.0,53.6,54.2,50.8,57.2,57.8,57.6,61.9,64.6,59.9,59.3,62.2,58.2,59.0,52.1,55.0,57.4,55.5,59.8,63.2,64.1,61.8,61.8,56.9,61.0,65.6,51.6,25.3,22.0,19.5,15.3,14.3,14.9,13.5,10.8,9.3,9.3,10.1,10.1,9.6,9.4,10.3,10.9,11.0,10.3,11.8,11.2,14.4,12.3,12.8,12.6,11.4,12.2,11.8,12.5,11.1,11.5],"precool":[9.0,8.5,8.7,9.0,8.8,10.0,10.5,10.5,10.2,10.2,12.0,10.5,9.5,8.8,8.5,9.1,9.0,9.0,8.9,8.2,8.7,10.1,10.6,10.3,9.9,9.7,9.9,12.6,28.0,37.5,39.5,36.7,37.8,36.1,46.7,55.4,56.0,64.3,66.4,62.6,69.5,70.3,68.3,73.2,76.6,65.9,65.6,68.4,64.5,65.4,58.5,60.6,63.2,55.5,59.8,63.2,64.1,61.8,61.8,56.9,61.0,71.4,51.6,25.3,22.0,19.5,15.3,14.3,14.9,13.5,10.8,9.3,9.3,10.1,10.1,9.6,9.4,10.3,10.9,11.0,10.3,11.8,11.2,14.4,12.3,12.8,12.6,11.4,12.2,11.8,12.5,11.1,11.5],"h0":0.75},"days":[{"d":"2023-09-22","wd":"Fri","c":1,"shape":[0.59,0.56,0.63,0.62,0.59,0.57,0.62,0.7,0.8,0.71,0.75,0.76,0.83,1.0,0.94,0.93,0.87,0.87,0.72,0.48,0.54,0.56,0.59,0.56]},{"d":"2023-09-23","wd":"Sat","c":1,"shape":[0.81,0.82,0.93,0.93,0.88,0.81,0.93,0.93,0.77,0.76,0.87,0.89,0.9,0.94,1.0,0.89,0.9,0.87,0.82,0.76,0.88,0.91,0.97,0.95]},{"d":"2023-09-24","wd":"Sun","c":1,"shape":[0.94,0.89,0.96,0.99,0.87,0.86,0.97,0.94,0.8,0.8,0.91,0.94,0.9,0.89,0.91,0.93,0.89,0.9,0.8,0.76,0.95,1.0,0.99,0.92]},{"d":"2023-09-25","wd":"Mon","c":0,"shape":[0.38,0.38,0.46,0.42,0.38,0.38,0.45,0.57,0.62,0.69,0.8,0.84,0.85,0.93,1.0,0.75,0.76,0.64,0.48,0.4,0.46,0.48,0.48,0.5]},{"d":"2023-09-26","wd":"Tue","c":0,"shape":[0.21,0.22,0.23,0.23,0.2,0.2,0.23,0.29,0.38,0.41,0.5,0.67,0.41,0.65,0.94,1.0,0.66,0.3,0.23,0.18,0.21,0.22,0.24,0.23]},{"d":"2023-09-28","wd":"Thu","c":1,"shape":[0.85,0.85,1.0,0.93,0.83,0.86,0.94,0.88,0.78,0.78,0.88,0.88,0.99,0.95,0.93,0.92,0.92,0.88,0.82,0.77,0.91,0.91,0.94,0.95]},{"d":"2023-09-29","wd":"Fri","c":0,"shape":[0.38,0.38,0.43,0.41,0.37,0.36,0.41,0.49,0.84,0.86,0.96,1.0,0.79,0.86,0.9,0.84,0.92,0.54,0.35,0.29,0.34,0.35,0.37,0.37]},{"d":"2023-09-30","wd":"Sat","c":1,"shape":[0.87,0.86,1.0,0.92,0.88,0.81,0.95,0.93,0.79,0.8,0.86,0.89,0.88,0.9,0.94,0.93,0.9,0.86,0.8,0.84,0.88,0.93,0.96,0.92]},{"d":"2023-10-01","wd":"Sun","c":1,"shape":[0.7,0.71,0.78,0.79,0.68,0.72,0.78,0.77,0.65,0.62,0.79,0.77,0.77,0.89,0.95,1.0,0.95,0.86,0.78,0.76,0.83,0.89,0.87,0.9]},{"d":"2023-10-02","wd":"Mon","c":0,"shape":[0.19,0.19,0.23,0.21,0.19,0.19,0.22,0.29,0.41,0.39,0.39,0.36,0.36,0.8,0.97,1.0,0.64,0.32,0.2,0.2,0.22,0.23,0.25,0.23]},{"d":"2023-10-03","wd":"Tue","c":0,"shape":[0.18,0.17,0.19,0.2,0.18,0.17,0.2,0.25,0.6,0.57,0.71,0.66,0.4,0.68,1.0,0.89,0.72,0.24,0.15,0.15,0.17,0.18,0.18,0.18]},{"d":"2023-10-06","wd":"Fri","c":0,"shape":[0.15,0.15,0.17,0.17,0.15,0.15,0.17,0.25,0.42,0.43,0.45,0.48,0.47,0.48,0.56,1.0,0.59,0.32,0.19,0.16,0.19,0.19,0.21,0.21]},{"d":"2023-10-07","wd":"Sat","c":1,"shape":[0.88,0.88,0.99,0.95,0.86,0.89,0.95,0.95,0.88,0.83,0.92,0.93,0.93,0.92,0.95,0.93,0.91,0.92,0.83,0.8,0.92,0.92,1.0,0.97]},{"d":"2023-10-08","wd":"Sun","c":1,"shape":[0.88,0.9,1.0,0.98,0.89,0.93,1.0,0.99,0.9,0.86,0.94,0.96,0.94,0.93,0.97,0.94,0.93,0.95,0.85,0.8,0.91,0.91,1.0,0.96]},{"d":"2023-10-09","wd":"Mon","c":0,"shape":[0.13,0.13,0.15,0.14,0.13,0.13,0.14,0.15,0.51,0.63,0.63,0.82,1.0,0.99,0.98,0.64,0.47,0.25,0.14,0.13,0.15,0.15,0.17,0.16]},{"d":"2023-10-10","wd":"Tue","c":0,"shape":[0.19,0.21,0.2,0.18,0.16,0.17,0.18,0.22,0.66,0.78,0.75,0.78,0.78,0.87,1.0,0.91,0.34,0.24,0.17,0.16,0.19,0.18,0.2,0.21]},{"d":"2023-10-12","wd":"Thu","c":0,"shape":[0.15,0.14,0.17,0.15,0.15,0.15,0.16,0.15,0.41,0.44,0.53,0.77,0.85,0.99,1.0,0.86,0.51,0.22,0.16,0.13,0.14,0.15,0.16,0.15]},{"d":"2023-10-13","wd":"Fri","c":0,"shape":[0.19,0.19,0.22,0.21,0.19,0.19,0.2,0.3,0.58,0.75,0.88,1.0,0.74,0.62,0.64,0.68,0.53,0.38,0.21,0.19,0.22,0.22,0.22,0.21]},{"d":"2023-10-14","wd":"Sat","c":1,"shape":[0.84,0.89,0.94,0.92,0.85,0.87,0.91,0.89,0.79,0.83,0.92,1.0,0.91,0.93,0.95,0.93,0.91,0.92,0.82,0.85,0.93,1.0,0.96,0.94]},{"d":"2023-10-15","wd":"Sun","c":1,"shape":[0.86,0.88,0.97,0.93,0.86,0.85,0.93,0.93,0.82,0.82,0.9,0.88,0.91,0.92,0.98,0.94,0.93,1.0,0.85,0.9,0.94,0.94,0.97,0.97]},{"d":"2023-10-16","wd":"Mon","c":0,"shape":[0.19,0.19,0.2,0.21,0.19,0.18,0.2,0.24,0.48,0.68,0.72,0.74,0.78,0.76,0.8,1.0,0.44,0.31,0.2,0.18,0.2,0.2,0.21,0.2]},{"d":"2023-10-17","wd":"Tue","c":0,"shape":[0.14,0.15,0.16,0.16,0.14,0.15,0.15,0.13,0.3,0.68,0.7,0.74,0.97,1.0,0.99,0.83,0.62,0.29,0.12,0.13,0.14,0.14,0.15,0.15]},{"d":"2023-10-19","wd":"Thu","c":0,"shape":[0.13,0.13,0.15,0.16,0.13,0.13,0.15,0.22,0.56,0.72,0.88,0.98,0.98,0.92,1.0,0.99,0.63,0.24,0.16,0.15,0.16,0.18,0.18,0.17]},{"d":"2023-10-20","wd":"Fri","c":0,"shape":[0.17,0.18,0.2,0.19,0.17,0.17,0.2,0.22,0.7,0.86,0.89,0.99,1.0,0.79,0.81,0.77,0.62,0.39,0.19,0.14,0.16,0.17,0.18,0.17]},{"d":"2023-10-21","wd":"Sat","c":1,"shape":[0.78,0.83,0.95,0.95,0.81,0.81,0.91,0.89,0.78,0.81,0.94,0.98,0.94,0.91,0.92,0.96,0.9,0.92,0.83,0.84,0.89,0.99,1.0,1.0]},{"d":"2023-10-22","wd":"Sun","c":1,"shape":[0.81,0.78,0.88,0.89,0.77,0.76,0.86,0.91,0.77,0.76,0.86,0.88,0.88,0.91,0.96,0.93,0.92,1.0,0.78,0.79,0.83,0.85,0.87,0.88]},{"d":"2023-10-23","wd":"Mon","c":0,"shape":[0.13,0.13,0.15,0.15,0.14,0.14,0.16,0.19,0.58,0.6,0.77,1.0,0.95,0.78,0.98,1.0,0.55,0.24,0.14,0.11,0.13,0.14,0.14,0.14]},{"d":"2023-10-24","wd":"Tue","c":0,"shape":[0.15,0.15,0.17,0.17,0.14,0.14,0.17,0.2,0.53,0.56,0.71,1.0,0.78,0.72,0.99,0.98,0.71,0.3,0.16,0.16,0.18,0.19,0.2,0.19]}]};
+
+/* ---------- svg helpers for the scenes (viewBox 800 x 450) ---------- */
+const f1 = v => v.toFixed(1);
+const T = (x, y, s, cls = "", d = 0, a = "") => `<text x="${x}" y="${y}" class="ap ${cls}" style="--d:${d}s" ${a}>${s}</text>`;
+const R = (x, y, w, h, cls, d = 0, extra = "") => `<rect x="${f1(x)}" y="${f1(y)}" width="${f1(Math.max(w, 0))}" height="${f1(Math.max(h, 0))}" rx="4" class="${cls}" style="--d:${d}s" ${extra}/>`;
+const L = (x1, y1, x2, y2, cls, d = 0, extra = "") => `<line x1="${f1(x1)}" y1="${f1(y1)}" x2="${f1(x2)}" y2="${f1(y2)}" class="${cls}" style="--d:${d}s" ${extra}/>`;
+function path(vals, x0, x1, y0, y1, lo, hi) {
+  let d = "", pen = false;
+  vals.forEach((v, i) => {
+    if (v == null) { pen = false; return; }
+    const x = x0 + (x1 - x0) * i / (vals.length - 1), y = y1 - (v - lo) / (hi - lo) * (y1 - y0);
+    d += (pen ? "L" : "M") + f1(x) + " " + f1(y); pen = true;
+  });
+  return d;
+}
+const P = (d, cls, delay = 0, extra = "") => `<path d="${d}" pathLength="1" class="ln ${cls}" style="--d:${delay}s" ${extra}/>`;
+function yaxis(x0, x1, y0, y1, lo, hi, ticks, unit = "") {
+  return ticks.map(t => { const y = y1 - (t - lo) / (hi - lo) * (y1 - y0);
+    return L(x0, y, x1, y, "gridl") + `<text x="${x0 - 8}" y="${f1(y + 4)}" text-anchor="end" class="lab">${t}${unit}</text>`; }).join("");
+}
+const svg = inner => `<svg viewBox="0 0 800 450" role="img">${inner}</svg>`;
+
+/* ---------- the five animations: each step = title, explanation, scene ---------- */
+const ANIMS = {
+izzatul: [
+  { t: "42 files arrive, week 1 is dropped", x: "Each week is a folder of CSV files, one per circuit, with one reading every second. Week 1 has no main-meter file, so it can't be used. Week 4's main meter is saved with a typo, so the loader accepts both spellings.",
+    s: () => {
+      const C = ["Aggregate", "CP AC", "DB TG", "DB T1", "DB ML 1", "DB ML 2", "EMSB 1", "SSB MF"];
+      const G = [[0,1,1,1,1,1,1,1],[1,0,1,1,1,0,1,1],[1,0,1,1,1,1,1,1],[1,1,1,1,1,1,1,1],[1,1,1,1,1,0,0,1],[1,1,1,1,1,1,1,1]];
+      let o = C.map((c, j) => `<text x="${150 + j * 80 + 36}" y="52" text-anchor="middle" class="ap lab" style="--d:0s">${c}</text>`).join("");
+      G.forEach((row, i) => {
+        o += T(108, 89 + i * 52, `Week ${i + 1}`, "lab", 0, 'text-anchor="end"');
+        row.forEach((v, j) => { const x = 150 + j * 80, y = 64 + i * 52, d = (i * 8 + j) * .025;
+          o += v ? R(x, y, 72, 40, "ap acc", d) : R(x, y, 72, 40, "ap", d, 'fill="none" stroke="var(--axis)" stroke-dasharray="4 4"') + T(x + 36, y + 25, "missing", "lab", d, 'text-anchor="middle"'); });
+      });
+      o += L(140, 84, 790, 84, "ap s-bad", 1.6, 'stroke-width="4"') + T(150, 395, "Week 1: no main meter, so the whole week is dropped", "bad mid", 1.8);
+      o += R(146, 216, 80, 48, "ap", 2.6, 'fill="none" stroke="var(--p4)" stroke-width="3"') + T(150, 425, "Week 4: main meter saved as Aggregtae.csv (typo), accepted as is", "mid", 2.8);
+      return svg(o);
+    } },
+  { t: "Work out the date format", x: "The first row says 18/10/2023. Read as month/day/year that's month 18, which fails. Read as day/month/year it's 18 Oct 2023, which matches the folder's start date. So the whole file is read as D/M/Y.",
+    s: () => svg(
+      R(260, 30, 280, 88, "ap card", 0) + T(400, 60, "First row of the week 6 main meter", "lab", 0, 'text-anchor="middle"') + T(400, 100, "18/10/2023", "big mono", .1, 'text-anchor="middle"') +
+      T(400, 145, "The folder says this week starts on 18 Oct 2023", "lab", .3, 'text-anchor="middle"') +
+      P("M400 160 C 400 200, 220 200, 220 240", "s-mut dr", .6) + P("M400 160 C 400 200, 580 200, 580 240", "s-mut dr", 1.8) +
+      R(80, 245, 280, 120, "ap card", 1.0) + T(220, 280, "Try M/D/Y", "mid", 1.0, 'text-anchor="middle"') + T(220, 318, "month 18? ValueError", "bad mid", 1.4, 'text-anchor="middle"') + T(220, 350, "✗ not this one", "bad", 1.5, 'text-anchor="middle"') +
+      R(440, 245, 280, 120, "ap card", 2.2) + T(580, 280, "Try D/M/Y", "mid", 2.2, 'text-anchor="middle"') + T(580, 318, "18 Oct 2023 = start date", "good mid", 2.6, 'text-anchor="middle"') + T(580, 350, "✓ use this format", "good", 2.7, 'text-anchor="middle"') +
+      T(400, 415, "No guessing: the folder's known start date decides", "mid", 3.2, 'text-anchor="middle"')) },
+  { t: "60 readings become 1 minute", x: "These are 300 real one-second readings of the main meter. Every 60 of them become one row: the mean, plus the std, min and max inside that minute. That keeps fast A/C switching visible while making the data 60 times smaller.",
+    s: () => {
+      const s = D.sec_kw, lo = Math.floor(Math.min(...s)) - 2, hi = Math.ceil(Math.max(...s)) + 2, x0 = 80, x1 = 770, y0 = 50, y1 = 380;
+      const X = i => x0 + (x1 - x0) * i / (s.length - 1), Y = v => y1 - (v - lo) / (hi - lo) * (y1 - y0);
+      let o = yaxis(x0, x1, y0, y1, lo, hi, [Math.ceil(lo / 5) * 5, Math.ceil(lo / 5) * 5 + 5, Math.ceil(lo / 5) * 5 + 10, Math.ceil(lo / 5) * 5 + 15].filter(t => t < hi), " kW");
+      for (let m = 1; m < 5; m++) o += L(X(m * 60 - .5), y0, X(m * 60 - .5), y1, "ap s-mut", .1, 'stroke-dasharray="3 4"');
+      s.forEach((v, i) => o += `<circle cx="${f1(X(i))}" cy="${f1(Y(v))}" r="2.3" class="fo muted" style="fill:var(--ink2);--d:${(i * .004).toFixed(3)}s;--f:3.4s"/>`);
+      for (let m = 0; m < 5; m++) {
+        const part = s.slice(m * 60, m * 60 + 60), mn = Math.min(...part), mx = Math.max(...part), xc = X(m * 60 + 29.5), d = 1.8 + m * .3;
+        o += L(xc, Y(mn), xc, Y(mx), "ap s-acc", d, 'stroke-width="4" stroke-linecap="round"') + `<circle cx="${f1(xc)}" cy="${f1(Y(D.min_kw[m]))}" r="9" class="ap acc" style="--d:${d}s"/>` +
+             T(xc, 412, `minute ${m + 1}`, "lab", .2, 'text-anchor="middle"');
+      }
+      o += T(80, 34, "300 one-second readings (grey) → 5 one-minute rows (mean dot, min–max line)", "mid", 0);
+      o += T(X(29.5) + 16, Y(D.min_kw[0]) - 14, `mean ${D.min_kw[0]} kW`, "acc mid", 2.2);
+      return svg(o);
+    } },
+  { t: "Remove the outage", x: "On Thursday 5 Oct the supply went off. Voltage fell from about 238 V to 0 V. Zero power here isn't low demand, it's no power at all. Every minute under 100 V is removed: 135 minutes in total.",
+    s: () => {
+      const v = D.outage.v, x0 = 80, x1 = 770, y0 = 50, y1 = 370, lo = 0, hi = 260, n = v.length;
+      const X = i => x0 + (x1 - x0) * i / (n - 1);
+      const low = v.map((x, i) => x < 100 ? i : -1).filter(i => i >= 0), a = low[0], b = low[low.length - 1];
+      let o = yaxis(x0, x1, y0, y1, lo, hi, [0, 100, 200], " V");
+      for (let i = 0; i < n; i++) { const mins = 11 * 60 + 50 + i * 5; if (mins % 60 === 0) o += T(X(i), 395, `${String(mins / 60).padStart(2, "0")}:00`, "lab", 0, 'text-anchor="middle"'); }
+      o += P(path(v.map((x, i) => i <= a ? x : null), x0, x1, y0, y1, lo, hi), "s-acc dr", .2) + P(path(v.map((x, i) => i >= b ? x : null), x0, x1, y0, y1, lo, hi), "s-acc dr", .9);
+      o += `<path d="${path(v.map((x, i) => i >= a - 1 && i <= b + 1 ? x : null), x0, x1, y0, y1, lo, hi)}" class="ln s-bad gone" style="--d:.6s;--f:3.4s;stroke-width:4"/>`;
+      o += L(x0, y1 - 100 / hi * (y1 - y0), x1, y1 - 100 / hi * (y1 - y0), "ap s-bad", 1.4, 'stroke-dasharray="6 5"') + T(x1, y1 - 100 / hi * (y1 - y0) - 8, "cut-off: 100 V", "bad", 1.4, 'text-anchor="end"');
+      o += R(X(a) - 4, y0, X(b) - X(a) + 8, y1 - y0, "ap", 2.0, 'fill="var(--bad)" fill-opacity=".1"');
+      o += T((X(a) + X(b)) / 2, 90, `Supply off ${D.outage.from}–17:05`, "bad mid", 2.2, 'text-anchor="middle"');
+      o += T((X(a) + X(b)) / 2, 115, "135 minutes removed", "bad mid", 3.6, 'text-anchor="middle"');
+      o += T(80, 34, `Main-meter voltage, ${D.outage.start.slice(0, 10)}`, "mid", 0);
+      return svg(o);
+    } },
+  { t: "Save one clean table", x: "All circuits are joined on the same minute and saved as one Parquet file. 5.9 GB of CSVs becomes 15 MB, about 400 times smaller. Every other script reads this file.",
+    s: () => {
+      const cols = ["minute", "agg_p_kw", "p_kw_std", "ac_kw", "light_kw", "Current1H5", "+60 more"];
+      let o = T(170, 80, "5.9 GB", "big", 0, 'text-anchor="middle" style="--d:0s;fill:var(--muted)"') + T(170, 108, "42 CSV files", "lab", 0, 'text-anchor="middle"');
+      o += P("M270 70 L 520 70", "s-acc dr", .5, 'stroke-width="4"') + `<path d="M520 60 L 536 70 L 520 80 Z" class="ap acc" style="--d:1.6s"/>`;
+      o += T(640, 80, "15 MB", "big acc", 1.6, 'text-anchor="middle"') + T(640, 108, "clemd_1min.parquet", "lab mono", 1.6, 'text-anchor="middle"');
+      const x0 = 40, cw = 103, y0 = 160;
+      cols.forEach((c, j) => o += R(x0 + j * cw, y0, cw - 4, 34, "ap", 1.9, 'fill="var(--acc)"') + T(x0 + j * cw + (cw - 4) / 2, y0 + 22, c, "mono", 1.9, 'text-anchor="middle" style="fill:#fff;font-size:11.5px;--d:1.9s"'));
+      D.min_kw.forEach((v, i) => { const y = y0 + 40 + i * 36, d = 2.2 + i * .15;
+        o += R(x0, y, cw * cols.length - 4, 32, "ap card", d) + T(x0 + cw / 2, y + 21, `${i + 1}`, "mono", d, 'text-anchor="middle"') + T(x0 + cw * 1.5, y + 21, v.toFixed(2), "mono", d, 'text-anchor="middle"');
+        for (let j = 2; j < cols.length; j++) o += R(x0 + j * cw + 20, y + 13, cw - 44, 6, "ap muted", d); });
+      o += T(400, 425, "41,680 clean minutes, weeks 2 to 6, all circuits on one clock", "mid", 3, 'text-anchor="middle"');
+      return svg(o);
+    } },
+],
+izzati: [
+  { t: "Look at the shape of the current", x: "Each harmonic is divided by the fundamental, so we see the shape of the current, not its size. Real data from weeks 4 and 5: when the A/C runs hard, the 5th harmonic is 4 times bigger and the 7th almost 6 times. That's the fingerprint of inverter compressors.",
+    s: () => {
+      const ord = [3, 5, 7, 9, 11, 13, 15], hi = 30, x0 = 90, x1 = 760, y0 = 60, y1 = 370, bw = (x1 - x0) / ord.length;
+      const Y = v => y1 - v * 100 / hi * (y1 - y0);
+      let o = yaxis(x0, x1, y0, y1, 0, hi, [0, 10, 20, 30], "%");
+      ord.forEach((k, i) => { const x = x0 + i * bw + bw * .18, w = bw * .3;
+        o += R(x, Y(D.spec_off[i]), w, y1 - Y(D.spec_off[i]), "gy muted", .2 + i * .05) + R(x + w + 4, Y(D.spec_on[i]), w, y1 - Y(D.spec_on[i]), "gy acc", 1.3 + i * .07) +
+             T(x + w, 395, `${k}${k === 3 ? "rd" : "th"}`, k === 5 || k === 7 ? "mid" : "lab", 0, 'text-anchor="middle"'); });
+      o += R(x0, 18, 14, 14, "ap muted", 0) + T(x0 + 20, 30, "A/C off (under 1 kW)", "lab", 0) + R(x0 + 200, 18, 14, 14, "ap acc", 1.2) + T(x0 + 220, 30, "A/C running hard (top 10%)", "lab", 1.2);
+      o += T(x0 + bw * 1.5, Y(D.spec_on[1]) - 14, `×${(D.spec_on[1] / D.spec_off[1]).toFixed(1)}`, "acc mid", 2.4, 'text-anchor="middle"') + T(x0 + bw * 2.5, Y(D.spec_on[2]) - 14, `×${(D.spec_on[2] / D.spec_off[2]).toFixed(1)}`, "acc mid", 2.6, 'text-anchor="middle"');
+      o += T(425, 428, "Phase-1 current, each harmonic as % of the fundamental (median)", "lab", 0, 'text-anchor="middle"');
+      return svg(o);
+    } },
+  { t: "Number the unbroken stretches", x: "The data has gaps, like the outage. Wherever two rows aren't exactly 1 minute apart, a new stretch starts. A running count (cumsum) gives every stretch its own number: 1, then 2.",
+    s: () => lagScene(false) },
+  { t: "Lags only inside a stretch", x: "Each lag takes the value from the minute before, but only inside the same stretch. The first minute after the gap gets a blank instead of a value from hours earlier. An assert checks this on every run.",
+    s: () => lagScene(true) },
+  { t: "Put the hour on a circle", x: "As a plain number, 23:59 and 00:00 are 24 apart. On a circle they're next to each other. sin and cos of the hour give the model that circle, so midnight isn't a cliff.",
+    s: () => {
+      let o = T(210, 60, "As a plain number", "mid", 0, 'text-anchor="middle"') + L(60, 220, 360, 220, "ap s-ink", .1, 'stroke-width="2"');
+      [0, 6, 12, 18, 24].forEach(h => o += L(60 + h * 12.5, 212, 60 + h * 12.5, 228, "ap s-ink", .1) + T(60 + h * 12.5, 250, h, "lab", .1, 'text-anchor="middle"'));
+      o += `<circle cx="60" cy="220" r="9" class="ap acc" style="--d:.5s"/><circle cx="360" cy="220" r="9" class="ap acc" style="--d:.5s"/>` + T(60, 196, "00:00", "mid", .5, 'text-anchor="middle"') + T(360, 196, "23:59", "mid", .5, 'text-anchor="middle"');
+      o += P("M60 290 L 360 290", "s-bad dr", .9, 'stroke-width="3"') + T(210, 320, "24 apart: looks like a cliff", "bad mid", 1.4, 'text-anchor="middle"');
+      const cx = 590, cy = 225, r = 120;
+      o += T(cx, 60, "On a circle (sin and cos)", "mid", 1.8, 'text-anchor="middle"') + `<circle cx="${cx}" cy="${cy}" r="${r}" pathLength="1" class="ln s-ink dr" style="--d:2s;fill:none"/>`;
+      [[0, cx, cy - r - 12], [6, cx + r + 18, cy + 5], [12, cx, cy + r + 24], [18, cx - r - 18, cy + 5]].forEach(([h, x, y]) => o += T(x, y, h, "lab", 2.4, 'text-anchor="middle"'));
+      const pt = h => [cx + r * Math.sin(2 * Math.PI * h / 24), cy - r * Math.cos(2 * Math.PI * h / 24)];
+      const [ax, ay] = pt(0), [bx, by] = pt(23.6);
+      o += `<circle cx="${f1(ax)}" cy="${f1(ay)}" r="9" class="ap acc" style="--d:2.8s"/><circle cx="${f1(bx)}" cy="${f1(by)}" r="9" class="ap acc" style="--d:2.8s"/>`;
+      o += T(cx + 26, cy - r + 34, "1 minute apart", "good mid", 3.1);
+      o += T(400, 420, "hour_sin = sin(2π·h/24)   hour_cos = cos(2π·h/24)", "mono", 3.4, 'text-anchor="middle"');
+      return svg(o);
+    } },
+  { t: "98 features in 5 groups", x: "Every minute now has 98 numbers. Harmonics are the biggest group with 53. A redundancy check flagged 130 near-duplicate pairs (|r| above 0.98), which the ablation later showed can go at no cost.",
+    s: () => {
+      const g = [["Harmonics", 53], ["Power quality", 16], ["Power", 15], ["Temporal (lags)", 9], ["Calendar", 5]];
+      let o = "";
+      g.forEach(([n, v], i) => { const y = 60 + i * 62;
+        o += T(210, y + 26, n, "mid", i * .2, 'text-anchor="end"') + R(230, y, v / 53 * 420, 38, "gx acc", .2 + i * .2) + T(240 + v / 53 * 420, y + 26, v, "mid", .6 + i * .2); });
+      o += T(400, 395, "= 98 features per minute", "big", 1.8, 'text-anchor="middle"') + T(400, 428, "130 near-duplicate pairs flagged (|r| > 0.98)", "lab", 2.2, 'text-anchor="middle"');
+      return svg(o);
+    } },
+],
+daphne: [
+  { t: "Split the data in time order", x: "Cross-validation uses 4 folds on weeks 4 and 5, always in time order. Training (blue) is always earlier than validation (orange), with a 60-minute gap in between, so a lag feature can't peek at the answer.",
+    s: () => {
+      let o = "", x0 = 140, w = 620;
+      for (let i = 0; i < 4; i++) { const y = 70 + i * 72, tr = (i + 1) / 5 * w, va = w / 5, d = i * .6;
+        o += T(120, y + 25, `Fold ${i + 1}`, "mid", d, 'text-anchor="end"') + R(x0, y, w, 36, "ap card", d) + R(x0, y, tr - 8, 36, "gx", d + .1, 'fill="var(--p3)"') +
+             R(x0 + tr - 8, y, 8, 36, "ap", d + .4, 'fill="var(--bad)"') + R(x0 + tr, y, va, 36, "gx", d + .45, 'fill="var(--p4)"'); }
+      o += T(x0 + 124 - 4, 64, "60-min gap", "bad", .5, 'text-anchor="middle"');
+      o += R(x0, 380, 14, 14, "ap", 0, 'fill="var(--p3)"') + T(x0 + 20, 392, "Train", "lab") + R(x0 + 90, 380, 14, 14, "ap", 0, 'fill="var(--bad)"') + T(x0 + 110, 392, "Gap", "lab") + R(x0 + 170, 380, 14, 14, "ap", 0, 'fill="var(--p4)"') + T(x0 + 190, 392, "Validate", "lab");
+      o += T(x0 + w, 392, "time →", "lab", 0, 'text-anchor="end"') + T(400, 430, "Validation is always later than training", "mid", 2.8, 'text-anchor="middle"');
+      return svg(o);
+    } },
+  { t: "Race five models", x: "Every model and setting is scored on the same 4 folds. These are the real cross-validation errors for A/C (MAE, kW). Lower is better. The three tree models are far ahead of the two baselines.",
+    s: () => raceScene(false) },
+  { t: "Apply the 5% rule", x: "The rule was written before training: a tree model must beat Ridge by at least 5%, so the bar to beat is 2.27 × 0.95 = 2.16 kW. LightGBM's 0.99 kW passes easily, so LightGBM is chosen.",
+    s: () => raceScene(true) },
+  { t: "Freeze before testing", x: "The choice and settings are written to freeze.json before week 6 is ever loaded. After that nothing changes. A rerun can only confirm the same choice, or the script stops.",
+    s: () => svg(
+      R(90, 50, 330, 330, "ap card", 0) + T(110, 84, "freeze.json", "mid mono", 0) +
+      ["chosen_model: lightgbm", "num_leaves: 63", "learning_rate: 0.1", "train_weeks: 4, 5", "test_week: 6", "frozen_at: 2026-11-06 21:11"].map((s, i) => T(110, 128 + i * 36, s, "mono", .3 + i * .2)).join("") +
+      lock(380, 56, 1.8) +
+      R(500, 120, 220, 170, "ap", .4, 'fill="none" stroke="var(--axis)" stroke-width="2" stroke-dasharray="6 5"') + T(610, 190, "Week 6", "big", .4, 'text-anchor="middle"') + T(610, 222, "19–25 Oct, sealed", "lab", .4, 'text-anchor="middle"') + lock(690, 126, .6) +
+      P("M425 215 L 495 215", "s-acc dr", 2.4, 'stroke-width="3"') + T(610, 330, "Loaded only after the freeze, tested once", "mid", 2.8, 'text-anchor="middle"')) },
+  { t: "One test on week 6", x: "The real result: measured A/C from the sub-meter (blue) and the model's estimate from the main meter only (orange dashed), hour by hour. The typical error is 1.24 kW, and the weekend is correctly near zero.",
+    s: () => {
+      const m = D.w6_hour.meas, e = D.w6_hour.est, x0 = 70, x1 = 770, y0 = 50, y1 = 360, hi = 35;
+      let o = yaxis(x0, x1, y0, y1, 0, hi, [0, 10, 20, 30], " kW");
+      D.w6_hour.days.forEach((d, i) => i * 24 + 12 < m.length && (o += T(x0 + (x1 - x0) * (i * 24 + 12) / (m.length - 1), 385, d, "lab", 0, 'text-anchor="middle"')));
+      o += P(path(m, x0, x1, y0, y1, 0, hi), "s-blue dr", .2) + `<path d="${path(e, x0, x1, y0, y1, 0, hi)}" class="ln s-org ap" style="--d:1.6s;stroke-dasharray:6 4"/>`;
+      o += L(x0, 26, x0 + 24, 26, "ln s-blue ap") + T(x0 + 30, 31, "Measured A/C (sub-meter)", "lab") + L(x0 + 230, 26, x0 + 254, 26, "ln s-org ap", 1.6, 'style="stroke-dasharray:6 4;--d:1.6s"') + T(x0 + 260, 31, "Estimated from the main meter", "lab", 1.6);
+      o += R(520, 395, 250, 44, "ap", 2.6, 'fill="var(--acc)"') + T(645, 423, "MAE 1.24 kW (CI 0.56–1.87)", "mid", 2.6, 'text-anchor="middle" style="fill:#fff;--d:2.6s"');
+      return svg(o);
+    } },
+],
+masyitah: [
+  { t: "Why 28.9 kW at the peak?", x: "SHAP splits one estimate into kW contributions. At the week's highest 15 minutes (Thu 19 Oct 16:00) the model starts from its average of 5.9 kW. Phase-2 power adds 12.4 kW, harmonics and THD add a few more, and everything sums to 28.9 kW. Measured: 30.4 kW.",
+    s: () => {
+      const items = [["Phase-2 real power", 12.35], ["5th harmonic, phase 3", 1.27], ["Apparent power, phase 2", 1.01], ["5th harmonic ratio, phase 3", .95], ["THD, phase 1", .89], ["Time of day (sin)", .88], ["5th harmonic, phase 1", .78], ["7th harmonic, phase 2", -.59], ["Total kW", .57], ["60-min average kW", .54]];
+      const sum = items.reduce((a, [, v]) => a + v, 0); items.push(["88 other features", +(28.9 - 5.9 - sum).toFixed(2)]);
+      const X = v => 230 + v / 32 * 540; let cum = 5.9, o = "";
+      o += T(220, 40, "Average estimate", "lab", 0, 'text-anchor="end"') + R(230, 26, X(5.9) - 230, 20, "gx muted", 0) + T(X(5.9) + 6, 41, "5.9", "lab", .3);
+      items.forEach(([n, v], i) => { const y = 56 + i * 28, d = .3 + i * .17, a = v >= 0 ? cum : cum + v;
+        o += T(220, y + 15, n, "lab", d, 'text-anchor="end"') + R(X(a), y, Math.abs(v) / 32 * 540, 20, `gx ${v >= 0 ? "acc" : "bad"}`, d) + T(X(Math.max(cum, cum + v)) + 6, y + 15, (v > 0 ? "+" : "") + v.toFixed(2), "lab", d + .2); cum += v; });
+      o += L(X(28.9), 56, X(28.9), 400, "ap s-ink", 2.4, 'stroke-dasharray="4 4"') + T(X(28.9) - 8, 425, "Estimate 28.9 kW", "mid acc", 2.4, 'text-anchor="end"') +
+           L(X(30.4), 56, X(30.4), 400, "ap s-good", 2.8, 'stroke-width="3"') + T(X(30.4) + 6, 445, "Measured 30.4", "good mid", 2.8, 'text-anchor="end"');
+      return svg(o);
+    } },
+  { t: "Add it up by feature group", x: "SHAP values for all test minutes are summed within each feature group and averaged. Power leads, harmonics come second. Calendar is small, so the model reads A/C from the electricity, not from the timetable.",
+    s: () => groupBars([["Power", 4.97], ["Harmonics", 1.20], ["Power quality", .60], ["Calendar", .44], ["Temporal", .26]], 5.2, "Mean |SHAP| per minute (kW)") },
+  { t: "Shuffle a whole group", x: "To double-check, shuffle every harmonic column together and see how much worse the model gets. The error goes from 1.24 kW to 3.35 kW. Shuffling one column at a time would hide this, because the other harmonics cover for it.",
+    s: () => {
+      const cols = ["Power", "Harm.", "PQ", "Temp.", "Cal."], perm = [3, 0, 5, 1, 4, 2];
+      let o = cols.map((c, j) => T(70 + j * 62 + 28, 50, c, j === 1 ? "mid" : "lab", 0, 'text-anchor="middle"')).join("");
+      for (let i = 0; i < 6; i++) for (let j = 0; j < 5; j++) {
+        const x = 70 + j * 62, y = 64 + i * 42;
+        o += j === 1 ? `<g class="ap" style="--d:0s"><rect x="${x}" y="${y}" width="56" height="36" rx="4" class="mv acc" style="--d:1s;--dy:${(perm[i] - i) * 42}px;fill-opacity:${.35 + i * .12}"/></g>`
+                     : R(x, y, 56, 36, "ap card", 0);
+      }
+      o += T(70 + 62 + 28, 340, "shuffled", "acc mid", 1.6, 'text-anchor="middle"');
+      o += T(440, 80, "Error before", "lab", .3) + T(440, 125, "1.24 kW", "big", .3) + T(440, 185, "After shuffling harmonics", "lab", 2.0) + T(440, 230, "3.35 kW", "big bad", 2.0) + T(620, 230, "+2.11", "mid bad", 2.3);
+      const g = [["Power", 3.93], ["Harmonics", 2.11], ["Temporal", .42], ["PQ", .42], ["Calendar", .19]];
+      g.forEach(([n, v], i) => { const y = 280 + i * 30, d = 2.8 + i * .12;
+        o += T(530, y + 15, n, "lab", d, 'text-anchor="end"') + R(540, y, v / 4 * 200, 20, `gx ${i === 1 ? "acc" : "muted"}`, d) + T(546 + v / 4 * 200, y + 15, v.toFixed(2), "lab", d); });
+      o += T(440, 268, "Error rise for each group (kW)", "lab", 2.8);
+      return svg(o);
+    } },
+  { t: "Compare days by their shape", x: "Each of the 28 full days becomes 24 hourly values, divided by that day's own maximum, so only the shape matters. k-means then splits them. The silhouette score is highest at k = 2: working days with a big 8-to-5 hump, and flat non-working days.",
+    s: () => {
+      const x0 = 70, x1 = 560, y0 = 50, y1 = 360;
+      let o = yaxis(x0, x1, y0, y1, 0, 1, [0, .5, 1]) + R(x0 + (x1 - x0) * 8 / 23, y0, (x1 - x0) * 9 / 23, y1 - y0, "ap", 0, 'fill="var(--wash)"');
+      [0, 6, 12, 18, 23].forEach(h => o += T(x0 + (x1 - x0) * h / 23, 382, `${h}:00`, "lab", 0, 'text-anchor="middle"'));
+      D.days.forEach((d, i) => o += `<path d="${path(d.shape, x0, x1, y0, y1, 0, 1)}" class="ln fo" style="stroke:var(--axis);stroke-width:1.5;--d:${(i * .03).toFixed(2)}s;--f:1.6s"/>`);
+      D.days.forEach((d, i) => o += `<path d="${path(d.shape, x0, x1, y0, y1, 0, 1)}" class="ln ap ${d.c ? "s-m1" : "s-blue"}" style="stroke-width:1.5;opacity:.5;--d:${(1.8 + i * .03).toFixed(2)}s"/>`);
+      for (const c of [0, 1]) { const ds = D.days.filter(d => d.c === c), mean = ds[0].shape.map((_, h) => ds.reduce((a, d) => a + d.shape[h], 0) / ds.length);
+        o += P(path(mean, x0, x1, y0, y1, 0, 1), `${c ? "s-m1" : "s-blue"} dr`, 2.8, 'style="stroke-width:5;--d:2.8s"'); }
+      o += R(x0, 400, 14, 14, "ap blue", 1.8) + T(x0 + 20, 412, "Working day (16 days)", "lab", 1.8) + R(x0 + 200, 400, 14, 14, "ap m1", 1.8) + T(x0 + 220, 412, "Non-working day (12 days)", "lab", 1.8);
+      const sil = [[2, .74], [3, .61], [4, .54], [5, .50], [6, .44]];
+      o += T(600, 70, "Silhouette score", "mid", 3.2);
+      sil.forEach(([k, s], i) => { const y = 90 + i * 40, d = 3.3 + i * .1;
+        o += T(625, y + 19, `k=${k}`, "lab", d, 'text-anchor="end"') + R(633, y, s / .8 * 140, 26, `gx ${k === 2 ? "acc" : "muted"}`, d) + T(639 + s / .8 * 140, y + 19, s.toFixed(2), "lab", d); });
+      return svg(o);
+    } },
+  { t: "One Thursday looks like a weekend", x: "Here is every day coloured by its mode. All weekends are non-working, as expected. But Thursday 28 Sep is too. That was Maulidur Rasul, a public holiday. The main meter found it without being told.",
+    s: () => {
+      const by = Object.fromEntries(D.days.map(d => [d.d, d.c]));
+      let o = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((w, j) => T(170 + j * 74 + 32, 50, w, "lab", 0, 'text-anchor="middle"')).join("");
+      for (let i = 0; i < 42; i++) {
+        const dt = new Date(Date.UTC(2023, 8, 18 + i)), k = dt.toISOString().slice(0, 10), r = Math.floor(i / 7), j = i % 7, x = 170 + j * 74, y = 64 + r * 54, d = i * .03;
+        if (k < "2023-09-21" || k > "2023-10-25") continue;
+        o += k in by ? R(x, y, 64, 44, `ap ${by[k] ? "m1" : "blue"}`, d) : R(x, y, 64, 44, "ap", d, 'fill="none" stroke="var(--axis)" stroke-dasharray="4 4"');
+        o += T(x + 32, y + 28, dt.getUTCDate(), "", d, `text-anchor="middle" style="--d:${d}s;fill:${k in by ? "#fff" : "var(--muted)"};font-size:13px"`);
+        if (k === "2023-09-28") o += R(x - 5, y - 5, 74, 54, "ap", 1.8, 'fill="none" stroke="var(--bad)" stroke-width="4"');
+      }
+      o += T(170, 400, "Thu 28 Sep: Maulidur Rasul, a public holiday", "bad mid", 2.1);
+      o += R(170, 418, 14, 14, "ap blue", 0) + T(190, 430, "Working", "lab") + R(280, 418, 14, 14, "ap m1", 0) + T(300, 430, "Non-working", "lab") + R(420, 418, 14, 14, "ap", 0, 'fill="none" stroke="var(--axis)" stroke-dasharray="3 3"') + T(440, 430, "Not a full day of data", "lab");
+      return svg(o);
+    } },
+],
+sharvin: [
+  { t: "Find the trigger", x: "This is the real peak day, Thu 19 Oct. The trigger is the top 5% of 15-minute demand: 53.1 kW. Only the windows above it (shaded) set the monthly demand charge. The day's peak is 71.4 kW.",
+    s: () => peakScene(0) },
+  { t: "Trim A/C only above it", x: "In those windows only, A/C is cut by 20% of the model's estimate (the A/C share is shown in blue). Everywhere else nothing changes. The peak falls from 71.4 to 65.6 kW, a 5.8 kW cut. Using the real sub-meter instead gives 6.1 kW, so the estimate holds up.",
+    s: () => peakScene(1) },
+  { t: "Turn kW into ringgit", x: "The demand charge is paid on the single worst 15 minutes each month, at about RM 89 to 97 per kW. So 5.8 kW less, every month, is worth about RM 6,200 to 6,700 a year for one building.",
+    s: () => svg(
+      eqCard(70, 120, "5.8 kW", "peak cut", 0) + T(280, 190, "×", "big", .4, 'text-anchor="middle"') + eqCard(310, 120, "RM 89–97", "per kW per month", .6) + T(520, 190, "×", "big", 1.0, 'text-anchor="middle"') + eqCard(550, 120, "12", "months", 1.2) +
+      T(400, 320, "= RM 6,190 – 6,730 a year", "big acc", 1.9, 'text-anchor="middle"') + T(400, 360, "10% trim: RM 3.1–3.4k   ·   30% trim: RM 9.3–10.1k", "lab", 2.4, 'text-anchor="middle"') +
+      T(400, 410, "Scenario for one CLEMD-sized building, not a UTP measurement", "lab", 2.8, 'text-anchor="middle"')) },
+  { t: "Test pre-cooling", x: "Our proposal's idea: move 20% of the 2 to 4 pm A/C into a morning window, keeping energy the same. On the real peak day it backfires. The morning bump becomes a new, higher peak: 76.6 kW, 5.2 kW worse. So we dropped it.",
+    s: () => peakScene(2) },
+  { t: "After hours, into carbon", x: "Outside office hours (weekdays 8 to 5), cutting A/C by 50% and lighting by 30% saves about 9,243 kWh a year. At Malaysia's grid factor of 0.740 t per MWh, that's about 6.8 tonnes of CO₂e a year.",
+    s: () => svg(
+      eqCard(160, 120, "9,243 kWh", "saved a year", 0) + T(400, 190, "×", "big", .5, 'text-anchor="middle"') + eqCard(460, 120, "0.740 t", "CO₂e per MWh", .7) +
+      T(400, 320, "= 6.8 tCO₂e a year", "big acc", 1.5, 'text-anchor="middle"') + T(400, 360, "A/C −50% and lighting −30% outside weekday 08:00–17:00", "lab", 2, 'text-anchor="middle"') +
+      T(400, 410, "Scenario for one CLEMD-sized building, not a UTP measurement", "lab", 2.4, 'text-anchor="middle"')) },
+],
+};
+
+// shared scene pieces
+function lock(x, y, d) { return `<g class="ap" style="--d:${d}s"><rect x="${x}" y="${y + 14}" width="26" height="20" rx="4" class="acc"/><path d="M${x + 6} ${y + 14} v-5 a7 7 0 0 1 14 0 v5" fill="none" stroke="var(--acc)" stroke-width="3"/></g>`; }
+function eqCard(x, y, big, small, d) { return R(x, y, 180, 120, "ap card", d) + T(x + 90, y + 65, big, "big", d, 'text-anchor="middle" style="font-size:30px;--d:' + d + 's"') + T(x + 90, y + 95, small, "lab", d, 'text-anchor="middle"'); }
+function groupBars(g, max, label) {
+  let o = T(400, 40, label, "lab", 0, 'text-anchor="middle"');
+  g.forEach(([n, v], i) => { const y = 70 + i * 66, d = .2 + i * .25;
+    o += T(200, y + 28, n, "mid", d, 'text-anchor="end"') + R(220, y, v / max * 480, 42, `gx ${i < 2 ? "acc" : "muted"}`, d) + T(228 + v / max * 480, y + 28, v.toFixed(2), "mid", d + .4); });
+  return svg(o);
+}
+function lagScene(withLags) {
+  const t1 = ["10:00", "10:01", "10:02", "10:03", "10:04"], t2 = ["17:06", "17:07", "17:08", "17:09", "17:10"], cells = [...t1, null, ...t2];
+  const X = i => i < 5 ? 190 + i * 52 : i === 5 ? 0 : 190 + 5 * 52 + 70 + (i - 6) * 52;
+  let o = ["minute", "new stretch?", "stretch id", ...(withLags ? ["p_lag1 uses"] : [])].map((s, i) => T(170, 82 + i * 80, s, "mid", 0, 'text-anchor="end"')).join("");
+  o += R(190 + 5 * 52, 56, 62, 40, "ap", 0, 'fill="none" stroke="var(--bad)" stroke-dasharray="5 4"') + T(190 + 5 * 52 + 31, 81, "gap", "bad", 0, 'text-anchor="middle"');
+  cells.forEach((c, i) => { if (!c) return; const x = X(i), first = i === 0 || i === 6, seg = i < 5 ? 1 : 2, d = withLags ? 0 : i * .06;
+    o += R(x, 56, 46, 40, "ap card", d) + T(x + 23, 81, c, "mono", d, 'text-anchor="middle" style="font-size:11.5px;--d:' + d + 's"');
+    o += R(x, 136, 46, 40, `ap ${first ? "bad" : "card"}`, withLags ? 0 : .9 + i * .05) + T(x + 23, 161, first ? "yes" : "no", "", withLags ? 0 : .9 + i * .05, `text-anchor="middle" style="--d:${withLags ? 0 : .9 + i * .05}s;fill:${first ? "#fff" : "var(--ink2)"}"`);
+    o += R(x, 216, 46, 40, "ap", withLags ? 0 : 1.9 + i * .05, `fill="${seg === 1 ? "var(--acc)" : "var(--p3)"}"`) + T(x + 23, 242, seg, "mid", withLags ? 0 : 1.9 + i * .05, `text-anchor="middle" style="fill:#fff;--d:${withLags ? 0 : 1.9 + i * .05}s"`);
+    if (withLags) { const d = .4 + i * .15;
+      o += R(x, 296, 46, 40, `ap ${first ? "" : "card"}`, d, first ? 'fill="none" stroke="var(--axis)" stroke-dasharray="4 4"' : "") +
+           T(x + 23, 321, first ? "blank" : cells[i - 1], first ? "lab" : "mono", d, 'text-anchor="middle" style="font-size:11px;--d:' + d + 's"');
+      if (!first) o += P(`M${X(i - 1) + 23} 296 Q ${(X(i - 1) + x) / 2 + 23} 272 ${x + 23} 292`, "s-acc dr", d, 'style="stroke-width:2;--d:' + d + 's"'); }
+  });
+  if (withLags) o += P(`M${X(4) + 23} 340 Q ${(X(4) + X(6)) / 2 + 23} 390 ${X(6) + 23} 340`, "s-bad dr", 2.2, 'style="stroke-dasharray:6 4;stroke-width:2;--d:2.2s"') + T((X(4) + X(6)) / 2 + 23, 400, "✗ never crosses the gap", "bad mid", 2.5, 'text-anchor="middle"');
+  else o += T(480, 300, "cumsum of 'yes' gives each stretch its own number", "lab", 2.4, 'text-anchor="middle"');
+  return svg(o);
+}
+function raceScene(rule) {
+  const m = [["Time-of-day avg", 2.99, "muted"], ["Ridge", 2.27, "muted"], ["Random forest", 1.03, "muted"], ["XGBoost", 1.04, "muted"], ["LightGBM", .99, "acc"]];
+  const X = v => 200 + v / 3.2 * 540;
+  let o = T(400, 36, "Cross-validation error for A/C, MAE in kW (lower is better)", "lab", 0, 'text-anchor="middle"');
+  m.forEach(([n, v, c], i) => { const y = 60 + i * 66, d = rule ? 0 : .2 + i * .3;
+    o += T(185, y + 28, n, "mid", d, 'text-anchor="end"') + R(200, y, X(v) - 200, 42, `gx ${c}`, d) + T(X(v) + 8, y + 28, v.toFixed(2), "mid", d + .4); });
+  if (rule) { const x = X(2.27 * .95);
+    o += L(x, 50, x, 400, "ap s-bad", .4, 'stroke-width="3" stroke-dasharray="7 5"') + T(x + 6, 420, "Ridge − 5% = 2.16 kW", "bad mid", .6);
+    o += R(X(.99) + 70, 324, 270, 44, "ap", 1.4, 'fill="var(--acc)"') + T(X(.99) + 205, 352, "0.99 < 2.16 → LightGBM chosen", "mid", 1.4, 'text-anchor="middle" style="fill:#fff;--d:1.4s"'); }
+  return svg(o);
+}
+function peakScene(mode) {
+  const pd = D.peak_day, n = pd.agg.length, x0 = 70, x1 = 770, y0 = 40, y1 = 370, hi = 85;
+  const hr = i => pd.h0 + i / 4, X = h => x0 + (x1 - x0) * (h - pd.h0) / (hr(n - 1) - pd.h0), Y = v => y1 - v / hi * (y1 - y0);
+  let o = yaxis(x0, x1, y0, y1, 0, hi, [0, 20, 40, 60, 80], " kW");
+  [3, 6, 9, 12, 15, 18, 21].forEach(h => o += T(X(h), 392, `${h}:00`, "lab", 0, 'text-anchor="middle"'));
+  const thrY = Y(pd.thr), peak = Math.max(...pd.agg), pi = pd.agg.indexOf(peak);
+  if (mode === 0) {
+    pd.agg.forEach((v, i) => { if (v >= pd.thr) o += R(X(hr(i)) - 3, y0, (x1 - x0) / (n - 1) + 2, y1 - y0, "ap", 1.8, 'fill="var(--acc)" fill-opacity=".16"'); });
+    o += P(path(pd.agg, x0, x1, y0, y1, 0, hi), "s-ink dr", .1) + L(x0, thrY, x1, thrY, "ap s-bad", 1.2, 'stroke-width="2.5" stroke-dasharray="8 5"') + T(x0 + 6, thrY - 8, `Trigger ${pd.thr} kW`, "bad mid", 1.2);
+    o += `<circle cx="${f1(X(hr(pi)))}" cy="${f1(Y(peak))}" r="7" class="ap acc" style="--d:2.2s"/>` + T(X(hr(pi)) + 12, Y(peak) - 6, `Peak ${peak} kW`, "mid", 2.2);
+  } else if (mode === 1) {
+    const top = pd.agg.map((v, i) => [X(hr(i)), Y(v)]), bot = pd.agg.map((v, i) => [X(hr(i)), Y(v - pd.ac[i])]);
+    o += `<path d="M${top.map(p => p.map(f1).join(" ")).join("L")}L${bot.reverse().map(p => p.map(f1).join(" ")).join("L")}Z" class="ap" style="fill:var(--p3);fill-opacity:.18;--d:.2s"/>`;
+    o += `<path d="${path(pd.agg, x0, x1, y0, y1, 0, hi)}" class="ln s-mut ap"/>` + L(x0, thrY, x1, thrY, "ap s-bad", 0, 'stroke-dasharray="8 5"');
+    o += P(path(pd.trim, x0, x1, y0, y1, 0, hi), "s-acc dr", .9, 'style="stroke-width:3.5;--d:.9s"');
+    const tp = Math.max(...pd.trim);
+    o += L(X(hr(pi)) + 20, Y(peak), X(hr(pi)) + 130, Y(peak), "ap s-ink", 2.2, 'stroke-dasharray="3 3"') + L(X(hr(pi)) + 20, Y(tp), X(hr(pi)) + 130, Y(tp), "ap s-acc", 2.2, 'stroke-dasharray="3 3"');
+    o += T(X(hr(pi)) + 138, Y(peak) + 4, `${peak} kW before`, "lab", 2.2) + T(X(hr(pi)) + 138, Y(tp) + 14, `${tp} kW after`, "acc mid", 2.4) + T(X(hr(pi)) - 20, Y(peak) - 26, `−${(peak - tp).toFixed(1)} kW`, "big acc", 2.8, 'text-anchor="end" style="font-size:32px;--d:2.8s"');
+    o += R(x0 + 10, 50, 14, 14, "ap", .2, 'fill="var(--p3)" fill-opacity=".35"') + T(x0 + 30, 62, "A/C share (model estimate)", "lab", .2);
+  } else {
+    o += R(X(10), y0, X(12) - X(10), y1 - y0, "ap", .3, 'fill="var(--good)" fill-opacity=".12"') + T((X(10) + X(12)) / 2, y1 - 10, "cool earlier", "good", .3, 'text-anchor="middle"');
+    o += R(X(14), y0, X(16) - X(14), y1 - y0, "ap", .5, 'fill="var(--p3)" fill-opacity=".12"') + T((X(14) + X(16)) / 2, y1 - 10, "take 20% here", "blue", .5, 'text-anchor="middle" style="fill:var(--p3);--d:.5s"');
+    o += `<path d="${path(pd.agg, x0, x1, y0, y1, 0, hi)}" class="ln s-ink ap"/>` + `<path d="${path(pd.precool, x0, x1, y0, y1, 0, hi)}" class="ln s-org ap" style="--d:1.2s;stroke-width:3.5;stroke-dasharray:7 4"/>`;
+    const pp = Math.max(...pd.precool.filter(v => v != null)), ppi = pd.precool.indexOf(pp);
+    o += `<circle cx="${f1(X(hr(ppi)))}" cy="${f1(Y(pp))}" r="8" class="ap bad" style="--d:2.2s"/>` + T(X(hr(ppi)) - 14, Y(pp) - 4, `New peak ${pp} kW (+${(pp - peak).toFixed(1)})`, "bad mid", 2.2, 'text-anchor="end"');
+    o += `<g class="ap" style="--d:3s"><rect x="580" y="70" width="170" height="52" rx="8" fill="none" stroke="var(--bad)" stroke-width="4"/><text x="665" y="105" text-anchor="middle" class="bad" style="font:700 26px var(--display)">DROPPED</text></g>`;
+  }
+  o += T(x0, 24, `Building demand, 15-min, ${pd.label}`, "lab", 0);
+  return svg(o);
+}
+
+/* ---------- build each animation slide: stage + controls + step list ---------- */
+document.querySelectorAll("[data-anim]").forEach(sec => {
+  const steps = ANIMS[sec.dataset.anim], grid = sec.querySelector(".animgrid");
+  grid.innerHTML = `<div class="stagebox"><div class="stage" aria-live="polite"></div><div class="ctrl">
+      <button class="iconbtn" data-a="back" aria-label="Previous step"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+      <button class="iconbtn" data-a="play" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M7 5v14l11-7z"/></svg><span>Play</span></button>
+      <button class="iconbtn" data-a="replay" aria-label="Replay this step"><svg viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg></button>
+      <button class="iconbtn" data-a="fwd" aria-label="Next step"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+      <span class="dots">${steps.map(() => "<i></i>").join("")}</span><span class="lbl"></span></div></div>
+    <ol class="steps">${steps.map((s, i) => `<li><button data-i="${i}"><span class="num">${i + 1}</span><b>${s.t}</b><span class="x">${s.x}</span></button></li>`).join("")}</ol>`;
+  const stage = grid.querySelector(".stage"), btns = [...grid.querySelectorAll(".steps button")], dots = [...grid.querySelectorAll(".dots i")];
+  const playBtn = grid.querySelector('[data-a="play"]');
+  let timer = null;
+  const p = sec._p = {
+    i: 0, n: steps.length, min: 0,
+    show(i) {
+      p.i = Math.max(0, Math.min(steps.length - 1, i));
+      stage.innerHTML = steps[p.i].s();
+      btns.forEach((b, j) => { b.classList.toggle("cur", j === p.i); b.classList.toggle("done", j < p.i); });
+      dots.forEach((d, j) => d.classList.toggle("done", j <= p.i));
+      grid.querySelector(".lbl").textContent = `step ${p.i + 1} / ${steps.length}`;
+      const ol = grid.querySelector(".steps"); ol.scrollTop = btns[p.i].offsetTop - ol.offsetTop - 8;
+    },
+    stop() { clearInterval(timer); timer = null; playBtn.setAttribute("aria-pressed", "false"); playBtn.querySelector("span").textContent = "Play"; },
+    play() {
+      if (timer) return p.stop();
+      if (p.i === steps.length - 1) p.show(0);
+      playBtn.setAttribute("aria-pressed", "true"); playBtn.querySelector("span").textContent = "Pause";
+      timer = setInterval(() => p.i < steps.length - 1 ? p.show(p.i + 1) : p.stop(), 7000);
+    },
+  };
+  btns.forEach(b => b.addEventListener("click", () => { p.stop(); p.show(+b.dataset.i); }));
+  grid.querySelector('[data-a="back"]').onclick = () => { p.stop(); p.show(p.i - 1); };
+  grid.querySelector('[data-a="fwd"]').onclick = () => { p.stop(); p.show(p.i + 1); };
+  grid.querySelector('[data-a="replay"]').onclick = () => p.show(p.i);
+  playBtn.onclick = p.play;
+});
+
+/* ---------- code slides: light syntax colouring + clickable callouts ---------- */
+const KW = /^(def|for|in|if|else|return|try|except|pass|raise|lambda|not|and|or|assert|True|False|None)$/;
+const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+function paint(line) {
+  if (line.trim() === "...") return `<span class="ell">${esc(line)}</span>`;
+  return line.replace(/(#.*$)|(f?"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*')|([A-Za-z_]\w*)|(\d+(?:\.\d+)?)|([^#"'\w]+)/g,
+    (m, c, s, w, n, o) => c ? `<span class="t-c">${esc(c)}</span>` : s ? `<span class="t-s">${esc(s)}</span>`
+      : w ? (KW.test(w) ? `<span class="t-k">${w}</span>` : w) : n ? `<span class="t-n">${n}</span>` : esc(o));
+}
+const range = spec => spec.split(",").flatMap(p => { const [a, b = a] = p.split("-").map(Number); return Array.from({ length: b - a + 1 }, (_, i) => a + i); });
+document.querySelectorAll("pre.code").forEach(pre => {
+  const groups = JSON.parse(pre.dataset.groups || "{}");
+  const lines = pre.textContent.replace(/\n$/, "").split("\n");
+  const owner = {}, first = {};
+  for (const [c, spec] of Object.entries(groups)) range(spec).forEach((n, i) => { (owner[n] ||= []).push(c); if (i === 0) first[n] = c; });
+  pre.innerHTML = lines.map((l, i) => { const n = i + 1;
+    return `<span class="l${owner[n] ? " hl" : ""}" data-c="${(owner[n] || []).join(" ")}">${paint(l) || " "}${first[n] ? `<span class="mk">${first[n]}</span>` : ""}</span>`; }).join("");
+});
+/* ---------- code slides: step through each numbered block like a run ---------- */
+// per person: which run-order chips light up (0-based) and the run log for each numbered block
+const sec60 = D.sec_kw.slice(0, 60), m60 = sec60.reduce((a, b) => a + b, 0) / 60;
+const sd60 = Math.sqrt(sec60.reduce((a, b) => a + (b - m60) ** 2, 0) / 59);
+const WALK = {
+  1: { f: [[4], [2], [5], [7]], t: [
+    ['date_format("18/10/2023", start=18 Oct 2023)', 'try "%m/%d/%Y" → month 18', '✗ ValueError, skip it', 'try "%d/%m/%Y" → 18 Oct 2023', '✓ equals the start date', 'return "%d/%m/%Y"'],
+    ['find("4-4 Oct to 11 Oct", "Aggregate")', 'look for Aggregate.csv', '✗ not in this folder', 'look for Aggregtae.csv', '✓ found it, load it'],
+    ['60 rows, one per second', 'resample("1min")', `mean ${m60.toFixed(2)} kW   std ${sd60.toFixed(2)}`, `min ${Math.min(...sec60).toFixed(2)}   max ${Math.max(...sec60).toFixed(2)}`, '✓ 1 row per minute, 60× fewer rows'],
+    ['agg_Voltage1 < 100 → True for 135 min', 'Thu 5 Oct, 14:50 to 17:05', 'df[~outage] keeps everything else', '41,815 → 41,680 minutes', '✓ no fake zero-demand minutes left']] },
+  2: { f: [[3], [4], [5], [6], [9]], t: [
+    ['h1 = agg_Current1H1  (the fundamental)', 'ratio_1H5 = H5 / h1', `A/C off ${D.spec_off[1]}   A/C high ${D.spec_on[1]}`, '3 phases × 7 harmonics = 21 ratios', '✓ the shape of the current, not its size'],
+    ['10:03 → 10:04   1 min   new? no', '10:04 → 17:06   gap     new? yes', 'cumsum → 1 1 1 1 1 | 2 2 2 2 2', '✓ each unbroken stretch has an id'],
+    ['groupby(seg).shift(1)', '10:01 lag1 = value at 10:00', '17:06 lag1 = NaN, not the 10:04 value', 'same for lags of 5, 15 and 60 min', '✓ no lag jumps across the gap'],
+    ['23:59 → sin −0.004   cos 1.000', '00:00 → sin  0.000   cos 1.000', '✓ neighbours, not 24 apart'],
+    ['assert lag after every gap is NaN', '✓ passes on every run', '→ 98 features per minute']] },
+  3: { f: [[1, 2], [4], [5]], t: [
+    ['TimeSeriesSplit(4, gap=60) on weeks 4–5', 'fold 1: train 1/5 → skip 60 → validate', 'fold 4: train 4/5 → skip 60 → validate', 'every model × its grid × 4 folds', '✓ validation always comes after training'],
+    ['ridge_mae = 2.27', 'bar = (1 − 0.05) × 2.27 = 2.16', 'best tree = lightgbm, 0.99', '0.99 ≤ 2.16', '✓ chosen = "lightgbm"'],
+    ['first run → write freeze.json', 'frozen_at 2026-11-06 21:11', 'rerun → same chosen_model and params?', '✓ yes → freeze_rerun.json, carry on', '✗ no → assert stops the run']] },
+  4: { f: [[1, 2], [3], [6], [7, 8]], t: [
+    ['TreeExplainer(model).shap_values(Xt)', '→ a kW value per feature per minute', 'sum inside each group, mean of |value|', 'power 4.97   harmonics 1.20   PQ 0.60', '✓ 5 numbers instead of 98'],
+    ['g = "harmonics" (53 columns)', 'shuffle all 53 together, 5 times', 'MAE 1.24 → 3.35 kW', '✓ harmonics matter: +2.11 kW'],
+    ['one day = 24 hourly kW values', "divide by that day's max", '→ the busiest hour becomes 1.0', '✓ days compared by shape, not size'],
+    ['k = 2 → silhouette 0.74', 'k = 3 → 0.61    k = 4 → 0.54', 'k = 5 → 0.50    k = 6 → 0.44', '✓ idxmax → k = 2']] },
+  5: { f: [[2, 3], [4], [6], [7]], t: [
+    ['thr = 95th percentile = 53.1 kW', 'agg >= thr → 1 in peak windows, else 0', 'peak: 71.4 − 0.2 × 28.9 = 65.6 kW', '✓ max demand cut by 5.8 kW'],
+    ['late = 14–16 h, early = 10–12 h', 'moved = 0.2 × A/C in the late windows', 'late −= moved, early += the same kWh', 'new max 76.6 kW (was 71.4)', '✗ peak went up 5.2 kW → dropped'],
+    ['5.78 kW × RM 89.27 × 12 = RM 6,190', '5.78 kW × RM 97.06 × 12 = RM 6,730', '9,243 kWh × 0.740 t/MWh = 6.84 t', '✓ kW, RM and tCO₂e a year'],
+    ['every number in scenarios.json carries', '"SCENARIOS for one CLEMD-sized', ' building, not UTP measurements"', '✓ never sold as a measured saving']] },
+};
+document.querySelectorAll("pre.code").forEach(pre => {
+  const sec = pre.closest(".slide"), w = WALK[sec.dataset.p], wrap = sec.querySelector(".codeslide");
+  const ol = sec.querySelector(".callouts"), btns = [...ol.querySelectorAll("button")], chips = [...sec.querySelectorAll(".callflow li")], strip = sec.querySelector(".callflow");
+  const col = document.createElement("div"); col.className = "rcol"; ol.replaceWith(col);
+  const con = document.createElement("div"); con.className = "codebox console";
+  con.innerHTML = '<div class="file">What happens when it runs</div><div class="trace" aria-live="polite"></div>';
+  col.append(ol, con);
+  const trace = con.querySelector(".trace"), lines = [...pre.querySelectorAll(".l")];
+  const p = sec._p = { i: -1, n: btns.length, min: -1, stop() {}, play() {},
+    show(i) {
+      p.i = Math.max(-1, Math.min(btns.length - 1, i));
+      const on = p.i >= 0, c = String(p.i + 1);
+      lines.forEach(l => l.classList.remove("cur")); void pre.offsetWidth; // restart the line animation
+      let k = 0;
+      lines.forEach(l => { if (on && l.dataset.c.split(" ").includes(c)) { l.classList.add("cur"); l.style.setProperty("--k", k++); } });
+      wrap.classList.toggle("walk", on); pre.classList.toggle("focus", on); strip.classList.toggle("run", on);
+      btns.forEach((b, j) => b.setAttribute("aria-pressed", String(j === p.i)));
+      chips.forEach((ch, j) => ch.classList.toggle("now", on && w.f[p.i].includes(j)));
+      trace.innerHTML = on ? w.t[p.i].map((s, j) => `<div class="tl${s[0] === "✓" ? " ok" : s[0] === "✗" ? " no" : ""}" style="--d:${(.3 + k * .12 + j * .6).toFixed(2)}s">${esc(s)}</div>`).join("") : "";
+      if (on) { const first = pre.querySelector(".l.cur"); if (first) pre.scrollTop = first.offsetTop - 40; }
+    } };
+  btns.forEach((b, j) => b.addEventListener("click", () => p.show(p.i === j ? -1 : j)));
+});
+
+/* ---------- deck navigation ---------- */
+const slides = [...document.querySelectorAll(".slide")];
+const $ = id => document.getElementById(id);
+let cur = 0;
+const player = () => slides[cur]._p;
+function go(i, atEnd = false) {
+  player()?.stop();
+  cur = Math.max(0, Math.min(slides.length - 1, i));
+  slides.forEach((s, j) => { s.classList.toggle("on", j === cur); s.inert = j !== cur; });
+  const s = slides[cur];
+  document.querySelector(".app").dataset.p = s.dataset.p === "0" ? "3" : s.dataset.p;
+  player()?.show(atEnd ? player().n - 1 : player().min);
+  $("count").textContent = `${cur + 1} / ${slides.length}`;
+  $("bar").style.transform = `scaleX(${(cur + 1) / slides.length})`;
+  $("drawer").innerHTML = `<b>Speaker notes · slide ${cur + 1}</b>` + (s.querySelector(".notes")?.innerHTML || "<p>No notes.</p>");
+  $("prev").disabled = cur === 0; $("next").disabled = cur === slides.length - 1;
+  history.replaceState(null, "", "#" + (cur + 1));
+}
+// on an animation slide, the arrows step through the animation first, then move on
+function next() { const p = player(); if (p && p.i < p.n - 1) { p.stop(); p.show(p.i + 1); } else go(cur + 1); }
+function prev() { const p = player(); if (p && p.i > p.min) { p.stop(); p.show(p.i - 1); } else go(cur - 1, true); }
+const person = n => slides.findIndex(s => s.dataset.p === String(n) && s.hasAttribute("data-first"));
+document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => go(person(b.dataset.go))));
+$("prev").onclick = prev; $("next").onclick = next;
+const toggleNotes = () => { const o = $("drawer").classList.toggle("open"); $("notesBtn").setAttribute("aria-pressed", String(o)); };
+const toggleTheme = () => {
+  const dark = getComputedStyle(document.documentElement).colorScheme === "dark";
+  document.documentElement.dataset.theme = dark ? "light" : "dark";
+  try { localStorage.setItem("wsp-theme", document.documentElement.dataset.theme); } catch (e) {}
+};
+const toggleFs = () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.();
+$("notesBtn").onclick = toggleNotes; $("themeBtn").onclick = toggleTheme; $("fsBtn").onclick = toggleFs;
+addEventListener("keydown", e => {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if (["ArrowRight", "PageDown", " "].includes(k)) { e.preventDefault(); next(); }
+  else if (["ArrowLeft", "PageUp"].includes(k)) { e.preventDefault(); prev(); }
+  else if (k === "Home" || k === "0") go(0);
+  else if (k === "End") go(slides.length - 1);
+  else if (/^[1-5]$/.test(k)) go(person(k));
+  else if (k === "p" || k === "P") player()?.play();
+  else if (k === "n" || k === "N") toggleNotes();
+  else if (k === "t" || k === "T") toggleTheme();
+  else if (k === "f" || k === "F") toggleFs();
+});
+// #9 opens slide 9, #9.3 opens slide 9 at animation step 3
+{ const [sl, st] = location.hash.slice(1).split(".").map(Number); go((sl || 1) - 1); if (st) player()?.show(st - 1); }
+/* The animation data (D) was extracted once from data/clemd, data/processed and the results folders.
+   If the results change, the slide numbers and D need updating by hand. */
+</script>
+</body>
+</html>
